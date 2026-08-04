@@ -1,4 +1,4 @@
-import { getAuth } from "@clerk/express";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { NextFunction, Request, Response } from "express";
 
 declare global {
@@ -9,13 +9,48 @@ declare global {
   }
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
-  if (!userId) {
+let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+
+function jwksUri(): string {
+  const url = process.env.SUPABASE_URL;
+  if (!url) {
+    throw new Error("SUPABASE_URL must be set to verify authentication tokens.");
+  }
+  return `${url.replace(/\/$/, "")}/auth/v1/.well-known/jwks.json`;
+}
+
+function getJwks() {
+  if (!jwks) {
+    jwks = createRemoteJWKSet(new URL(jwksUri()));
+  }
+  return jwks;
+}
+
+export async function requireAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+
+  if (!token) {
     res.status(401).json({ error: "Necesitas iniciar sesión para continuar." });
     return;
   }
-  req.userId = userId;
-  next();
+
+  try {
+    const { payload } = await jwtVerify(token, getJwks(), {
+      algorithms: ["ES256", "RS256", "HS256"],
+    });
+    const userId = typeof payload.sub === "string" ? payload.sub : null;
+    if (!userId || payload.role !== "authenticated") {
+      res.status(401).json({ error: "Necesitas iniciar sesión para continuar." });
+      return;
+    }
+    req.userId = userId;
+    next();
+  } catch {
+    res.status(401).json({ error: "Necesitas iniciar sesión para continuar." });
+  }
 }

@@ -139,7 +139,7 @@ router.delete("/products/demo", async (req, res): Promise<void> => {
 
 router.get("/dashboard", requireAuth, async (req, res): Promise<void> => {
   const { dashboardData } = await import("../lib/inventory-service");
-  res.json(dashboardData(req.userId!));
+  res.json(await dashboardData(req.userId!));
 });
 
 export default router;

@@ -1,13 +1,12 @@
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, useAuth, useClerk, useUser } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
 import {
   ArrowRight, BarChart3, Box, Check, ChevronDown, CircleDollarSign, ClipboardList,
   History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Search, ShoppingBasket,
   ShoppingCart, Sparkles, TriangleAlert, TrendingUp, X
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AuthProvider, useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useRoute } from 'wouter';
 import {
   getGetDashboardQueryKey, getListProductsQueryKey, getListSalesQueryKey,
@@ -22,8 +21,6 @@ import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const money = (value: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
 const dateLabel = (date: string) => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date));
 
@@ -77,8 +74,7 @@ function StatusMessage({ type = 'error', text, onRetry }: { type?: 'error' | 'em
 
 function Shell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user, signOut } = useAuth();
   const nav = [
     { href: '/app', label: 'Inicio', icon: HomeIcon },
     { href: '/app/productos', label: 'Productos', icon: Box },
@@ -98,9 +94,9 @@ function Shell({ children }: { children: React.ReactNode }) {
         <p className="mt-1 text-xs leading-relaxed text-[hsl(var(--sidebar-foreground)/.58)]">Un vistazo claro para trabajar con tranquilidad.</p>
       </div>
       <div className="mt-5 flex items-center gap-3 border-t border-[hsl(var(--sidebar-border))] pt-5">
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-[hsl(var(--sidebar-primary))] text-xs font-bold text-[hsl(var(--sidebar-primary-foreground))]">{(user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0] || 'F').toUpperCase()}</span>
-        <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{user?.firstName || 'Mi cuenta'}</p><p className="truncate text-[11px] text-[hsl(var(--sidebar-foreground)/.55)]">{user?.emailAddresses?.[0]?.emailAddress || 'Sesión activa'}</p></div>
-        <button onClick={() => signOut({ redirectUrl: basePath || '/' })} className="rounded-lg p-2 text-[hsl(var(--sidebar-foreground)/.55)] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-foreground))]" title="Salir" data-testid="button-sign-out"><LogOut size={17} /></button>
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-[hsl(var(--sidebar-primary))] text-xs font-bold text-[hsl(var(--sidebar-primary-foreground))]">{(user?.email?.[0] || 'F').toUpperCase()}</span>
+        <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{user?.email || 'Mi cuenta'}</p><p className="truncate text-[11px] text-[hsl(var(--sidebar-foreground)/.55)]">{user?.email || 'Sesión activa'}</p></div>
+        <button onClick={() => signOut()} className="rounded-lg p-2 text-[hsl(var(--sidebar-foreground)/.55)] hover:bg-[hsl(var(--sidebar-accent))] hover:text-[hsl(var(--sidebar-foreground))]" title="Salir" data-testid="button-sign-out"><LogOut size={17} /></button>
       </div>
     </aside>
     <div className="md:pl-[264px]">
@@ -195,17 +191,67 @@ function Protected({ children }: { children: React.ReactNode }) {
   return isSignedIn ? <>{children}</> : <Redirect to="/sign-in" />;
 }
 
-function SignInPage() { return <div className="grid min-h-[100dvh] place-items-center bg-background px-4 py-8"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>; }
-function SignUpPage() { return <div className="grid min-h-[100dvh] place-items-center bg-background px-4 py-8"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>; }
+function AuthCard({ mode }: { mode: 'sign-in' | 'sign-up' }) {
+  const { isSignedIn } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const [pending, setPending] = useState(false);
+  const isSignIn = mode === 'sign-in';
+
+  if (isSignedIn) return <Redirect to="/app" />;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setInfo('');
+    setPending(true);
+    try {
+      if (isSignIn) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        setInfo('Revisa tu correo para confirmar la cuenta, o vuelve a intentar iniciar sesión si ya estaba creada.');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Algo salió mal, intenta de nuevo.';
+      setError(message.replace(/^Error:\s*/, ''));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return <div className="grid min-h-[100dvh] place-items-center bg-background px-4 py-8">
+    <div className="w-full max-w-[440px] rounded-2xl border border-[#ded8ca] bg-[#fffdf8] p-8 shadow-sm">
+      <div className="mb-7 flex justify-center"><Brand /></div>
+      <h1 className="text-center font-[Fraunces] text-3xl font-bold text-[#274347]">{isSignIn ? 'Qué gusto verte' : 'Crea tu cuenta'}</h1>
+      <p className="mt-1 text-center text-sm text-[#687678]">{isSignIn ? 'Entra para continuar con tu negocio' : 'Empieza a llevar tu negocio con calma'}</p>
+      <form onSubmit={submit} className="mt-7 grid gap-4">
+        <Field label="Correo" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" data-testid="input-auth-email" />
+        <Field label="Contraseña" type="password" required autoComplete={isSignIn ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" data-testid="input-auth-password" />
+        {error && <p className="rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]" data-testid="status-auth-error">{error}</p>}
+        {info && <p className="rounded-xl bg-[hsl(var(--accent)/.6)] p-3 text-sm text-[hsl(var(--accent-foreground))]">{info}</p>}
+        <Button type="submit" disabled={pending} className="w-full" data-testid="button-auth-submit">{pending ? 'Un momento…' : isSignIn ? 'Entrar' : 'Crear cuenta'}</Button>
+      </form>
+      <p className="mt-6 text-center text-sm text-[#687678]">
+        {isSignIn ? <>¿Aún no tienes cuenta? <Link href="/sign-up" className="font-bold text-[#b85e3c]">Créala aquí</Link></> : <>¿Ya tienes cuenta? <Link href="/sign-in" className="font-bold text-[#b85e3c]">Inicia sesión</Link></>}
+      </p>
+    </div>
+  </div>;
+}
+
+function SignInPage() { return <AuthCard mode="sign-in" />; }
+function SignUpPage() { return <AuthCard mode="sign-up" />; }
 
 function Routes() {
   return <Switch><Route path="/" component={Landing} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/app"><Protected><Dashboard /></Protected></Route><Route path="/app/productos"><Protected><Products /></Protected></Route><Route path="/app/venta"><Protected><SalePage /></Protected></Route><Route path="/app/reportes"><Protected><Reports /></Protected></Route><Route component={NotFound} /></Switch>;
 }
 
 function App() {
-  if (!clerkPubKey) return <div className="grid min-h-[100dvh] place-items-center bg-background p-6 text-center"><p className="max-w-md text-sm text-[hsl(var(--destructive))]">Falta configurar la clave pública de autenticación.</p></div>;
-  const appearance = { theme: shadcn, cssLayerName: 'clerk', options: { logoPlacement: 'inside' as const, logoLinkUrl: basePath || '/', logoImageUrl: `${window.location.origin}${basePath}/logo.svg` }, variables: { colorPrimary: '#b85e3c', colorForeground: '#274347', colorMutedForeground: '#687678', colorDanger: '#ba423b', colorBackground: '#fffdf8', colorInput: '#fffdf8', colorInputForeground: '#274347', colorNeutral: '#ded8ca', fontFamily: 'DM Sans', borderRadius: '0.9rem' }, elements: { rootBox: 'w-full flex justify-center', cardBox: 'bg-[#fffdf8] rounded-2xl w-[440px] max-w-full overflow-hidden border border-[#ded8ca]', card: '!shadow-none !border-0 !bg-transparent', footer: '!shadow-none !border-0 !bg-transparent', headerTitle: 'font-[Fraunces] text-[#274347]', headerSubtitle: 'text-[#687678]', formFieldLabel: 'text-[#274347]', footerActionLink: 'text-[#b85e3c]', footerActionText: 'text-[#687678]', dividerRow: '!hidden', dividerText: '!hidden', socialButtonsBlockButton: '!hidden', socialButtonsBlockButtonText: '!hidden', formButtonPrimary: 'bg-[#b85e3c] hover:bg-[#a75031]', formFieldInput: 'border-[#ded8ca] text-[#274347]', alertText: 'text-[#ba423b]' } };
-  return <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={appearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} localization={{ signIn: { start: { title: 'Qué gusto verte', subtitle: 'Entra para continuar con tu negocio' } }, signUp: { start: { title: 'Crea tu cuenta', subtitle: 'Empieza a llevar tu negocio con calma' } } }}><QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={basePath}><Routes /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider></ClerkProvider>;
+  return <AuthProvider><QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={basePath}><Routes /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider></AuthProvider>;
 }
 
 export default App;
