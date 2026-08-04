@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Inventario Familiar"
+description = "Una aplicación privada y sencilla en español para administrar productos, inventario, ventas y reportes de un pequeño negocio familiar."
+version = "1.0.0"
+id = "artifacts/inventario-familiar"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23322
+
+[services.development]
+run = "pnpm --filter @workspace/inventario-familiar run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/inventario-familiar", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/inventario-familiar/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23322"
+BASE_PATH = "/"

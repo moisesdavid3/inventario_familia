@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API for a simple private inventory and sales app
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Product and inventory operations
+  - name: sales
+    description: Sales operations
+  - name: reports
+    description: Dashboard and report operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +29,463 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update product details
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /products/{id}/inventory:
+    post:
+      operationId: addInventory
+      tags: [products]
+      summary: Add inventory units
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryInput"
+      responses:
+        "200":
+          description: Inventory updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /products/demo:
+    delete:
+      operationId: deleteDemoProducts
+      tags: [products]
+      summary: Delete seeded demo products
+      responses:
+        "204":
+          description: Demo products deleted
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [reports]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      summary: List sales
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [today, last7, thisMonth, previousMonth, all]
+            default: all
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sale"
+    post:
+      operationId: createSale
+      tags: [sales]
+      summary: Register a sale and update inventory atomically
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleInput"
+      responses:
+        "201":
+          description: Sale registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Insufficient inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /sales/{id}:
+    get:
+      operationId: getSale
+      tags: [sales]
+      summary: Get sale details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "200":
+          description: Sale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /reports/inventory:
+    get:
+      operationId: getInventoryReport
+      tags: [reports]
+      summary: Get inventory report
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, low, empty]
+            default: all
+      responses:
+        "200":
+          description: Inventory report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReport"
+  /reports/sales:
+    get:
+      operationId: getSalesReport
+      tags: [reports]
+      summary: Get sales report
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [today, last7, thisMonth, previousMonth, all]
+            default: all
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Sales report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesReport"
 components:
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: number
+        minimum: 1
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     HealthStatus:
       type: object
       properties:
         status:
           type: string
-      required:
-        - status
-
+      required: [status]
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    Product:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        cost:
+          type: number
+        salePrice:
+          type: number
+        stock:
+          type: number
+        minimumStock:
+          type: number
+        isDemo:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, cost, salePrice, stock, minimumStock, createdAt, updatedAt]
+    ProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        cost:
+          type: number
+          minimum: 0
+        salePrice:
+          type: number
+          minimum: 0
+        initialStock:
+          type: number
+          minimum: 0
+        minimumStock:
+          type: number
+          minimum: 0
+      required: [name, cost, salePrice, initialStock]
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        cost:
+          type: number
+          minimum: 0
+        salePrice:
+          type: number
+          minimum: 0
+        minimumStock:
+          type: number
+          minimum: 0
+      minProperties: 1
+    InventoryInput:
+      type: object
+      properties:
+        quantity:
+          type: number
+          minimum: 1
+        note:
+          type: string
+      required: [quantity]
+    SaleItemInput:
+      type: object
+      properties:
+        productId:
+          type: number
+          minimum: 1
+        quantity:
+          type: number
+          minimum: 1
+      required: [productId, quantity]
+    SaleInput:
+      type: object
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SaleItemInput"
+      required: [items]
+    SaleItem:
+      type: object
+      properties:
+        productId:
+          type: number
+        productName:
+          type: string
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        unitCost:
+          type: number
+        subtotal:
+          type: number
+      required: [productId, productName, quantity, unitPrice, unitCost, subtotal]
+    Sale:
+      type: object
+      properties:
+        id:
+          type: number
+        date:
+          type: string
+          format: date-time
+        total:
+          type: number
+        totalItems:
+          type: number
+        estimatedProfit:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SaleItem"
+      required: [id, date, total, totalItems, estimatedProfit, items]
+    LowStockProduct:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        stock:
+          type: number
+        minimumStock:
+          type: number
+      required: [id, name, stock, minimumStock]
+    Dashboard:
+      type: object
+      properties:
+        productCount:
+          type: number
+        totalUnits:
+          type: number
+        inventoryCostValue:
+          type: number
+        inventorySaleValue:
+          type: number
+        potentialProfit:
+          type: number
+        todaySalesCount:
+          type: number
+        todaySalesTotal:
+          type: number
+        lowStockProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LowStockProduct"
+      required: [productCount, totalUnits, inventoryCostValue, inventorySaleValue, potentialProfit, todaySalesCount, todaySalesTotal, lowStockProducts]
+    InventoryReport:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        totalCostValue:
+          type: number
+        totalSaleValue:
+          type: number
+        potentialProfit:
+          type: number
+      required: [products, totalCostValue, totalSaleValue, potentialProfit]
+    SalesReport:
+      type: object
+      properties:
+        sales:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sale"
+        totalSold:
+          type: number
+        saleCount:
+          type: number
+        itemCount:
+          type: number
+        estimatedProfit:
+          type: number
+        bestSellingProduct:
+          type: ["string", "null"]
+        lowStockProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LowStockProduct"
+      required: [sales, totalSold, saleCount, itemCount, estimatedProfit, bestSellingProduct, lowStockProducts]

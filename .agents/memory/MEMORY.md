@@ -1,0 +1,1 @@
+- [Compilación de apps Vite](vite-build-env.md) — las compilaciones manuales necesitan PORT y BASE_PATH; el workflow los inyecta automáticamente.
