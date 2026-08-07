@@ -9,6 +9,8 @@
 export interface Product {
   id: number;
   name: string;
+  brand?: string;
+  content?: string;
   cost: number;
   salePrice: number;
   stock: number;

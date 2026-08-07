@@ -6,6 +6,8 @@ export const productsTable = pgTable("inventory_products", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
+  brand: text("brand"),
+  content: text("content"),
   cost: integer("cost").notNull(),
   salePrice: integer("sale_price").notNull(),
   stock: integer("stock").notNull().default(0),
@@ -30,6 +32,13 @@ export const inventoryMovementsTable = pgTable("inventory_movements", {
 export const inventoryUserSettingsTable = pgTable("inventory_user_settings", {
   userId: text("user_id").primaryKey(),
   demoProductsCleared: boolean("demo_products_cleared").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const appSettingsTable = pgTable("inventory_app_settings", {
+  key: text("key").primaryKey(),
+  value: integer("value").notNull(),
+  updatedBy: text("updated_by"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

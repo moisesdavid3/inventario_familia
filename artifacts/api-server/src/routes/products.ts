@@ -8,12 +8,21 @@ import {
   CreateProductBody,
   CreateProductResponse,
   ListProductsResponse,
+  UpdateDeudaMoisesBody,
   UpdateProductBody,
   UpdateProductParams,
   UpdateProductResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import { ensureSeeded, productResponse } from "../lib/inventory-service";
+import {
+  ensureSeeded,
+  deleteProduct,
+  isOwner,
+  listProductsFor,
+  productResponse,
+  resolveUserIdByEmail,
+  TERE_EMAIL,
+} from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/products", requireAuth);
@@ -21,7 +30,7 @@ router.use("/products", requireAuth);
 router.get("/products", async (req, res): Promise<void> => {
   const userId = req.userId!;
   await ensureSeeded(userId);
-  const rows = await db.select().from(productsTable).where(eq(productsTable.userId, userId));
+  const rows = await listProductsFor(userId, req.userEmail);
   res.json(ListProductsResponse.parse(rows.map(productResponse)));
 });
 
@@ -31,11 +40,15 @@ router.post("/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Revisa los datos del producto e inténtalo nuevamente." });
     return;
   }
-  const userId = req.userId!;
+  const userId = isOwner(req.userEmail)
+    ? ((await resolveUserIdByEmail(TERE_EMAIL)) ?? req.userId!)
+    : req.userId!;
   const [product] = await db.transaction(async (tx) => {
     const [created] = await tx.insert(productsTable).values({
       userId,
       name: parsed.data.name.trim(),
+      brand: parsed.data.brand?.trim() || null,
+      content: parsed.data.content?.trim() || null,
       cost: parsed.data.cost,
       salePrice: parsed.data.salePrice,
       stock: parsed.data.initialStock,
@@ -62,15 +75,23 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Revisa los datos e inténtalo nuevamente." });
     return;
   }
-  const [product] = await db.update(productsTable)
-    .set({ ...parsed.data, name: parsed.data.name?.trim(), updatedAt: new Date() })
-    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.userId, req.userId!)))
-    .returning();
-  if (!product) {
+  const [product] = await db.select({ userId: productsTable.userId }).from(productsTable)
+    .where(eq(productsTable.id, params.data.id));
+  if (!product || (!isOwner(req.userEmail) && product.userId !== req.userId!)) {
     res.status(404).json({ error: "No encontramos ese producto." });
     return;
   }
-  res.json(UpdateProductResponse.parse(productResponse(product)));
+  const [updated] = await db.update(productsTable)
+    .set({
+      ...parsed.data,
+      name: parsed.data.name?.trim(),
+      brand: parsed.data.brand?.trim() || null,
+      content: parsed.data.content?.trim() || null,
+      updatedAt: new Date(),
+    })
+    .where(eq(productsTable.id, params.data.id))
+    .returning();
+  res.json(UpdateProductResponse.parse(productResponse(updated)));
 });
 
 router.post("/products/:id/inventory", async (req, res): Promise<void> => {
@@ -80,17 +101,16 @@ router.post("/products/:id/inventory", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Indica una cantidad válida para agregar." });
     return;
   }
-  const userId = req.userId!;
   const result = await db.transaction(async (tx) => {
     const [product] = await tx.select().from(productsTable)
-      .where(and(eq(productsTable.id, params.data.id), eq(productsTable.userId, userId)));
-    if (!product) return null;
+      .where(eq(productsTable.id, params.data.id));
+    if (!product || (!isOwner(req.userEmail) && product.userId !== req.userId!)) return null;
     const [updated] = await tx.update(productsTable)
       .set({ stock: product.stock + parsed.data.quantity, updatedAt: new Date() })
       .where(eq(productsTable.id, product.id))
       .returning();
     await tx.insert(inventoryMovementsTable).values({
-      userId,
+      userId: product.userId,
       productId: product.id,
       type: "entrada",
       quantity: parsed.data.quantity,
@@ -137,9 +157,38 @@ router.delete("/products/demo", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
+router.delete("/products/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ error: "Indica un id de producto válido." });
+    return;
+  }
+  const deleted = await deleteProduct(id, req.userId!, req.userEmail);
+  if (!deleted) {
+    res.status(404).json({ error: "No encontramos ese producto." });
+    return;
+  }
+  res.sendStatus(204);
+});
+
 router.get("/dashboard", requireAuth, async (req, res): Promise<void> => {
   const { dashboardData } = await import("../lib/inventory-service");
-  res.json(await dashboardData(req.userId!));
+  res.json(await dashboardData(req.userId!, req.userEmail));
+});
+
+router.patch("/dashboard", requireAuth, async (req, res): Promise<void> => {
+  const { DEBT_OWNER_EMAIL, setDeudaMoises } = await import("../lib/inventory-service");
+  if (req.userEmail !== DEBT_OWNER_EMAIL) {
+    res.status(403).json({ error: "Solo el dueño puede actualizar la deuda." });
+    return;
+  }
+  const parsed = UpdateDeudaMoisesBody.safeParse(req.body);
+  if (!parsed.success || !Number.isFinite(parsed.data.value) || parsed.data.value < 0) {
+    res.status(400).json({ error: "Escribe un valor de deuda válido." });
+    return;
+  }
+  await setDeudaMoises(Math.round(parsed.data.value), req.userEmail);
+  res.sendStatus(204);
 });
 
 export default router;

@@ -86,6 +86,17 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "204":
+          description: Product deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
   /products/{id}/inventory:
     post:
       operationId: addInventory
@@ -130,6 +141,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Dashboard"
+    patch:
+      operationId: updateDeudaMoises
+      tags: [reports]
+      summary: Update the debt value of Moises David (owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeudaMoisesInput"
+      responses:
+        "204":
+          description: Debt updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Only the owner can update the debt
   /sales:
     get:
       operationId: listSales
@@ -304,6 +332,10 @@ components:
           type: number
         name:
           type: string
+        brand:
+          type: string
+        content:
+          type: string
         cost:
           type: number
         salePrice:
@@ -327,6 +359,10 @@ components:
         name:
           type: string
           minLength: 1
+        brand:
+          type: string
+        content:
+          type: string
         cost:
           type: number
           minimum: 0
@@ -346,6 +382,10 @@ components:
         name:
           type: string
           minLength: 1
+        brand:
+          type: string
+        content:
+          type: string
         cost:
           type: number
           minimum: 0
@@ -431,6 +471,12 @@ components:
         minimumStock:
           type: number
       required: [id, name, stock, minimumStock]
+    DeudaMoisesInput:
+      type: object
+      properties:
+        value:
+          type: number
+      required: [value]
     Dashboard:
       type: object
       properties:
@@ -448,6 +494,12 @@ components:
           type: number
         todaySalesTotal:
           type: number
+        deudaMoisesDavid:
+          type: number
+          description: Valor monetario de la deuda de Moises David
+        canEditDeudaMoises:
+          type: boolean
+          description: Si el usuario actual puede editar la deuda
         lowStockProducts:
           type: array
           items:

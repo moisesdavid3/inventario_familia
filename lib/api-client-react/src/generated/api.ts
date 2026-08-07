@@ -22,6 +22,7 @@ import type {
 import type {
   BadRequestResponse,
   Dashboard,
+  DeudaMoisesInput,
   Error,
   GetInventoryReportParams,
   GetSalesReportParams,
@@ -362,6 +363,77 @@ export const useUpdateProduct = <TError = ErrorType<BadRequestResponse | NotFoun
       return useMutation(getUpdateProductMutationOptions(options));
     }
 
+export const getDeleteProductUrl = (id: number,) => {
+
+
+
+
+  return `/api/products/${id}`
+}
+
+/**
+ * @summary Delete a product
+ */
+export const deleteProduct = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteProductUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteProductMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteProduct'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProduct>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteProduct(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProductMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>
+
+    export type DeleteProductMutationError = ErrorType<NotFoundResponse>
+
+    /**
+ * @summary Delete a product
+ */
+export const useDeleteProduct = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProduct>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteProductMutationOptions(options));
+    }
+
 export const getAddInventoryUrl = (id: number,) => {
 
 
@@ -581,6 +653,77 @@ export function useGetDashboard<TData = Awaited<ReturnType<typeof getDashboard>>
 
 
 
+
+export const getUpdateDeudaMoisesUrl = () => {
+
+
+
+
+  return `/api/dashboard`
+}
+
+/**
+ * @summary Update the debt value of Moises David (owner only)
+ */
+export const updateDeudaMoises = async (deudaMoisesInput: DeudaMoisesInput, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getUpdateDeudaMoisesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(deudaMoisesInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateDeudaMoisesMutationOptions = <TError = ErrorType<BadRequestResponse | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDeudaMoises>>, TError,{data: BodyType<DeudaMoisesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateDeudaMoises>>, TError,{data: BodyType<DeudaMoisesInput>}, TContext> => {
+
+const mutationKey = ['updateDeudaMoises'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDeudaMoises>>, {data: BodyType<DeudaMoisesInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateDeudaMoises(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDeudaMoisesMutationResult = NonNullable<Awaited<ReturnType<typeof updateDeudaMoises>>>
+    export type UpdateDeudaMoisesMutationBody = BodyType<DeudaMoisesInput>
+    export type UpdateDeudaMoisesMutationError = ErrorType<BadRequestResponse | void>
+
+    /**
+ * @summary Update the debt value of Moises David (owner only)
+ */
+export const useUpdateDeudaMoises = <TError = ErrorType<BadRequestResponse | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDeudaMoises>>, TError,{data: BodyType<DeudaMoisesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateDeudaMoises>>,
+        TError,
+        {data: BodyType<DeudaMoisesInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateDeudaMoisesMutationOptions(options));
+    }
 
 export const getListSalesUrl = (params?: ListSalesParams,) => {
   const normalizedParams = new URLSearchParams();

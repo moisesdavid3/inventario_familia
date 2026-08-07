@@ -5,6 +5,7 @@ declare global {
   namespace Express {
     interface Request {
       userId?: string;
+      userEmail?: string;
     }
   }
 }
@@ -49,6 +50,7 @@ export async function requireAuth(
       return;
     }
     req.userId = userId;
+    req.userEmail = typeof payload.email === "string" ? payload.email : undefined;
     next();
   } catch {
     res.status(401).json({ error: "Necesitas iniciar sesión para continuar." });

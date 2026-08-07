@@ -9,6 +9,8 @@
 export interface ProductInput {
   /** @minLength 1 */
   name: string;
+  brand?: string;
+  content?: string;
   /** @minimum 0 */
   cost: number;
   /** @minimum 0 */

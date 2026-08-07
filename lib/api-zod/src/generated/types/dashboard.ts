@@ -15,5 +15,9 @@ export interface Dashboard {
   potentialProfit: number;
   todaySalesCount: number;
   todaySalesTotal: number;
+  /** Valor monetario de la deuda de Moises David */
+  deudaMoisesDavid?: number;
+  /** Si el usuario actual puede editar la deuda */
+  canEditDeudaMoises?: boolean;
   lowStockProducts: LowStockProduct[];
 }

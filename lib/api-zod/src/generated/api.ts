@@ -22,6 +22,8 @@ export const HealthCheckResponse = zod.object({
 export const ListProductsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "brand": zod.string().optional(),
+  "content": zod.string().optional(),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -49,6 +51,8 @@ export const createProductBodyMinimumStockMin = 0;
 
 export const CreateProductBody = zod.object({
   "name": zod.string().min(1),
+  "brand": zod.string().optional(),
+  "content": zod.string().optional(),
   "cost": zod.number().min(createProductBodyCostMin),
   "salePrice": zod.number().min(createProductBodySalePriceMin),
   "initialStock": zod.number().min(createProductBodyInitialStockMin),
@@ -58,6 +62,8 @@ export const CreateProductBody = zod.object({
 export const CreateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "brand": zod.string().optional(),
+  "content": zod.string().optional(),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -89,6 +95,8 @@ export const updateProductBodyMinimumStockMin = 0;
 
 export const UpdateProductBody = zod.object({
   "name": zod.string().min(1).optional(),
+  "brand": zod.string().optional(),
+  "content": zod.string().optional(),
   "cost": zod.number().min(updateProductBodyCostMin).optional(),
   "salePrice": zod.number().min(updateProductBodySalePriceMin).optional(),
   "minimumStock": zod.number().min(updateProductBodyMinimumStockMin).optional()
@@ -97,6 +105,8 @@ export const UpdateProductBody = zod.object({
 export const UpdateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "brand": zod.string().optional(),
+  "content": zod.string().optional(),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -105,6 +115,19 @@ export const UpdateProductResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary Delete a product
+ */
+
+
+
+export const DeleteProductParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeleteProductResponse = zod.void()
 
 
 /**
@@ -128,6 +151,8 @@ export const AddInventoryBody = zod.object({
 export const AddInventoryResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "brand": zod.string().optional(),
+  "content": zod.string().optional(),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -155,6 +180,8 @@ export const GetDashboardResponse = zod.object({
   "potentialProfit": zod.number(),
   "todaySalesCount": zod.number(),
   "todaySalesTotal": zod.number(),
+  "deudaMoisesDavid": zod.number().optional().describe('Valor monetario de la deuda de Moises David'),
+  "canEditDeudaMoises": zod.boolean().optional().describe('Si el usuario actual puede editar la deuda'),
   "lowStockProducts": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -162,6 +189,16 @@ export const GetDashboardResponse = zod.object({
   "minimumStock": zod.number()
 }))
 })
+
+
+/**
+ * @summary Update the debt value of Moises David (owner only)
+ */
+export const UpdateDeudaMoisesBody = zod.object({
+  "value": zod.number()
+})
+
+export const UpdateDeudaMoisesResponse = zod.void()
 
 
 /**
@@ -265,6 +302,8 @@ export const GetInventoryReportResponse = zod.object({
   "products": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "brand": zod.string().optional(),
+  "content": zod.string().optional(),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),

@@ -8,6 +8,7 @@
 
 export * from './badRequestResponse';
 export * from './dashboard';
+export * from './deudaMoisesInput';
 export * from './error';
 export * from './getInventoryReportFilter';
 export * from './getInventoryReportParams';

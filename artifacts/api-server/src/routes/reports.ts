@@ -48,7 +48,7 @@ router.get("/reports/sales", async (req, res): Promise<void> => {
     return;
   }
   const range = dateRangeForPeriod(parsed.data.period, from, to);
-  res.json(GetSalesReportResponse.parse(await salesReportData(userId, range)));
+  res.json(GetSalesReportResponse.parse(await salesReportData(userId, req.userEmail, range)));
 });
 
 export default router;

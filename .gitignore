@@ -52,3 +52,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# API runtime log
+artifacts/api-server/api.log

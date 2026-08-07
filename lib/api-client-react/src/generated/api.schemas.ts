@@ -16,6 +16,8 @@ export interface Error {
 export interface Product {
   id: number;
   name: string;
+  brand?: string;
+  content?: string;
   cost: number;
   salePrice: number;
   stock: number;
@@ -28,6 +30,8 @@ export interface Product {
 export interface ProductInput {
   /** @minLength 1 */
   name: string;
+  brand?: string;
+  content?: string;
   /** @minimum 0 */
   cost: number;
   /** @minimum 0 */
@@ -41,6 +45,8 @@ export interface ProductInput {
 export interface ProductUpdate {
   /** @minLength 1 */
   name?: string;
+  brand?: string;
+  content?: string;
   /** @minimum 0 */
   cost?: number;
   /** @minimum 0 */
@@ -92,6 +98,10 @@ export interface LowStockProduct {
   minimumStock: number;
 }
 
+export interface DeudaMoisesInput {
+  value: number;
+}
+
 export interface Dashboard {
   productCount: number;
   totalUnits: number;
@@ -100,6 +110,10 @@ export interface Dashboard {
   potentialProfit: number;
   todaySalesCount: number;
   todaySalesTotal: number;
+  /** Valor monetario de la deuda de Moises David */
+  deudaMoisesDavid?: number;
+  /** Si el usuario actual puede editar la deuda */
+  canEditDeudaMoises?: boolean;
   lowStockProducts: LowStockProduct[];
 }
 
