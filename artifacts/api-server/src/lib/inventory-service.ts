@@ -33,8 +33,9 @@ export async function resolveUserIdByEmail(email: string): Promise<string | unde
       headers: { Authorization: `Bearer ${serviceRoleKey}`, apikey: serviceRoleKey },
     });
     if (!res.ok) return undefined;
-    const data = (await res.json()) as { users?: { id: string }[] };
-    const id = data.users?.[0]?.id;
+    const data = (await res.json()) as { users?: { id: string; email?: string }[] };
+    const found = data.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    const id = found?.id;
     if (id) userIdByEmailCache.set(email, id);
     return id;
   } catch {
