@@ -290,6 +290,19 @@ export const GetSaleResponse = zod.object({
 
 
 /**
+ * @summary Delete a sale and return its items to inventory
+ */
+
+
+
+export const DeleteSaleParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeleteSaleResponse = zod.void()
+
+
+/**
  * @summary Get inventory report
  */
 export const getInventoryReportQueryFilterDefault = `all`;

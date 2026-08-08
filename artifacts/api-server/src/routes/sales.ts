@@ -10,7 +10,7 @@ import {
   ListSalesResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere } from "../lib/inventory-service";
+import { dateRangeForPeriod, ensureSeeded, isOwner, saleResponse, saleWhere } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/sales", requireAuth);
@@ -111,6 +111,45 @@ router.get("/sales/:id", async (req, res): Promise<void> => {
     return;
   }
   res.json(GetSaleResponse.parse(await saleResponse(sale)));
+});
+
+router.delete("/sales/:id", async (req, res): Promise<void> => {
+  const params = GetSaleParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "No encontramos esa venta." });
+    return;
+  }
+  const deleted = await getDb().transaction(async (tx) => {
+    const [sale] = await tx.select().from(salesTable).where(eq(salesTable.id, params.data.id));
+    if (!sale) return false;
+    if (!isOwner(req.userEmail) && sale.userId !== req.userId) return false;
+    const items = await tx.select().from(saleItemsTable).where(eq(saleItemsTable.saleId, sale.id));
+    for (const item of items) {
+      const [product] = await tx.select().from(productsTable).where(eq(productsTable.id, item.productId));
+      if (!product) continue;
+      const stockAfter = product.stock + item.quantity;
+      await tx.update(productsTable)
+        .set({ stock: stockAfter, updatedAt: new Date() })
+        .where(eq(productsTable.id, product.id));
+      await tx.insert(inventoryMovementsTable).values({
+        userId: product.userId,
+        productId: product.id,
+        type: "venta_anulada",
+        quantity: item.quantity,
+        stockBefore: product.stock,
+        stockAfter,
+        note: `Venta #${sale.id} anulada`,
+      });
+    }
+    await tx.delete(saleItemsTable).where(eq(saleItemsTable.saleId, sale.id));
+    await tx.delete(salesTable).where(eq(salesTable.id, sale.id));
+    return true;
+  });
+  if (!deleted) {
+    res.status(404).json({ error: "No encontramos esa venta." });
+    return;
+  }
+  res.sendStatus(204);
 });
 
 export default router;

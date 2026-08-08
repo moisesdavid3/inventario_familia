@@ -238,6 +238,24 @@ paths:
                 $ref: "#/components/schemas/Sale"
         "404":
           $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteSale
+      tags: [sales]
+      summary: Delete a sale and return its items to inventory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "204":
+          description: Sale deleted and inventory restored
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /reports/inventory:
     get:
       operationId: getInventoryReport
