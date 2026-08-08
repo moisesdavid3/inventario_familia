@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq } from "drizzle-orm";
-import { db, inventoryMovementsTable, inventoryUserSettingsTable, productsTable } from "@workspace/db";
+import { getDb, inventoryMovementsTable, inventoryUserSettingsTable, productsTable } from "@workspace/db";
 import {
   AddInventoryBody,
   AddInventoryParams,
@@ -43,7 +43,7 @@ router.post("/products", async (req, res): Promise<void> => {
   const userId = isOwner(req.userEmail)
     ? ((await resolveUserIdByEmail(TERE_EMAIL)) ?? req.userId!)
     : req.userId!;
-  const [product] = await db.transaction(async (tx) => {
+  const [product] = await getDb().transaction(async (tx) => {
     const [created] = await tx.insert(productsTable).values({
       userId,
       name: parsed.data.name.trim(),
@@ -75,13 +75,13 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Revisa los datos e inténtalo nuevamente." });
     return;
   }
-  const [product] = await db.select({ userId: productsTable.userId }).from(productsTable)
+  const [product] = await getDb().select({ userId: productsTable.userId }).from(productsTable)
     .where(eq(productsTable.id, params.data.id));
   if (!product || (!isOwner(req.userEmail) && product.userId !== req.userId!)) {
     res.status(404).json({ error: "No encontramos ese producto." });
     return;
   }
-  const [updated] = await db.update(productsTable)
+  const [updated] = await getDb().update(productsTable)
     .set({
       ...parsed.data,
       name: parsed.data.name?.trim(),
@@ -101,7 +101,7 @@ router.post("/products/:id/inventory", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Indica una cantidad válida para agregar." });
     return;
   }
-  const result = await db.transaction(async (tx) => {
+  const result = await getDb().transaction(async (tx) => {
     const [product] = await tx.select().from(productsTable)
       .where(eq(productsTable.id, params.data.id));
     if (!product || (!isOwner(req.userEmail) && product.userId !== req.userId!)) return null;
@@ -129,7 +129,7 @@ router.post("/products/:id/inventory", async (req, res): Promise<void> => {
 
 router.delete("/products/demo", async (req, res): Promise<void> => {
   const userId = req.userId!;
-  await db.transaction(async (tx) => {
+  await getDb().transaction(async (tx) => {
     const demoProducts = await tx.select({ id: productsTable.id })
       .from(productsTable)
       .where(and(eq(productsTable.userId, userId), eq(productsTable.isDemo, true)));

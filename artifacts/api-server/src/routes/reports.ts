@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, productsTable } from "@workspace/db";
+import { getDb, productsTable } from "@workspace/db";
 import {
   GetInventoryReportQueryParams,
   GetInventoryReportResponse,
@@ -22,7 +22,7 @@ router.get("/reports/inventory", async (req, res): Promise<void> => {
     res.status(400).json({ error: "El filtro no es válido." });
     return;
   }
-  const rows = await db.select().from(productsTable).where(eq(productsTable.userId, userId));
+  const rows = await getDb().select().from(productsTable).where(eq(productsTable.userId, userId));
   const products = rows.filter((product) => {
     if (parsed.data.filter === "low") return product.stock <= product.minimumStock;
     if (parsed.data.filter === "empty") return product.stock === 0;

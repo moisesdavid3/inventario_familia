@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
-import { db, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
+import { getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateSaleBody,
   CreateSaleResponse,
@@ -27,7 +27,7 @@ router.get("/sales", async (req, res): Promise<void> => {
   await ensureSeeded(userId);
   const { period, from, to } = queryDates(req.query as Record<string, unknown>);
   const range = dateRangeForPeriod(period, from, to);
-  const rows = await db.select().from(salesTable)
+  const rows = await getDb().select().from(salesTable)
     .where(saleWhere(userId, range))
     .orderBy(desc(salesTable.createdAt));
   res.json(ListSalesResponse.parse(await Promise.all(rows.map(saleResponse))));
@@ -45,7 +45,7 @@ router.post("/sales", async (req, res): Promise<void> => {
     requested.set(item.productId, (requested.get(item.productId) ?? 0) + item.quantity);
   }
 
-  const result = await db.transaction(async (tx) => {
+  const result = await getDb().transaction(async (tx) => {
     const products = [];
     for (const [productId, quantity] of requested.entries()) {
       const [product] = await tx.select().from(productsTable)
@@ -104,7 +104,7 @@ router.get("/sales/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "No encontramos esa venta." });
     return;
   }
-  const [sale] = await db.select().from(salesTable)
+  const [sale] = await getDb().select().from(salesTable)
     .where(and(eq(salesTable.id, params.data.id), eq(salesTable.userId, req.userId!)));
   if (!sale) {
     res.status(404).json({ error: "No encontramos esa venta." });

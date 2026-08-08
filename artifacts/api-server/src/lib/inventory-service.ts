@@ -1,7 +1,7 @@
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import {
   appSettingsTable,
-  db,
+  getDb,
   inventoryMovementsTable,
   inventoryUserSettingsTable,
   productsTable,
@@ -47,21 +47,21 @@ export async function listProductsFor(userId: string, userEmail?: string) {
   if (isOwner(userEmail)) {
     const tereId = await resolveUserIdByEmail(TERE_EMAIL);
     if (tereId) {
-      return db.select().from(productsTable).where(inArray(productsTable.userId, [userId, tereId]));
+      return getDb().select().from(productsTable).where(inArray(productsTable.userId, [userId, tereId]));
     }
   }
-  return db.select().from(productsTable).where(eq(productsTable.userId, userId));
+  return getDb().select().from(productsTable).where(eq(productsTable.userId, userId));
 }
 
 export async function getDeudaMoises(): Promise<number> {
-  const [row] = await db.select({ value: appSettingsTable.value })
+  const [row] = await getDb().select({ value: appSettingsTable.value })
     .from(appSettingsTable)
     .where(eq(appSettingsTable.key, DEBT_SETTING_KEY));
   return row?.value ?? 0;
 }
 
 export async function setDeudaMoises(value: number, updatedBy: string): Promise<void> {
-  await db.insert(appSettingsTable)
+  await getDb().insert(appSettingsTable)
     .values({ key: DEBT_SETTING_KEY, value, updatedBy, updatedAt: new Date() })
     .onConflictDoUpdate({
       target: appSettingsTable.key,
@@ -85,7 +85,7 @@ export function productResponse(product: typeof productsTable.$inferSelect) {
 }
 
 export async function deleteProduct(productId: number, requesterId: string, requesterEmail?: string): Promise<boolean> {
-  return db.transaction(async (tx) => {
+  return getDb().transaction(async (tx) => {
     const [product] = await tx.select({ id: productsTable.id, userId: productsTable.userId }).from(productsTable)
       .where(eq(productsTable.id, productId));
     if (!product) return false;
@@ -114,20 +114,20 @@ export async function deleteProduct(productId: number, requesterId: string, requ
 }
 
 export async function ensureSeeded(userId: string): Promise<void> {
-  const existing = await db
+  const existing = await getDb()
     .select({ id: productsTable.id })
     .from(productsTable)
     .where(eq(productsTable.userId, userId))
     .limit(1);
   if (existing.length > 0) return;
-  const [settings] = await db
+  const [settings] = await getDb()
     .select()
     .from(inventoryUserSettingsTable)
     .where(eq(inventoryUserSettingsTable.userId, userId))
     .limit(1);
   if (settings?.demoProductsCleared) return;
 
-  await db.transaction(async (tx) => {
+  await getDb().transaction(async (tx) => {
     const rows = await tx
       .insert(productsTable)
       .values([
@@ -188,7 +188,7 @@ export function saleWhere(userId: string, range: DateRange) {
 }
 
 export async function saleResponse(sale: typeof salesTable.$inferSelect) {
-  const items = await db
+  const items = await getDb()
     .select()
     .from(saleItemsTable)
     .where(eq(saleItemsTable.saleId, sale.id));
@@ -213,7 +213,7 @@ export async function dashboardData(userId: string, userEmail?: string) {
   await ensureSeeded(userId);
   const products = await listProductsFor(userId, userEmail);
   const todayRange = dateRangeForPeriod("today");
-  const todaySales = await db.select().from(salesTable).where(saleWhere(userId, todayRange));
+  const todaySales = await getDb().select().from(salesTable).where(saleWhere(userId, todayRange));
   return {
     productCount: products.length,
     totalUnits: products.reduce((sum, product) => sum + product.stock, 0),
@@ -232,7 +232,7 @@ export async function dashboardData(userId: string, userEmail?: string) {
 
 export async function salesReportData(userId: string, userEmail: string | undefined, range: DateRange) {
   await ensureSeeded(userId);
-  const sales = await db.select().from(salesTable).where(saleWhere(userId, range)).orderBy(sql`${salesTable.createdAt} desc`);
+  const sales = await getDb().select().from(salesTable).where(saleWhere(userId, range)).orderBy(sql`${salesTable.createdAt} desc`);
   const completeSales = await Promise.all(sales.map(saleResponse));
   const counts = new Map<string, number>();
   completeSales.forEach((sale) => sale.items.forEach((item) => counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity)));

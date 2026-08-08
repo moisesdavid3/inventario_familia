@@ -55,3 +55,9 @@ Thumbs.db
 
 # API runtime log
 artifacts/api-server/api.log
+
+# Cloudflare Pages local dev vars
+artifacts/inventario-familiar/.dev.vars
+
+# Cloudflare Pages local dev cache
+artifacts/inventario-familiar/.wrangler/
