@@ -22,7 +22,8 @@ export const HealthCheckResponse = zod.object({
 export const ListCompaniesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
-  "slug": zod.string()
+  "slug": zod.string(),
+  "allowNegativeStock": zod.boolean().describe('Permite registrar ventas incluso sin inventario suficiente')
 })
 export const ListCompaniesResponse = zod.array(ListCompaniesResponseItem)
 

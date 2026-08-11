@@ -10,4 +10,6 @@ export interface Company {
   id: number;
   name: string;
   slug: string;
+  /** Permite registrar ventas incluso sin inventario suficiente */
+  allowNegativeStock: boolean;
 }

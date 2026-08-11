@@ -482,7 +482,10 @@ components:
           type: string
         slug:
           type: string
-      required: [id, name, slug]
+        allowNegativeStock:
+          type: boolean
+          description: Permite registrar ventas incluso sin inventario suficiente
+      required: [id, name, slug, allowNegativeStock]
     Product:
       type: object
       properties:

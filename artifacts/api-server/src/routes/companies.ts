@@ -9,7 +9,12 @@ router.use("/companies", requireAuth);
 
 router.get("/companies", async (req, res): Promise<void> => {
   const rows = await getDb()
-    .select({ id: companiesTable.id, name: companiesTable.name, slug: companiesTable.slug })
+    .select({
+      id: companiesTable.id,
+      name: companiesTable.name,
+      slug: companiesTable.slug,
+      allowNegativeStock: companiesTable.allowNegativeStock,
+    })
     .from(companyMembersTable)
     .innerJoin(companiesTable, eq(companiesTable.id, companyMembersTable.companyId))
     .where(eq(companyMembersTable.userId, req.userId!))

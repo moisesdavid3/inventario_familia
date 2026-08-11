@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq } from "drizzle-orm";
-import { getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
+import { companiesTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateSaleBody,
   CreateSaleResponse,
@@ -46,13 +46,16 @@ router.post("/sales", async (req, res): Promise<void> => {
     requested.set(item.productId, (requested.get(item.productId) ?? 0) + item.quantity);
   }
 
+  const [company] = await getDb().select().from(companiesTable).where(eq(companiesTable.id, req.companyId!));
+  const allowNegative = !!company?.allowNegativeStock;
+
   const result = await getDb().transaction(async (tx) => {
     const products = [];
     for (const [productId, quantity] of requested.entries()) {
       const [product] = await tx.select().from(productsTable)
         .where(and(eq(productsTable.id, productId), eq(productsTable.companyId, req.companyId!)));
       if (!product) return { error: "No encontramos uno de los productos." as const };
-      if (product.stock < quantity) {
+      if (!allowNegative && product.stock < quantity) {
         return { error: `Solo hay ${product.stock} unidades disponibles de ${product.name}.` as const, conflict: true as const };
       }
       products.push({ product, quantity });
