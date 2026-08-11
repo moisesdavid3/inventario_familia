@@ -34,7 +34,7 @@ export const ListCompaniesResponse = zod.array(ListCompaniesResponseItem)
 export const ListProductsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
-  "brand": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -65,7 +65,7 @@ export const createProductBodyMinimumStockMin = 0;
 
 export const CreateProductBody = zod.object({
   "name": zod.string().min(1),
-  "brand": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -78,7 +78,7 @@ export const CreateProductBody = zod.object({
 export const CreateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
-  "brand": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -113,7 +113,7 @@ export const updateProductBodyMinimumStockMin = 0;
 
 export const UpdateProductBody = zod.object({
   "name": zod.string().min(1).optional(),
-  "brand": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -125,7 +125,7 @@ export const UpdateProductBody = zod.object({
 export const UpdateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
-  "brand": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -173,7 +173,7 @@ export const AddInventoryBody = zod.object({
 export const AddInventoryResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
-  "brand": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -492,7 +492,7 @@ export const GetInventoryReportResponse = zod.object({
   "products": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
-  "brand": zod.string().optional(),
+  "supplier": zod.string().optional(),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),

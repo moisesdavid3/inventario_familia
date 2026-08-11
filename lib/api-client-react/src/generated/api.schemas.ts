@@ -24,7 +24,7 @@ export interface Company {
 export interface Product {
   id: number;
   name: string;
-  brand?: string;
+  supplier?: string;
   category?: string;
   content?: string;
   description?: string;
@@ -40,7 +40,7 @@ export interface Product {
 export interface ProductInput {
   /** @minLength 1 */
   name: string;
-  brand?: string;
+  supplier?: string;
   category?: string;
   content?: string;
   description?: string;
@@ -57,7 +57,7 @@ export interface ProductInput {
 export interface ProductUpdate {
   /** @minLength 1 */
   name?: string;
-  brand?: string;
+  supplier?: string;
   category?: string;
   content?: string;
   description?: string;

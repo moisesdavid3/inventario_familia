@@ -9,7 +9,7 @@
 export interface ProductUpdate {
   /** @minLength 1 */
   name?: string;
-  brand?: string;
+  supplier?: string;
   category?: string;
   content?: string;
   description?: string;

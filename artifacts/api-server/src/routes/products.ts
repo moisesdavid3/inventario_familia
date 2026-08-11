@@ -49,7 +49,7 @@ router.post("/products", async (req, res): Promise<void> => {
       companyId: req.companyId!,
       userId,
       name: parsed.data.name.trim(),
-      brand: parsed.data.brand?.trim() || null,
+      supplier: parsed.data.supplier?.trim() || null,
       category: parsed.data.category?.trim() || null,
       content: parsed.data.content?.trim() || null,
       description: parsed.data.description?.trim() || null,
@@ -90,7 +90,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     .set({
       ...parsed.data,
       name: parsed.data.name?.trim(),
-      brand: parsed.data.brand?.trim() || null,
+      supplier: parsed.data.supplier?.trim() || null,
       category: parsed.data.category?.trim() || null,
       content: parsed.data.content?.trim() || null,
       description: parsed.data.description?.trim() || null,

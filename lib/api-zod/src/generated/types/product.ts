@@ -9,7 +9,7 @@
 export interface Product {
   id: number;
   name: string;
-  brand?: string;
+  supplier?: string;
   category?: string;
   content?: string;
   description?: string;

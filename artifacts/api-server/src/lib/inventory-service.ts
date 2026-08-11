@@ -73,7 +73,7 @@ export function productResponse(product: typeof productsTable.$inferSelect) {
   return {
     id: product.id,
     name: product.name,
-    brand: product.brand ?? undefined,
+    supplier: product.supplier ?? undefined,
     category: product.category ?? undefined,
     content: product.content ?? undefined,
     description: product.description ?? undefined,

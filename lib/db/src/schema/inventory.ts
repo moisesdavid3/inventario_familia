@@ -7,7 +7,7 @@ export const productsTable = pgTable("inventory_products", {
   companyId: integer("company_id").notNull().default(1),
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
-  brand: text("brand"),
+  supplier: text("supplier"),
   category: text("category"),
   content: text("content"),
   description: text("description"),

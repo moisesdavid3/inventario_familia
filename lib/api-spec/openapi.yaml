@@ -493,7 +493,7 @@ components:
           type: number
         name:
           type: string
-        brand:
+        supplier:
           type: string
         category:
           type: string
@@ -524,7 +524,7 @@ components:
         name:
           type: string
           minLength: 1
-        brand:
+        supplier:
           type: string
         category:
           type: string
@@ -551,7 +551,7 @@ components:
         name:
           type: string
           minLength: 1
-        brand:
+        supplier:
           type: string
         category:
           type: string
