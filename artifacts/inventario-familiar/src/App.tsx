@@ -170,7 +170,7 @@ function CompanySwitcher() {
       </span>
       <ChevronDown size={16} className={`shrink-0 text-[hsl(var(--sidebar-foreground)/.6)] transition-transform ${open ? 'rotate-180' : ''}`} />
     </button>
-    {open && <><div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden /><div className="absolute left-0 right-0 z-50 mt-2 rounded-2xl border bg-[hsl(var(--card))] p-1.5 shadow-xl">
+    {open && <><div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden /><div className="absolute left-0 right-0 z-50 mt-2 rounded-2xl border bg-[hsl(var(--card))] p-1.5 text-[hsl(var(--foreground))] shadow-xl">
       {companies.map((company) => <button key={company.id} type="button" onClick={() => { selectCompany(company); setOpen(false); }} data-testid={`option-company-${company.id}`} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold ${company.id === activeCompany.id ? 'bg-[hsl(var(--muted))]' : 'hover:bg-[hsl(var(--muted))]'}`}>
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[hsl(var(--secondary))] font-mono-app text-xs text-[hsl(var(--secondary-foreground))]">{company.name.slice(0, 2).toUpperCase()}</span>
         <span className="flex-1">{company.name}</span>
