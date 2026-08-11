@@ -5,6 +5,8 @@ import {
   inventoryMovementsTable,
   inventoryUserSettingsTable,
   productsTable,
+  purchaseItemsTable,
+  purchasesTable,
   saleItemsTable,
   salesTable,
 } from "@workspace/db";
@@ -150,6 +152,35 @@ export function saleWhere(companyId: number, range: DateRange) {
   if (range.from) conditions.push(gte(salesTable.createdAt, range.from));
   if (range.to) conditions.push(lte(salesTable.createdAt, range.to));
   return and(...conditions);
+}
+
+export function purchaseWhere(companyId: number, range: DateRange) {
+  const conditions = [eq(purchasesTable.companyId, companyId)];
+  if (range.from) conditions.push(gte(purchasesTable.purchaseDate, range.from));
+  if (range.to) conditions.push(lte(purchasesTable.purchaseDate, range.to));
+  return and(...conditions);
+}
+
+export async function purchaseResponse(purchase: typeof purchasesTable.$inferSelect) {
+  const items = await getDb()
+    .select()
+    .from(purchaseItemsTable)
+    .where(eq(purchaseItemsTable.purchaseId, purchase.id));
+  return {
+    id: purchase.id,
+    date: purchase.purchaseDate,
+    supplier: purchase.supplier ?? null,
+    invoiceNumber: purchase.invoiceNumber ?? null,
+    total: purchase.total,
+    totalItems: purchase.totalItems,
+    items: items.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      unitCost: item.unitCost,
+      subtotal: item.subtotal,
+    })),
+  };
 }
 
 export async function saleResponse(sale: typeof salesTable.$inferSelect) {

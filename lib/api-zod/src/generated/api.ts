@@ -326,6 +326,156 @@ export const DeleteSaleResponse = zod.void()
 
 
 /**
+ * @summary List purchases
+ */
+export const listPurchasesQueryPeriodDefault = `all`;
+
+export const ListPurchasesQueryParams = zod.object({
+  "period": zod.enum(['today', 'last7', 'thisMonth', 'previousMonth', 'all']).default(listPurchasesQueryPeriodDefault),
+  "from": zod.date().optional(),
+  "to": zod.date().optional()
+})
+
+export const ListPurchasesResponseItem = zod.object({
+  "id": zod.number(),
+  "date": zod.coerce.date(),
+  "supplier": zod.string().nullish(),
+  "invoiceNumber": zod.string().nullish(),
+  "total": zod.number(),
+  "totalItems": zod.number(),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitCost": zod.number(),
+  "subtotal": zod.number()
+}))
+})
+export const ListPurchasesResponse = zod.array(ListPurchasesResponseItem)
+
+
+/**
+ * @summary Register a purchase and update inventory atomically
+ */
+
+
+export const createPurchaseBodyItemsItemUnitCostMin = 0;
+
+
+
+
+export const CreatePurchaseBody = zod.object({
+  "supplier": zod.string().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "purchaseDate": zod.coerce.date().optional(),
+  "items": zod.array(zod.object({
+  "productId": zod.number().min(1),
+  "quantity": zod.number().min(1),
+  "unitCost": zod.number().min(createPurchaseBodyItemsItemUnitCostMin)
+})).min(1)
+})
+
+export const CreatePurchaseResponse = zod.object({
+  "id": zod.number(),
+  "date": zod.coerce.date(),
+  "supplier": zod.string().nullish(),
+  "invoiceNumber": zod.string().nullish(),
+  "total": zod.number(),
+  "totalItems": zod.number(),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitCost": zod.number(),
+  "subtotal": zod.number()
+}))
+})
+
+
+/**
+ * @summary Import purchases from a file, matching or creating products by name
+ */
+
+
+export const importPurchasesBodyRowsItemUnitCostMin = 0;
+
+
+
+
+export const ImportPurchasesBody = zod.object({
+  "supplier": zod.string().optional(),
+  "invoiceNumber": zod.string().optional(),
+  "purchaseDate": zod.coerce.date().optional(),
+  "rows": zod.array(zod.object({
+  "product": zod.string().min(1),
+  "quantity": zod.number().min(1),
+  "unitCost": zod.number().min(importPurchasesBodyRowsItemUnitCostMin)
+})).min(1)
+})
+
+export const ImportPurchasesResponse = zod.object({
+  "created": zod.number().describe('Productos nuevos creados durante la importación'),
+  "matched": zod.number().describe('Productos existentes que se actualizaron'),
+  "skipped": zod.number().describe('Filas omitidas (sin producto o sin cantidad)'),
+  "purchase": zod.object({
+  "id": zod.number(),
+  "date": zod.coerce.date(),
+  "supplier": zod.string().nullish(),
+  "invoiceNumber": zod.string().nullish(),
+  "total": zod.number(),
+  "totalItems": zod.number(),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitCost": zod.number(),
+  "subtotal": zod.number()
+}))
+})
+})
+
+
+/**
+ * @summary Get purchase details
+ */
+
+
+
+export const GetPurchaseParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const GetPurchaseResponse = zod.object({
+  "id": zod.number(),
+  "date": zod.coerce.date(),
+  "supplier": zod.string().nullish(),
+  "invoiceNumber": zod.string().nullish(),
+  "total": zod.number(),
+  "totalItems": zod.number(),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitCost": zod.number(),
+  "subtotal": zod.number()
+}))
+})
+
+
+/**
+ * @summary Delete a purchase and remove its items from inventory
+ */
+
+
+
+export const DeletePurchaseParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeletePurchaseResponse = zod.void()
+
+
+/**
  * @summary Get inventory report
  */
 export const getInventoryReportQueryFilterDefault = `all`;

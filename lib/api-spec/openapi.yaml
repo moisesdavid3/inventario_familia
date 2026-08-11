@@ -16,6 +16,8 @@ tags:
     description: Product and inventory operations
   - name: sales
     description: Sales operations
+  - name: purchases
+    description: Purchase and stock operations
   - name: reports
     description: Dashboard and report operations
 paths:
@@ -272,6 +274,118 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+  /purchases:
+    get:
+      operationId: listPurchases
+      tags: [purchases]
+      summary: List purchases
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [today, last7, thisMonth, previousMonth, all]
+            default: all
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Purchase"
+    post:
+      operationId: createPurchase
+      tags: [purchases]
+      summary: Register a purchase and update inventory atomically
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseInput"
+      responses:
+        "201":
+          description: Purchase registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Purchase"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /purchases/import:
+    post:
+      operationId: importPurchases
+      tags: [purchases]
+      summary: Import purchases from a file, matching or creating products by name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseImportInput"
+      responses:
+        "201":
+          description: Purchases imported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseImportResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /purchases/{id}:
+    get:
+      operationId: getPurchase
+      tags: [purchases]
+      summary: Get purchase details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "200":
+          description: Purchase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Purchase"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deletePurchase
+      tags: [purchases]
+      summary: Delete a purchase and remove its items from inventory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "204":
+          description: Purchase deleted and inventory reverted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /reports/inventory:
     get:
       operationId: getInventoryReport
@@ -515,6 +629,114 @@ components:
           items:
             $ref: "#/components/schemas/SaleItem"
       required: [id, date, total, totalItems, estimatedProfit, items]
+    PurchaseItemInput:
+      type: object
+      properties:
+        productId:
+          type: number
+          minimum: 1
+        quantity:
+          type: number
+          minimum: 1
+        unitCost:
+          type: number
+          minimum: 0
+      required: [productId, quantity, unitCost]
+    PurchaseInput:
+      type: object
+      properties:
+        supplier:
+          type: string
+        invoiceNumber:
+          type: string
+        purchaseDate:
+          type: string
+          format: date-time
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PurchaseItemInput"
+      required: [items]
+    PurchaseItem:
+      type: object
+      properties:
+        productId:
+          type: number
+        productName:
+          type: string
+        quantity:
+          type: number
+        unitCost:
+          type: number
+        subtotal:
+          type: number
+      required: [productId, productName, quantity, unitCost, subtotal]
+    Purchase:
+      type: object
+      properties:
+        id:
+          type: number
+        date:
+          type: string
+          format: date-time
+        supplier:
+          type: ["string", "null"]
+        invoiceNumber:
+          type: ["string", "null"]
+        total:
+          type: number
+        totalItems:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseItem"
+      required: [id, date, total, totalItems, items]
+    PurchaseImportRow:
+      type: object
+      properties:
+        product:
+          type: string
+          minLength: 1
+        quantity:
+          type: number
+          minimum: 1
+        unitCost:
+          type: number
+          minimum: 0
+      required: [product, quantity, unitCost]
+    PurchaseImportInput:
+      type: object
+      properties:
+        supplier:
+          type: string
+        invoiceNumber:
+          type: string
+        purchaseDate:
+          type: string
+          format: date-time
+        rows:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PurchaseImportRow"
+      required: [rows]
+    PurchaseImportResult:
+      type: object
+      properties:
+        created:
+          type: number
+          description: Productos nuevos creados durante la importación
+        matched:
+          type: number
+          description: Productos existentes que se actualizaron
+        skipped:
+          type: number
+          description: Filas omitidas (sin producto o sin cantidad)
+        purchase:
+          $ref: "#/components/schemas/Purchase"
+      required: [created, matched, skipped, purchase]
     LowStockProduct:
       type: object
       properties:

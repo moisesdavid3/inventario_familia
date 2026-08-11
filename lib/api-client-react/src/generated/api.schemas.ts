@@ -103,6 +103,70 @@ export interface Sale {
   items: SaleItem[];
 }
 
+export interface PurchaseItemInput {
+  /** @minimum 1 */
+  productId: number;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitCost: number;
+}
+
+export interface PurchaseInput {
+  supplier?: string;
+  invoiceNumber?: string;
+  purchaseDate?: string;
+  /** @minItems 1 */
+  items: PurchaseItemInput[];
+}
+
+export interface PurchaseItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+  subtotal: number;
+}
+
+export interface Purchase {
+  id: number;
+  date: string;
+  /** @nullable */
+  supplier?: string | null;
+  /** @nullable */
+  invoiceNumber?: string | null;
+  total: number;
+  totalItems: number;
+  items: PurchaseItem[];
+}
+
+export interface PurchaseImportRow {
+  /** @minLength 1 */
+  product: string;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitCost: number;
+}
+
+export interface PurchaseImportInput {
+  supplier?: string;
+  invoiceNumber?: string;
+  purchaseDate?: string;
+  /** @minItems 1 */
+  rows: PurchaseImportRow[];
+}
+
+export interface PurchaseImportResult {
+  /** Productos nuevos creados durante la importación */
+  created: number;
+  /** Productos existentes que se actualizaron */
+  matched: number;
+  /** Filas omitidas (sin producto o sin cantidad) */
+  skipped: number;
+  purchase: Purchase;
+}
+
 export interface LowStockProduct {
   id: number;
   name: string;
@@ -167,6 +231,23 @@ export type ListSalesPeriod = typeof ListSalesPeriod[keyof typeof ListSalesPerio
 
 
 export const ListSalesPeriod = {
+  today: 'today',
+  last7: 'last7',
+  thisMonth: 'thisMonth',
+  previousMonth: 'previousMonth',
+  all: 'all',
+} as const;
+
+export type ListPurchasesParams = {
+period?: ListPurchasesPeriod;
+from?: string;
+to?: string;
+};
+
+export type ListPurchasesPeriod = typeof ListPurchasesPeriod[keyof typeof ListPurchasesPeriod];
+
+
+export const ListPurchasesPeriod = {
   today: 'today',
   last7: 'last7',
   thisMonth: 'thisMonth',

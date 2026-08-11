@@ -19,4 +19,5 @@
 
 export * from "./companies";
 export * from "./inventory";
+export * from "./purchases";
 export * from "./sales";
