@@ -17,6 +17,17 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary List companies the user belongs to
+ */
+export const ListCompaniesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string()
+})
+export const ListCompaniesResponse = zod.array(ListCompaniesResponseItem)
+
+
+/**
  * @summary List products
  */
 export const ListProductsResponseItem = zod.object({

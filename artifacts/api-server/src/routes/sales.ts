@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateSaleBody,
@@ -10,10 +10,11 @@ import {
   ListSalesResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
-import { dateRangeForPeriod, ensureSeeded, isOwner, saleResponse, saleWhere } from "../lib/inventory-service";
+import { requireCompany } from "../middlewares/requireCompany";
+import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere } from "../lib/inventory-service";
 
 const router: IRouter = Router();
-router.use("/sales", requireAuth);
+router.use("/sales", requireAuth, requireCompany);
 
 function queryDates(query: Record<string, unknown>) {
   const period = typeof query.period === "string" ? query.period : "all";
@@ -28,7 +29,7 @@ router.get("/sales", async (req, res): Promise<void> => {
   const { period, from, to } = queryDates(req.query as Record<string, unknown>);
   const range = dateRangeForPeriod(period, from, to);
   const rows = await getDb().select().from(salesTable)
-    .where(saleWhere(userId, range))
+    .where(saleWhere(req.companyId!, range))
     .orderBy(desc(salesTable.createdAt));
   res.json(ListSalesResponse.parse(await Promise.all(rows.map(saleResponse))));
 });
@@ -49,7 +50,7 @@ router.post("/sales", async (req, res): Promise<void> => {
     const products = [];
     for (const [productId, quantity] of requested.entries()) {
       const [product] = await tx.select().from(productsTable)
-        .where(and(eq(productsTable.id, productId), eq(productsTable.userId, userId)));
+        .where(and(eq(productsTable.id, productId), eq(productsTable.companyId, req.companyId!)));
       if (!product) return { error: "No encontramos uno de los productos." as const };
       if (product.stock < quantity) {
         return { error: `Solo hay ${product.stock} unidades disponibles de ${product.name}.` as const, conflict: true as const };
@@ -69,6 +70,7 @@ router.post("/sales", async (req, res): Promise<void> => {
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const estimatedProfit = items.reduce((sum, item) => sum + (item.unitPrice - item.unitCost) * item.quantity, 0);
     const [sale] = await tx.insert(salesTable).values({
+      companyId: req.companyId!,
       userId,
       total,
       totalItems,
@@ -79,6 +81,7 @@ router.post("/sales", async (req, res): Promise<void> => {
       const nextStock = product.stock - quantity;
       await tx.update(productsTable).set({ stock: nextStock, updatedAt: new Date() }).where(eq(productsTable.id, product.id));
       await tx.insert(inventoryMovementsTable).values({
+        companyId: req.companyId!,
         userId,
         productId: product.id,
         type: "venta",
@@ -105,7 +108,7 @@ router.get("/sales/:id", async (req, res): Promise<void> => {
     return;
   }
   const [sale] = await getDb().select().from(salesTable)
-    .where(and(eq(salesTable.id, params.data.id), eq(salesTable.userId, req.userId!)));
+    .where(and(eq(salesTable.id, params.data.id), eq(salesTable.companyId, req.companyId!)));
   if (!sale) {
     res.status(404).json({ error: "No encontramos esa venta." });
     return;
@@ -120,9 +123,9 @@ router.delete("/sales/:id", async (req, res): Promise<void> => {
     return;
   }
   const deleted = await getDb().transaction(async (tx) => {
-    const [sale] = await tx.select().from(salesTable).where(eq(salesTable.id, params.data.id));
+    const [sale] = await tx.select().from(salesTable)
+      .where(and(eq(salesTable.id, params.data.id), eq(salesTable.companyId, req.companyId!)));
     if (!sale) return false;
-    if (!isOwner(req.userEmail) && sale.userId !== req.userId) return false;
     const items = await tx.select().from(saleItemsTable).where(eq(saleItemsTable.saleId, sale.id));
     for (const item of items) {
       const [product] = await tx.select().from(productsTable).where(eq(productsTable.id, item.productId));
@@ -132,6 +135,7 @@ router.delete("/sales/:id", async (req, res): Promise<void> => {
         .set({ stock: stockAfter, updatedAt: new Date() })
         .where(eq(productsTable.id, product.id));
       await tx.insert(inventoryMovementsTable).values({
+        companyId: req.companyId!,
         userId: product.userId,
         productId: product.id,
         type: "venta_anulada",

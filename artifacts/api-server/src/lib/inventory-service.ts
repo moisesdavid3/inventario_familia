@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import {
   appSettingsTable,
   getDb,
@@ -43,28 +43,26 @@ export async function resolveUserIdByEmail(email: string): Promise<string | unde
   }
 }
 
-export async function listProductsFor(userId: string, userEmail?: string) {
-  if (isOwner(userEmail)) {
-    const tereId = await resolveUserIdByEmail(TERE_EMAIL);
-    if (tereId) {
-      return getDb().select().from(productsTable).where(inArray(productsTable.userId, [userId, tereId]));
-    }
-  }
-  return getDb().select().from(productsTable).where(eq(productsTable.userId, userId));
+export async function listAllProducts(companyId: number) {
+  return getDb().select().from(productsTable)
+    .where(eq(productsTable.companyId, companyId));
 }
 
-export async function getDeudaMoises(): Promise<number> {
+export async function getDeudaMoises(companyId: number): Promise<number> {
   const [row] = await getDb().select({ value: appSettingsTable.value })
     .from(appSettingsTable)
-    .where(eq(appSettingsTable.key, DEBT_SETTING_KEY));
+    .where(and(
+      eq(appSettingsTable.companyId, companyId),
+      eq(appSettingsTable.key, DEBT_SETTING_KEY),
+    ));
   return row?.value ?? 0;
 }
 
-export async function setDeudaMoises(value: number, updatedBy: string): Promise<void> {
+export async function setDeudaMoises(companyId: number, value: number, updatedBy: string): Promise<void> {
   await getDb().insert(appSettingsTable)
-    .values({ key: DEBT_SETTING_KEY, value, updatedBy, updatedAt: new Date() })
+    .values({ companyId, key: DEBT_SETTING_KEY, value, updatedBy, updatedAt: new Date() })
     .onConflictDoUpdate({
-      target: appSettingsTable.key,
+      target: [appSettingsTable.companyId, appSettingsTable.key],
       set: { value, updatedBy, updatedAt: new Date() },
     });
 }
@@ -84,21 +82,26 @@ export function productResponse(product: typeof productsTable.$inferSelect) {
   };
 }
 
-export async function deleteProduct(productId: number, requesterId: string, requesterEmail?: string): Promise<boolean> {
+export async function deleteProduct(productId: number, companyId: number): Promise<boolean> {
   return getDb().transaction(async (tx) => {
     const [product] = await tx.select({ id: productsTable.id, userId: productsTable.userId }).from(productsTable)
-      .where(eq(productsTable.id, productId));
+      .where(and(eq(productsTable.id, productId), eq(productsTable.companyId, companyId)));
     if (!product) return false;
-    if (!isOwner(requesterEmail) && product.userId !== requesterId) return false;
     await tx.delete(inventoryMovementsTable).where(and(
-      eq(inventoryMovementsTable.userId, product.userId),
+      eq(inventoryMovementsTable.companyId, companyId),
       eq(inventoryMovementsTable.productId, productId),
     ));
-    await tx.delete(productsTable).where(eq(productsTable.id, productId));
+    await tx.delete(productsTable).where(and(
+      eq(productsTable.id, productId),
+      eq(productsTable.companyId, companyId),
+    ));
     const [remaining] = await tx
       .select({ id: productsTable.id })
       .from(productsTable)
-      .where(eq(productsTable.userId, product.userId))
+      .where(and(
+        eq(productsTable.userId, product.userId),
+        eq(productsTable.companyId, companyId),
+      ))
       .limit(1);
     if (!remaining) {
       await tx
@@ -113,48 +116,8 @@ export async function deleteProduct(productId: number, requesterId: string, requ
   });
 }
 
-export async function ensureSeeded(userId: string): Promise<void> {
-  const existing = await getDb()
-    .select({ id: productsTable.id })
-    .from(productsTable)
-    .where(eq(productsTable.userId, userId))
-    .limit(1);
-  if (existing.length > 0) return;
-  const [settings] = await getDb()
-    .select()
-    .from(inventoryUserSettingsTable)
-    .where(eq(inventoryUserSettingsTable.userId, userId))
-    .limit(1);
-  if (settings?.demoProductsCleared) return;
-
-  await getDb().transaction(async (tx) => {
-    const rows = await tx
-      .insert(productsTable)
-      .values([
-        { userId, name: "Granola artesanal", cost: 12000, salePrice: 22000, stock: 18, minimumStock: 5, isDemo: true },
-        { userId, name: "Mantequilla de maní", cost: 15000, salePrice: 28000, stock: 12, minimumStock: 5, isDemo: true },
-        { userId, name: "Mix de semillas", cost: 8000, salePrice: 16000, stock: 25, minimumStock: 5, isDemo: true },
-      ])
-      .returning();
-    await tx.insert(inventoryMovementsTable).values(
-      rows.map((product) => ({
-        userId,
-        productId: product.id,
-        type: "entrada",
-        quantity: product.stock,
-        stockBefore: 0,
-        stockAfter: product.stock,
-        note: "Inventario inicial",
-      })),
-    );
-    await tx
-      .insert(inventoryUserSettingsTable)
-      .values({ userId, demoProductsCleared: true, updatedAt: new Date() })
-      .onConflictDoUpdate({
-        target: inventoryUserSettingsTable.userId,
-        set: { demoProductsCleared: true, updatedAt: new Date() },
-      });
-  });
+export async function ensureSeeded(_userId: string): Promise<void> {
+  return;
 }
 
 export function dateRangeForPeriod(period: string, from?: Date, to?: Date): DateRange {
@@ -180,8 +143,8 @@ export function dateRangeForPeriod(period: string, from?: Date, to?: Date): Date
   return {};
 }
 
-export function saleWhere(userId: string, range: DateRange) {
-  const conditions = [eq(salesTable.userId, userId)];
+export function saleWhere(companyId: number, range: DateRange) {
+  const conditions = [eq(salesTable.companyId, companyId)];
   if (range.from) conditions.push(gte(salesTable.createdAt, range.from));
   if (range.to) conditions.push(lte(salesTable.createdAt, range.to));
   return and(...conditions);
@@ -209,11 +172,11 @@ export async function saleResponse(sale: typeof salesTable.$inferSelect) {
   };
 }
 
-export async function dashboardData(userId: string, userEmail?: string) {
+export async function dashboardData(userId: string, companyId: number, userEmail?: string) {
   await ensureSeeded(userId);
-  const products = await listProductsFor(userId, userEmail);
+  const products = await listAllProducts(companyId);
   const todayRange = dateRangeForPeriod("today");
-  const todaySales = await getDb().select().from(salesTable).where(saleWhere(userId, todayRange));
+  const todaySales = await getDb().select().from(salesTable).where(saleWhere(companyId, todayRange));
   return {
     productCount: products.length,
     totalUnits: products.reduce((sum, product) => sum + product.stock, 0),
@@ -222,7 +185,7 @@ export async function dashboardData(userId: string, userEmail?: string) {
     potentialProfit: products.reduce((sum, product) => sum + (product.salePrice - product.cost) * product.stock, 0),
     todaySalesCount: todaySales.length,
     todaySalesTotal: todaySales.reduce((sum, sale) => sum + sale.total, 0),
-    deudaMoisesDavid: await getDeudaMoises(),
+    deudaMoisesDavid: await getDeudaMoises(companyId),
     canEditDeudaMoises: userEmail === DEBT_OWNER_EMAIL,
     lowStockProducts: products
       .filter((product) => product.stock <= product.minimumStock)
@@ -230,14 +193,14 @@ export async function dashboardData(userId: string, userEmail?: string) {
   };
 }
 
-export async function salesReportData(userId: string, userEmail: string | undefined, range: DateRange) {
+export async function salesReportData(userId: string, companyId: number, userEmail: string | undefined, range: DateRange) {
   await ensureSeeded(userId);
-  const sales = await getDb().select().from(salesTable).where(saleWhere(userId, range)).orderBy(sql`${salesTable.createdAt} desc`);
+  const sales = await getDb().select().from(salesTable).where(saleWhere(companyId, range)).orderBy(sql`${salesTable.createdAt} desc`);
   const completeSales = await Promise.all(sales.map(saleResponse));
   const counts = new Map<string, number>();
   completeSales.forEach((sale) => sale.items.forEach((item) => counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity)));
   const bestSellingProduct = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-  const products = await listProductsFor(userId, userEmail);
+  const products = await listAllProducts(companyId);
   return {
     sales: completeSales,
     totalSold: completeSales.reduce((sum, sale) => sum + sale.total, 0),

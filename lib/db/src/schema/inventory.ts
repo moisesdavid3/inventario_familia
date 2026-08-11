@@ -1,9 +1,10 @@
 import { createInsertSchema } from "drizzle-zod";
-import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, primaryKey, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const productsTable = pgTable("inventory_products", {
   id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().default(1),
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
   brand: text("brand"),
@@ -19,6 +20,7 @@ export const productsTable = pgTable("inventory_products", {
 
 export const inventoryMovementsTable = pgTable("inventory_movements", {
   id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().default(1),
   userId: text("user_id").notNull(),
   productId: integer("product_id").notNull(),
   type: text("type").notNull(),
@@ -35,12 +37,17 @@ export const inventoryUserSettingsTable = pgTable("inventory_user_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const appSettingsTable = pgTable("inventory_app_settings", {
-  key: text("key").primaryKey(),
-  value: integer("value").notNull(),
-  updatedBy: text("updated_by"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const appSettingsTable = pgTable(
+  "inventory_app_settings",
+  {
+    companyId: integer("company_id").notNull().default(1),
+    key: text("key").notNull(),
+    value: integer("value").notNull(),
+    updatedBy: text("updated_by"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.companyId, t.key] })],
+);
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({
   id: true,

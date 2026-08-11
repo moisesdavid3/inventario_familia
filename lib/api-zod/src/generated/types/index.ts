@@ -7,6 +7,7 @@
  */
 
 export * from './badRequestResponse';
+export * from './company';
 export * from './dashboard';
 export * from './deudaMoisesInput';
 export * from './error';

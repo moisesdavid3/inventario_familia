@@ -8,10 +8,11 @@ import {
   GetSalesReportResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+import { requireCompany } from "../middlewares/requireCompany";
 import { dateRangeForPeriod, ensureSeeded, productResponse, salesReportData } from "../lib/inventory-service";
 
 const router: IRouter = Router();
-router.use("/reports", requireAuth);
+router.use("/reports", requireAuth, requireCompany);
 
 router.get("/reports/inventory", async (req, res): Promise<void> => {
   const userId = req.userId!;
@@ -22,7 +23,8 @@ router.get("/reports/inventory", async (req, res): Promise<void> => {
     res.status(400).json({ error: "El filtro no es válido." });
     return;
   }
-  const rows = await getDb().select().from(productsTable).where(eq(productsTable.userId, userId));
+  const rows = await getDb().select().from(productsTable)
+    .where(eq(productsTable.companyId, req.companyId!));
   const products = rows.filter((product) => {
     if (parsed.data.filter === "low") return product.stock <= product.minimumStock;
     if (parsed.data.filter === "empty") return product.stock === 0;
@@ -48,7 +50,7 @@ router.get("/reports/sales", async (req, res): Promise<void> => {
     return;
   }
   const range = dateRangeForPeriod(parsed.data.period, from, to);
-  res.json(GetSalesReportResponse.parse(await salesReportData(userId, req.userEmail, range)));
+  res.json(GetSalesReportResponse.parse(await salesReportData(userId, req.companyId!, req.userEmail, range)));
 });
 
 export default router;

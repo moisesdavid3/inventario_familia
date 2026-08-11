@@ -7,6 +7,7 @@ import {
 import { useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { CompanyProvider, useCompany } from '@/lib/company';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useRoute } from 'wouter';
 import {
   getGetDashboardQueryKey, getGetSalesReportQueryKey, getListProductsQueryKey, getListSalesQueryKey,
@@ -72,6 +73,29 @@ function StatusMessage({ type = 'error', text, onRetry }: { type?: 'error' | 'em
   </div>;
 }
 
+function CompanySwitcher() {
+  const { companies, activeCompany, selectCompany } = useCompany();
+  const [open, setOpen] = useState(false);
+  if (!activeCompany) return null;
+  return <div className="relative mb-6">
+    <button type="button" onClick={() => setOpen(!open)} data-testid="button-company-switcher" className="flex w-full items-center gap-3 rounded-2xl border border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar-accent)/.55)] p-4 text-left transition-colors hover:bg-[hsl(var(--sidebar-accent)/.8)]">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--sidebar-primary))] text-sm font-bold text-[hsl(var(--sidebar-primary-foreground))]">{activeCompany.name.slice(0, 2).toUpperCase()}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-bold">{activeCompany.name}</span>
+        <span className="block text-[11px] text-[hsl(var(--sidebar-foreground)/.55)]">{companies.length === 1 ? 'Tu negocio' : 'Cambiar de negocio'}</span>
+      </span>
+      <ChevronDown size={16} className={`shrink-0 text-[hsl(var(--sidebar-foreground)/.6)] transition-transform ${open ? 'rotate-180' : ''}`} />
+    </button>
+    {open && <><div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden /><div className="absolute left-0 right-0 z-50 mt-2 rounded-2xl border bg-[hsl(var(--card))] p-1.5 shadow-xl">
+      {companies.map((company) => <button key={company.id} type="button" onClick={() => { selectCompany(company); setOpen(false); }} data-testid={`option-company-${company.id}`} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold ${company.id === activeCompany.id ? 'bg-[hsl(var(--muted))]' : 'hover:bg-[hsl(var(--muted))]'}`}>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[hsl(var(--secondary))] font-mono-app text-xs text-[hsl(var(--secondary-foreground))]">{company.name.slice(0, 2).toUpperCase()}</span>
+        <span className="flex-1">{company.name}</span>
+        {company.id === activeCompany.id && <Check size={15} className="text-[hsl(var(--primary))]" />}
+      </button>)}
+    </div></>}
+  </div>;
+}
+
 function Shell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
@@ -84,7 +108,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return <div className="min-h-[100dvh] bg-background">
     <aside className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col bg-[hsl(var(--sidebar))] px-5 py-6 text-[hsl(var(--sidebar-foreground))] transition-transform md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="mb-10 flex items-center justify-between"><Brand /><button className="text-[hsl(var(--sidebar-foreground)/.7)] md:hidden" onClick={() => setMobileOpen(false)} data-testid="button-close-menu"><X size={20} /></button></div>
-      <p className="mb-3 px-3 font-mono-app text-[10px] uppercase tracking-[.18em] text-[hsl(var(--sidebar-foreground)/.52)]">Tu negocio</p>
+      <CompanySwitcher />
       <nav className="grid gap-1">
         {nav.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${location.pathname === href ? 'bg-[hsl(var(--sidebar-accent))] text-[hsl(var(--sidebar-accent-foreground))]' : 'text-[hsl(var(--sidebar-foreground)/.7)] hover:bg-[hsl(var(--sidebar-accent)/.7)] hover:text-[hsl(var(--sidebar-foreground))]'}`} data-testid={`link-nav-${label.toLowerCase().replaceAll(' ', '-')}`}><Icon size={19} /><span>{label}</span>{href === '/app/venta' && <span className="ml-auto h-2 w-2 rounded-full bg-[hsl(var(--sidebar-primary))]" />}</Link>)}
       </nav>
@@ -134,7 +158,8 @@ function Dashboard() {
   const dashboard = useGetDashboard();
   const data = dashboard.data;
   const [debtModal, setDebtModal] = useState(false);
-  return <Shell><PageHeading eyebrow="Resumen del negocio" title="Suplementos de Tere" description="Esto es lo que está pasando con tu negocio hoy." action={<Link href="/app/venta" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary-foreground))] shadow-[0_4px_0_hsl(var(--primary-border))]" data-testid="link-dashboard-sale"><ShoppingCart size={18} /> Registrar venta</Link>} />
+  const { activeCompany } = useCompany();
+  return <Shell><PageHeading eyebrow="Resumen del negocio" title={activeCompany?.name ?? 'Tu negocio'} description="Esto es lo que está pasando con tu negocio hoy." action={<Link href="/app/venta" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[hsl(var(--primary))] px-5 text-sm font-bold text-[hsl(var(--primary-foreground))] shadow-[0_4px_0_hsl(var(--primary-border))]" data-testid="link-dashboard-sale"><ShoppingCart size={18} /> Registrar venta</Link>} />
     {dashboard.isLoading ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[1, 2, 3, 4].map((n) => <div key={n} className="h-36 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div> :
       dashboard.isError ? <StatusMessage text="No pudimos cargar tu resumen. Revisa tu conexión e inténtalo de nuevo." onRetry={() => dashboard.refetch()} /> :
         <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><Metric label="Productos" value={String(data?.productCount ?? 0)} detail={`${data?.totalUnits ?? 0} unidades en existencia`} icon={Box} /><Metric label="Ventas de hoy" value={money(data?.todaySalesTotal ?? 0)} detail={`${data?.todaySalesCount ?? 0} ventas registradas`} icon={CircleDollarSign} tone="green" /><Metric label="Valor para vender" value={money(data?.inventorySaleValue ?? 0)} detail="Si vendes todo tu inventario" icon={TrendingUp} tone="orange" /><Metric label="Ganancia posible" value={money(data?.potentialProfit ?? 0)} detail="Antes de gastos adicionales" icon={Sparkles} /><div className="rounded-2xl border bg-[hsl(var(--secondary)/.7)] p-5 rise-in" data-testid="metric-deuda-moises-david"><div className="flex items-start justify-between"><p className="text-sm font-semibold text-[hsl(var(--muted-foreground))]">Deuda Moises David</p><span className="grid h-9 w-9 place-items-center rounded-xl bg-[hsl(var(--background)/.6)] text-[hsl(var(--primary))]"><Wallet size={18} /></span></div><p className="mt-4 font-mono-app text-3xl font-bold tracking-tight">{money(data?.deudaMoisesDavid ?? 0)}</p>{data?.canEditDeudaMoises ? <button onClick={() => setDebtModal(true)} className="mt-2 text-xs font-semibold text-[hsl(var(--primary))] underline underline-offset-2" data-testid="button-edit-debt">Actualizar deuda</button> : <p className="mt-2 text-xs text-[hsl(var(--muted-foreground))]">Valor pendiente</p>}</div></div>
@@ -302,7 +327,7 @@ function Routes() {
 }
 
 function App() {
-  return <AuthProvider><QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={basePath}><Routes /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider></AuthProvider>;
+  return <AuthProvider><QueryClientProvider client={queryClient}><TooltipProvider><CompanyProvider><WouterRouter base={basePath}><Routes /></WouterRouter><Toaster /></CompanyProvider></TooltipProvider></QueryClientProvider></AuthProvider>;
 }
 
 export default App;

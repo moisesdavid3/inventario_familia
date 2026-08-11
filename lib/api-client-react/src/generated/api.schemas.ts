@@ -13,6 +13,12 @@ export interface Error {
   error: string;
 }
 
+export interface Company {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface Product {
   id: number;
   name: string;

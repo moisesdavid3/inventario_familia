@@ -14,23 +14,24 @@ import {
   UpdateProductResponse,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+import { requireCompany } from "../middlewares/requireCompany";
 import {
   ensureSeeded,
   deleteProduct,
   isOwner,
-  listProductsFor,
+  listAllProducts,
   productResponse,
   resolveUserIdByEmail,
   TERE_EMAIL,
 } from "../lib/inventory-service";
 
 const router: IRouter = Router();
-router.use("/products", requireAuth);
+router.use("/products", requireAuth, requireCompany);
 
 router.get("/products", async (req, res): Promise<void> => {
   const userId = req.userId!;
   await ensureSeeded(userId);
-  const rows = await listProductsFor(userId, req.userEmail);
+  const rows = await listAllProducts(req.companyId!);
   res.json(ListProductsResponse.parse(rows.map(productResponse)));
 });
 
@@ -45,6 +46,7 @@ router.post("/products", async (req, res): Promise<void> => {
     : req.userId!;
   const [product] = await getDb().transaction(async (tx) => {
     const [created] = await tx.insert(productsTable).values({
+      companyId: req.companyId!,
       userId,
       name: parsed.data.name.trim(),
       brand: parsed.data.brand?.trim() || null,
@@ -55,6 +57,7 @@ router.post("/products", async (req, res): Promise<void> => {
       minimumStock: parsed.data.minimumStock ?? 5,
     }).returning();
     await tx.insert(inventoryMovementsTable).values({
+      companyId: req.companyId!,
       userId,
       productId: created.id,
       type: "entrada",
@@ -76,8 +79,8 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     return;
   }
   const [product] = await getDb().select({ userId: productsTable.userId }).from(productsTable)
-    .where(eq(productsTable.id, params.data.id));
-  if (!product || (!isOwner(req.userEmail) && product.userId !== req.userId!)) {
+    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)));
+  if (!product) {
     res.status(404).json({ error: "No encontramos ese producto." });
     return;
   }
@@ -89,7 +92,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
       content: parsed.data.content?.trim() || null,
       updatedAt: new Date(),
     })
-    .where(eq(productsTable.id, params.data.id))
+    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)))
     .returning();
   res.json(UpdateProductResponse.parse(productResponse(updated)));
 });
@@ -103,13 +106,14 @@ router.post("/products/:id/inventory", async (req, res): Promise<void> => {
   }
   const result = await getDb().transaction(async (tx) => {
     const [product] = await tx.select().from(productsTable)
-      .where(eq(productsTable.id, params.data.id));
-    if (!product || (!isOwner(req.userEmail) && product.userId !== req.userId!)) return null;
+      .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)));
+    if (!product) return null;
     const [updated] = await tx.update(productsTable)
       .set({ stock: product.stock + parsed.data.quantity, updatedAt: new Date() })
       .where(eq(productsTable.id, product.id))
       .returning();
     await tx.insert(inventoryMovementsTable).values({
+      companyId: req.companyId!,
       userId: product.userId,
       productId: product.id,
       type: "entrada",
@@ -132,16 +136,21 @@ router.delete("/products/demo", async (req, res): Promise<void> => {
   await getDb().transaction(async (tx) => {
     const demoProducts = await tx.select({ id: productsTable.id })
       .from(productsTable)
-      .where(and(eq(productsTable.userId, userId), eq(productsTable.isDemo, true)));
+      .where(and(
+        eq(productsTable.userId, userId),
+        eq(productsTable.companyId, req.companyId!),
+        eq(productsTable.isDemo, true),
+      ));
     if (demoProducts.length > 0) {
       const ids = demoProducts.map(({ id }) => id);
       for (const id of ids) {
         await tx.delete(inventoryMovementsTable).where(and(
-          eq(inventoryMovementsTable.userId, userId),
+          eq(inventoryMovementsTable.companyId, req.companyId!),
           eq(inventoryMovementsTable.productId, id),
         ));
         await tx.delete(productsTable).where(and(
           eq(productsTable.userId, userId),
+          eq(productsTable.companyId, req.companyId!),
           eq(productsTable.id, id),
         ));
       }
@@ -163,7 +172,7 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Indica un id de producto válido." });
     return;
   }
-  const deleted = await deleteProduct(id, req.userId!, req.userEmail);
+  const deleted = await deleteProduct(id, req.companyId!);
   if (!deleted) {
     res.status(404).json({ error: "No encontramos ese producto." });
     return;
@@ -171,12 +180,12 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.get("/dashboard", requireAuth, async (req, res): Promise<void> => {
+router.get("/dashboard", requireAuth, requireCompany, async (req, res): Promise<void> => {
   const { dashboardData } = await import("../lib/inventory-service");
-  res.json(await dashboardData(req.userId!, req.userEmail));
+  res.json(await dashboardData(req.userId!, req.companyId!, req.userEmail));
 });
 
-router.patch("/dashboard", requireAuth, async (req, res): Promise<void> => {
+router.patch("/dashboard", requireAuth, requireCompany, async (req, res): Promise<void> => {
   const { DEBT_OWNER_EMAIL, setDeudaMoises } = await import("../lib/inventory-service");
   if (req.userEmail !== DEBT_OWNER_EMAIL) {
     res.status(403).json({ error: "Solo el dueño puede actualizar la deuda." });
@@ -187,7 +196,7 @@ router.patch("/dashboard", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: "Escribe un valor de deuda válido." });
     return;
   }
-  await setDeudaMoises(Math.round(parsed.data.value), req.userEmail);
+  await setDeudaMoises(req.companyId!, Math.round(parsed.data.value), req.userEmail);
   res.sendStatus(204);
 });
 

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: companies
+    description: Company operations
   - name: products
     description: Product and inventory operations
   - name: sales
@@ -29,6 +31,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /companies:
+    get:
+      operationId: listCompanies
+      tags: [companies]
+      summary: List companies the user belongs to
+      responses:
+        "200":
+          description: Companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Company"
   /products:
     get:
       operationId: listProducts
@@ -343,6 +359,16 @@ components:
         error:
           type: string
       required: [error]
+    Company:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+      required: [id, name, slug]
     Product:
       type: object
       properties:

@@ -7,6 +7,7 @@ export type ErrorType<T = unknown> = ApiError<T>;
 export type BodyType<T> = T;
 
 export type AuthTokenGetter = () => Promise<string | null> | string | null;
+export type CompanyIdGetter = () => string | number | null;
 
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
@@ -17,6 +18,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _companyIdGetter: CompanyIdGetter | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -42,6 +44,17 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/**
+ * Register a getter that supplies the active company id.  Before every fetch
+ * the getter is invoked; when it returns a non-null value, an
+ * `X-Company-Id` header is attached to the request.
+ *
+ * Pass `null` to clear the getter.
+ */
+export function setCompanyIdGetter(getter: CompanyIdGetter | null): void {
+  _companyIdGetter = getter;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -355,6 +368,14 @@ export async function customFetch<T = unknown>(
     const token = await _authTokenGetter();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
+    }
+  }
+
+  // Attach the active company id when a getter is configured.
+  if (_companyIdGetter && !headers.has("x-company-id")) {
+    const companyId = _companyIdGetter();
+    if (companyId != null && companyId !== "") {
+      headers.set("x-company-id", String(companyId));
     }
   }
 
