@@ -107,6 +107,8 @@ export interface SaleItem {
 
 export interface Sale {
   id: number;
+  /** Número consecutivo de la venta dentro de su día */
+  saleNumber: number;
   date: string;
   total: number;
   totalItems: number;

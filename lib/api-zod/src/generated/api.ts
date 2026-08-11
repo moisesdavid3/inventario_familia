@@ -238,6 +238,7 @@ export const ListSalesQueryParams = zod.object({
 
 export const ListSalesResponseItem = zod.object({
   "id": zod.number(),
+  "saleNumber": zod.number().describe('Número consecutivo de la venta dentro de su día'),
   "date": zod.coerce.date(),
   "total": zod.number(),
   "totalItems": zod.number(),
@@ -278,6 +279,7 @@ export const CreateSaleBody = zod.object({
 
 export const CreateSaleResponse = zod.object({
   "id": zod.number(),
+  "saleNumber": zod.number().describe('Número consecutivo de la venta dentro de su día'),
   "date": zod.coerce.date(),
   "total": zod.number(),
   "totalItems": zod.number(),
@@ -307,6 +309,7 @@ export const GetSaleParams = zod.object({
 
 export const GetSaleResponse = zod.object({
   "id": zod.number(),
+  "saleNumber": zod.number().describe('Número consecutivo de la venta dentro de su día'),
   "date": zod.coerce.date(),
   "total": zod.number(),
   "totalItems": zod.number(),
@@ -532,6 +535,7 @@ export const GetSalesReportQueryParams = zod.object({
 export const GetSalesReportResponse = zod.object({
   "sales": zod.array(zod.object({
   "id": zod.number(),
+  "saleNumber": zod.number().describe('Número consecutivo de la venta dentro de su día'),
   "date": zod.coerce.date(),
   "total": zod.number(),
   "totalItems": zod.number(),

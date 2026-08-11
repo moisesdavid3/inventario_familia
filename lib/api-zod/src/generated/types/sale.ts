@@ -9,6 +9,8 @@ import type { SaleItem } from './saleItem';
 
 export interface Sale {
   id: number;
+  /** Número consecutivo de la venta dentro de su día */
+  saleNumber: number;
   date: Date;
   total: number;
   totalItems: number;

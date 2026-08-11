@@ -190,6 +190,7 @@ export async function saleResponse(sale: typeof salesTable.$inferSelect) {
     .where(eq(saleItemsTable.saleId, sale.id));
   return {
     id: sale.id,
+    saleNumber: sale.saleNumber,
     date: sale.createdAt,
     total: sale.total,
     totalItems: sale.totalItems,

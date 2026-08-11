@@ -628,6 +628,9 @@ components:
       properties:
         id:
           type: number
+        saleNumber:
+          type: number
+          description: Número consecutivo de la venta dentro de su día
         date:
           type: string
           format: date-time
@@ -647,7 +650,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SaleItem"
-      required: [id, date, total, totalItems, estimatedProfit, items]
+      required: [id, saleNumber, date, total, totalItems, estimatedProfit, items]
     PurchaseItemInput:
       type: object
       properties:

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { companiesTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateSaleBody,
@@ -15,6 +15,14 @@ import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere } from "../li
 
 const router: IRouter = Router();
 router.use("/sales", requireAuth, requireCompany);
+
+const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+function startOfDayBogota(date: Date): Date {
+  const shifted = new Date(date.getTime() - BOGOTA_OFFSET_MS);
+  const midnight = new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()));
+  return new Date(midnight.getTime() + BOGOTA_OFFSET_MS);
+}
 
 function queryDates(query: Record<string, unknown>) {
   const period = typeof query.period === "string" ? query.period : "all";
@@ -79,9 +87,13 @@ router.post("/sales", async (req, res): Promise<void> => {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const estimatedProfit = items.reduce((sum, item) => sum + (item.unitPrice - item.unitCost) * item.quantity, 0);
+    const dayStart = startOfDayBogota(new Date());
+    const [row] = await tx.select({ count: sql<number>`count(*)` }).from(salesTable)
+      .where(and(eq(salesTable.companyId, req.companyId!), gte(salesTable.createdAt, dayStart)));
     const [sale] = await tx.insert(salesTable).values({
       companyId: req.companyId!,
       userId,
+      saleNumber: Number(row?.count ?? 0) + 1,
       total,
       totalItems,
       estimatedProfit,
@@ -100,7 +112,7 @@ router.post("/sales", async (req, res): Promise<void> => {
         quantity: -quantity,
         stockBefore: product.stock,
         stockAfter: nextStock,
-        note: `Venta #${sale.id}`,
+        note: `Venta #${sale.saleNumber}`,
       });
     }
     return { sale };
@@ -154,7 +166,7 @@ router.delete("/sales/:id", async (req, res): Promise<void> => {
         quantity: item.quantity,
         stockBefore: product.stock,
         stockAfter,
-        note: `Venta #${sale.id} anulada`,
+        note: `Venta #${sale.saleNumber} anulada`,
       });
     }
     await tx.delete(saleItemsTable).where(eq(saleItemsTable.saleId, sale.id));
