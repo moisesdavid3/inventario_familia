@@ -57,7 +57,9 @@ function parsePrice(raw: string): number {
 async function main() {
   const db = getDb();
   const dryRun = process.argv.includes("--dry-run");
-  const csvPath = process.argv.slice(2).filter((arg) => !arg.startsWith("--"))[0] ?? resolve("attached_assets/productos_prema.csv");
+  const csvPath =
+    process.argv.slice(2).filter((arg) => !arg.startsWith("--"))[0] ??
+    resolve(import.meta.dirname, "../../attached_assets/productos_prema.csv");
   const text = readFileSync(csvPath, "utf8");
   const rows = parseCsv(text);
   const header = rows[0].map((cell) => cell.trim());
