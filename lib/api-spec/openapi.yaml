@@ -587,6 +587,10 @@ components:
         quantity:
           type: number
           minimum: 1
+        unitPrice:
+          type: number
+          minimum: 0
+          description: Precio unitario de venta para esta línea (si se omite, usa el precio del producto)
       required: [productId, quantity]
     SaleInput:
       type: object

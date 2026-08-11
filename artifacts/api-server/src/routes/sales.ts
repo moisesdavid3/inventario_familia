@@ -41,9 +41,13 @@ router.post("/sales", async (req, res): Promise<void> => {
     return;
   }
   const userId = req.userId!;
-  const requested = new Map<number, number>();
+  const requested = new Map<number, { quantity: number; unitPrice?: number }>();
   for (const item of parsed.data.items) {
-    requested.set(item.productId, (requested.get(item.productId) ?? 0) + item.quantity);
+    const existing = requested.get(item.productId);
+    requested.set(item.productId, {
+      quantity: (existing?.quantity ?? 0) + item.quantity,
+      unitPrice: item.unitPrice ?? existing?.unitPrice,
+    });
   }
 
   const [company] = await getDb().select().from(companiesTable).where(eq(companiesTable.id, req.companyId!));
@@ -51,24 +55,27 @@ router.post("/sales", async (req, res): Promise<void> => {
 
   const result = await getDb().transaction(async (tx) => {
     const products = [];
-    for (const [productId, quantity] of requested.entries()) {
+    for (const [productId, lineReq] of requested.entries()) {
       const [product] = await tx.select().from(productsTable)
         .where(and(eq(productsTable.id, productId), eq(productsTable.companyId, req.companyId!)));
       if (!product) return { error: "No encontramos uno de los productos." as const };
-      if (!allowNegative && product.stock < quantity) {
+      if (!allowNegative && product.stock < lineReq.quantity) {
         return { error: `Solo hay ${product.stock} unidades disponibles de ${product.name}.` as const, conflict: true as const };
       }
-      products.push({ product, quantity });
+      products.push({ product, quantity: lineReq.quantity, unitPrice: lineReq.unitPrice });
     }
 
-    const items = products.map(({ product, quantity }) => ({
-      productId: product.id,
-      productName: product.name,
-      quantity,
-      unitPrice: product.salePrice,
-      unitCost: product.cost,
-      subtotal: product.salePrice * quantity,
-    }));
+    const items = products.map(({ product, quantity, unitPrice }) => {
+      const price = unitPrice ?? product.salePrice;
+      return {
+        productId: product.id,
+        productName: product.name,
+        quantity,
+        unitPrice: price,
+        unitCost: product.cost,
+        subtotal: price * quantity,
+      };
+    });
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const estimatedProfit = items.reduce((sum, item) => sum + (item.unitPrice - item.unitCost) * item.quantity, 0);

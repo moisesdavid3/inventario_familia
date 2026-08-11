@@ -259,13 +259,16 @@ export const ListSalesResponse = zod.array(ListSalesResponseItem)
  */
 
 
+export const createSaleBodyItemsItemUnitPriceMin = 0;
+
 
 
 
 export const CreateSaleBody = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number().min(1),
-  "quantity": zod.number().min(1)
+  "quantity": zod.number().min(1),
+  "unitPrice": zod.number().min(createSaleBodyItemsItemUnitPriceMin).optional().describe('Precio unitario de venta para esta línea (si se omite, usa el precio del producto)')
 })).min(1)
 })
 

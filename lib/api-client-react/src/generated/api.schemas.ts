@@ -80,6 +80,11 @@ export interface SaleItemInput {
   productId: number;
   /** @minimum 1 */
   quantity: number;
+  /**
+     * Precio unitario de venta para esta línea (si se omite, usa el precio del producto)
+     * @minimum 0
+     */
+  unitPrice?: number;
 }
 
 export interface SaleInput {
