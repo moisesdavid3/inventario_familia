@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight, BarChart3, Box, Check, ChevronDown, CircleDollarSign, ClipboardList,
-  History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Search, ShoppingBasket,
+  Download, History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Search, ShoppingBasket,
   ShoppingCart, Sparkles, Trash2, TriangleAlert, TrendingUp, Upload, Wallet, X
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -29,6 +29,85 @@ const PROVIDERS = [
   'Vitaliah', 'Agroinversiones Franes', 'Gano Excel', 'Cofarnat', 'Manavida', 'Montes de Maria',
   'Bio Supplements', 'Mauka',
 ];
+
+function crc32(data: Uint8Array): number {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c >>> 0;
+  }
+  let crc = 0xffffffff;
+  for (let i = 0; i < data.length; i++) crc = (crc >>> 8) ^ table[(crc ^ data[i]) & 0xff];
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+async function zipBlob(files: { name: string; data: Uint8Array }[]): Promise<Blob> {
+  const enc = new TextEncoder();
+  const parts: BlobPart[] = [];
+  const central: Uint8Array[] = [];
+  let offset = 0;
+  for (const file of files) {
+    const name = enc.encode(file.name);
+    const body = file.data;
+    const crc = crc32(body);
+    const local = new Uint8Array(30 + name.length);
+    const dv = new DataView(local.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true);
+    dv.setUint16(8, 0, true);
+    dv.setUint32(14, crc, true);
+    dv.setUint32(18, body.length, true);
+    dv.setUint32(22, body.length, true);
+    dv.setUint16(26, name.length, true);
+    local.set(name, 30);
+    parts.push(local as BlobPart, body as BlobPart);
+    const cd = new Uint8Array(46 + name.length);
+    const cdv = new DataView(cd.buffer);
+    cdv.setUint32(0, 0x02014b50, true);
+    cdv.setUint16(4, 20, true);
+    cdv.setUint16(6, 20, true);
+    cdv.setUint16(10, 0, true);
+    cdv.setUint32(16, crc, true);
+    cdv.setUint32(20, body.length, true);
+    cdv.setUint32(24, body.length, true);
+    cdv.setUint16(28, name.length, true);
+    cdv.setUint32(42, offset, true);
+    cd.set(name, 46);
+    central.push(cd);
+    offset += local.length + body.length;
+  }
+  const centralStart = offset;
+  const centralSize = central.reduce((n, c) => n + c.length, 0);
+  for (const c of central) parts.push(c as BlobPart);
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(8, files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, centralSize, true);
+  ev.setUint32(16, centralStart, true);
+  parts.push(eocd as BlobPart);
+  return new Blob(parts, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+const xmlEscape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+async function buildXlsxBlob(rows: (string | number)[][]): Promise<Blob> {
+  const enc = new TextEncoder();
+  const sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + rows.map((row) => '<row>' + row.map((v) => typeof v === 'number' ? `<c><v>${v}</v></c>` : `<c t="inlineStr"><is><t xml:space="preserve">${xmlEscape(v)}</t></is></c>`).join('') + '</row>').join('') + '</sheetData></worksheet>';
+  const files = [
+    { name: '[Content_Types].xml', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>') },
+    { name: '_rels/.rels', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>') },
+    { name: 'xl/workbook.xml', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Ventas por día" sheetId="1" r:id="rId1"/></sheets></workbook>') },
+    { name: 'xl/_rels/workbook.xml.rels', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>') },
+    { name: 'xl/worksheets/sheet1.xml', data: enc.encode(sheet) },
+  ];
+  return zipBlob(files);
+}
+
+const downloadBlob = (blob: Blob, name: string) => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+const toCsv = (rows: (string | number)[][]) => '\uFEFF' + rows.map((r) => r.map((c) => { const s = String(c); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(',')).join('\n');
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return <Link href="/" className="flex items-center gap-3" data-testid="link-brand">
@@ -322,9 +401,32 @@ function Purchases() {
 }
 
 function Reports() {
-  const [period, setPeriod] = useState<'today' | 'last7' | 'thisMonth' | 'previousMonth' | 'all'>('thisMonth'); const [filter, setFilter] = useState<'all' | 'low' | 'empty'>('all');
+  const [period, setPeriod] = useState<'today' | 'last7' | 'thisMonth' | 'previousMonth' | 'all'>('today'); const [filter, setFilter] = useState<'all' | 'low' | 'empty'>('all');
   const inventory = useGetInventoryReport({ filter }); const sales = useGetSalesReport({ period }); const tabs = [{ value: 'all', label: 'Todo' }, { value: 'low', label: 'Por surtir' }, { value: 'empty', label: 'Agotados' }]; const qc = useQueryClient(); const deleteSale = useDeleteSale(); const [confirmSale, setConfirmSale] = useState<number | null>(null);
-  return <Shell><PageHeading eyebrow="Panorama" title="Reportes" description="Una lectura sencilla de cómo se mueve tu negocio." /><div className="mb-6 flex flex-col gap-3 rounded-2xl border bg-[hsl(var(--card))] p-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-1 rounded-xl bg-[hsl(var(--muted))] p-1">{tabs.map((tab) => <button key={tab.value} onClick={() => setFilter(tab.value as typeof filter)} className={`rounded-lg px-3 py-2 text-xs font-bold ${filter === tab.value ? 'bg-[hsl(var(--card))] shadow-sm' : 'text-[hsl(var(--muted-foreground))]'}`} data-testid={`button-inventory-filter-${tab.value}`}>{tab.label}</button>)}</div><label className="relative"><select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 pr-8 text-sm font-bold outline-none sm:w-48" data-testid="select-report-period"><option value="today">Hoy</option><option value="last7">Últimos 7 días</option><option value="thisMonth">Este mes</option><option value="previousMonth">Mes pasado</option><option value="all">Todo el tiempo</option></select><ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-3" /></label></div>{inventory.isLoading || sales.isLoading ? <div className="grid gap-4 sm:grid-cols-2">{[1, 2, 3, 4].map((n) => <div key={n} className="h-32 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div> : inventory.isError || sales.isError ? <StatusMessage text="No pudimos generar tus reportes." onRetry={() => { inventory.refetch(); sales.refetch(); }} /> : <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Valor de costo" value={money(inventory.data?.totalCostValue || 0)} detail="Lo que has invertido" icon={CircleDollarSign} /><Metric label="Valor de venta" value={money(inventory.data?.totalSaleValue || 0)} detail="Si vendes existencias" icon={TrendingUp} tone="green" /><Metric label="Ventas registradas" value={String(sales.data?.saleCount || 0)} detail={`${sales.data?.itemCount || 0} productos vendidos`} icon={ShoppingCart} tone="orange" /><Metric label="Ganancia estimada" value={money(sales.data?.estimatedProfit || 0)} detail="En el periodo elegido" icon={Sparkles} /></div><section className="mt-6 rounded-2xl border bg-[hsl(var(--card))] p-6" data-testid="section-latest-sales"><div className="flex items-center gap-3"><History size={20} className="text-[hsl(var(--primary))]" /><h2 className="font-display text-2xl font-bold">Últimas ventas</h2></div>{!sales.data?.sales.length ? <p className="py-8 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay ventas en este periodo.</p> : <div className="mt-4 divide-y">{sales.data?.sales.slice(0, 6).map((s) => <div key={s.id} className="py-4" data-testid={`report-sale-${s.id}`}><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{dateLabel(s.date)}</span><span className="flex-1 font-semibold">{s.totalItems} productos</span><span className="font-mono-app font-bold">{money(s.total)}</span><span className="hidden rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-1 text-xs font-bold sm:inline">Ganancia {money(s.estimatedProfit)}</span><button type="button" onClick={() => setConfirmSale(s.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar venta" data-testid={`button-delete-sale-${s.id}`}><Trash2 size={15} /></button></div><div className="mt-3 rounded-xl bg-[hsl(var(--muted)/.4)] p-3">{s.items.map((item) => <div key={item.productId} className="flex items-center justify-between gap-3 py-1 text-sm" data-testid={`report-sale-${s.id}-item-${item.productId}`}><span className="min-w-0 flex-1 truncate text-[hsl(var(--muted-foreground))]">{item.quantity} × {item.productName}</span><span className="shrink-0 font-mono-app font-semibold">{money(item.subtotal)}</span></div>)}</div></div>)}</div>}</section><div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.85fr]"><section className="rounded-2xl border bg-[hsl(var(--card))] p-6"><div className="flex items-center justify-between border-b pb-4"><div><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Inventario actual</p><h2 className="mt-1 font-display text-2xl font-bold">Lo que tienes hoy</h2></div><Box size={21} className="text-[hsl(var(--primary))]" /></div>{!inventory.data?.products.length ? <p className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">No hay productos en este filtro.</p> : <div className="mt-2 divide-y">{inventory.data?.products.slice(0, 8).map((p) => <div key={p.id} className="flex items-center gap-3 py-3" data-testid={`report-product-${p.id}`}><span className="flex-1 text-sm font-semibold">{p.name}</span><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{p.stock} pzas.</span><span className="font-mono-app text-sm font-bold">{money(p.salePrice * p.stock)}</span></div>)}</div>}</section><section className="rounded-2xl border bg-[hsl(var(--card))] p-6"><div className="flex items-center justify-between border-b pb-4"><div><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Ventas</p><h2 className="mt-1 font-display text-2xl font-bold">Lo más importante</h2></div><BarChart3 size={21} className="text-[hsl(var(--primary))]" /></div><div className="mt-5 grid gap-4"><div className="rounded-xl bg-[hsl(var(--accent)/.55)] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Producto más vendido</p><p className="mt-2 text-lg font-bold">{sales.data?.bestSellingProduct || 'Todavía no hay datos'}</p></div><div className="rounded-xl bg-[hsl(var(--secondary)/.65)] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Total vendido</p><p className="mt-2 font-mono-app text-2xl font-bold">{money(sales.data?.totalSold || 0)}</p></div><div className="flex items-center justify-between text-sm"><span className="text-[hsl(var(--muted-foreground))]">Productos por surtir</span><strong>{sales.data?.lowStockProducts?.length || 0}</strong></div></div></section></div></>}{confirmSale && <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true" data-testid="modal-confirm-delete-sale"><div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl"><h3 className="font-display text-2xl font-bold">¿Borrar esta venta?</h3><p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se devolverá el inventario de sus productos y la venta desaparecerá de tus reportes.</p><div className="mt-7 flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setConfirmSale(null)} data-testid="button-cancel-delete-sale">Cancelar</Button><Button type="button" variant="danger" onClick={() => deleteSale.mutate({ id: confirmSale }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getGetSalesReportQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); setConfirmSale(null); }, onError: () => setConfirmSale(null) })} disabled={deleteSale.isPending} data-testid="button-confirm-delete-sale">{deleteSale.isPending ? 'Borrando…' : 'Borrar'}</Button></div></div></div>}</Shell>;
+  const dayHeader = (iso: string) => new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00'));
+  const byDay = useMemo(() => {
+    const map = new Map<string, Sale[]>();
+    for (const s of sales.data?.sales ?? []) {
+      const day = new Date(s.date).toLocaleDateString('en-CA');
+      const list = map.get(day) ?? [];
+      list.push(s);
+      map.set(day, list);
+    }
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [sales.data]);
+  const exportRows = () => {
+    const rows: (string | number)[][] = [['Fecha', 'Venta', 'Producto', 'Cantidad', 'Precio unitario', 'Total producto', 'Total venta', 'Total día']];
+    for (const [day, daySales] of byDay) {
+      const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0);
+      for (const s of daySales) {
+        for (const item of s.items) rows.push([dayHeader(day), `Venta #${s.id}`, item.productName, item.quantity, item.unitPrice, item.subtotal, s.total, dayTotal]);
+      }
+    }
+    return rows;
+  };
+  const downloadCsv = () => downloadBlob(new Blob([toCsv(exportRows())], { type: 'text/csv;charset=utf-8' }), `ventas-${period}-${new Date().toISOString().slice(0, 10)}.csv`);
+  const downloadXlsx = () => buildXlsxBlob(exportRows()).then((blob) => downloadBlob(blob, `ventas-${period}-${new Date().toISOString().slice(0, 10)}.xlsx`));
+  return <Shell><PageHeading eyebrow="Panorama" title="Reportes" description="Una lectura sencilla de cómo se mueve tu negocio." /><div className="mb-6 flex flex-col gap-3 rounded-2xl border bg-[hsl(var(--card))] p-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-1 rounded-xl bg-[hsl(var(--muted))] p-1">{tabs.map((tab) => <button key={tab.value} onClick={() => setFilter(tab.value as typeof filter)} className={`rounded-lg px-3 py-2 text-xs font-bold ${filter === tab.value ? 'bg-[hsl(var(--card))] shadow-sm' : 'text-[hsl(var(--muted-foreground))]'}`} data-testid={`button-inventory-filter-${tab.value}`}>{tab.label}</button>)}</div><div className="flex flex-wrap items-center gap-2"><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadCsv} data-testid="button-export-csv"><Download size={15} /> CSV</Button><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadXlsx} data-testid="button-export-xlsx"><Download size={15} /> XLSX</Button><label className="relative"><select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 pr-8 text-sm font-bold outline-none sm:w-48" data-testid="select-report-period"><option value="today">Hoy</option><option value="last7">Últimos 7 días</option><option value="thisMonth">Este mes</option><option value="previousMonth">Mes pasado</option><option value="all">Todo el tiempo</option></select><ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-3" /></label></div></div>{inventory.isLoading || sales.isLoading ? <div className="grid gap-4 sm:grid-cols-2">{[1, 2, 3, 4].map((n) => <div key={n} className="h-32 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div> : inventory.isError || sales.isError ? <StatusMessage text="No pudimos generar tus reportes." onRetry={() => { inventory.refetch(); sales.refetch(); }} /> : <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Valor de costo" value={money(inventory.data?.totalCostValue || 0)} detail="Lo que has invertido" icon={CircleDollarSign} /><Metric label="Valor de venta" value={money(inventory.data?.totalSaleValue || 0)} detail="Si vendes existencias" icon={TrendingUp} tone="green" /><Metric label="Ventas registradas" value={String(sales.data?.saleCount || 0)} detail={`${sales.data?.itemCount || 0} productos vendidos`} icon={ShoppingCart} tone="orange" /><Metric label="Ganancia estimada" value={money(sales.data?.estimatedProfit || 0)} detail="En el periodo elegido" icon={Sparkles} /></div><section className="mt-6 rounded-2xl border bg-[hsl(var(--card))] p-6" data-testid="section-sales-by-day"><div className="flex items-center gap-3"><History size={20} className="text-[hsl(var(--primary))]" /><h2 className="font-display text-2xl font-bold">Ventas por día</h2></div>{!sales.data?.sales.length ? <p className="py-8 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay ventas en este periodo.</p> : <div className="mt-4 divide-y">{byDay.map(([day, daySales]) => { const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0); return <div key={day} className="py-4" data-testid={`report-day-${day}`}><div className="flex flex-wrap items-center gap-3"><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{dayHeader(day)}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{daySales.length} {daySales.length === 1 ? 'venta' : 'ventas'}</span><span className="flex-1" /><span className="font-mono-app font-bold">Total: {money(dayTotal)}</span></div><div className="mt-3 divide-y rounded-xl bg-[hsl(var(--muted)/.4)] px-4">{daySales.map((s) => <div key={s.id} className="py-3" data-testid={`report-sale-${s.id}`}><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-semibold">Venta #{s.id}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{s.totalItems} productos</span><span className="flex-1" /><span className="font-mono-app font-bold">{money(s.total)}</span><span className="hidden rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-1 text-xs font-bold sm:inline">Ganancia {money(s.estimatedProfit)}</span><button type="button" onClick={() => setConfirmSale(s.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar venta" data-testid={`button-delete-sale-${s.id}`}><Trash2 size={15} /></button></div><div className="mt-3 rounded-xl bg-[hsl(var(--muted)/.4)] p-3">{s.items.map((item) => <div key={item.productId} className="flex items-center justify-between gap-3 py-1 text-sm" data-testid={`report-sale-${s.id}-item-${item.productId}`}><span className="min-w-0 flex-1 truncate text-[hsl(var(--muted-foreground))]">{item.quantity} × {item.productName}</span><span className="shrink-0 font-mono-app font-semibold">{money(item.subtotal)}</span></div>)}</div></div>)}</div></div>;})}</div>}</section><div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.85fr]"><section className="rounded-2xl border bg-[hsl(var(--card))] p-6"><div className="flex items-center justify-between border-b pb-4"><div><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Inventario actual</p><h2 className="mt-1 font-display text-2xl font-bold">Lo que tienes hoy</h2></div><Box size={21} className="text-[hsl(var(--primary))]" /></div>{!inventory.data?.products.length ? <p className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">No hay productos en este filtro.</p> : <div className="mt-2 divide-y">{inventory.data?.products.slice(0, 8).map((p) => <div key={p.id} className="flex items-center gap-3 py-3" data-testid={`report-product-${p.id}`}><span className="flex-1 text-sm font-semibold">{p.name}</span><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{p.stock} pzas.</span><span className="font-mono-app text-sm font-bold">{money(p.salePrice * p.stock)}</span></div>)}</div>}</section><section className="rounded-2xl border bg-[hsl(var(--card))] p-6"><div className="flex items-center justify-between border-b pb-4"><div><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Ventas</p><h2 className="mt-1 font-display text-2xl font-bold">Lo más importante</h2></div><BarChart3 size={21} className="text-[hsl(var(--primary))]" /></div><div className="mt-5 grid gap-4"><div className="rounded-xl bg-[hsl(var(--accent)/.55)] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Producto más vendido</p><p className="mt-2 text-lg font-bold">{sales.data?.bestSellingProduct || 'Todavía no hay datos'}</p></div><div className="rounded-xl bg-[hsl(var(--secondary)/.65)] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Total vendido</p><p className="mt-2 font-mono-app text-2xl font-bold">{money(sales.data?.totalSold || 0)}</p></div><div className="flex items-center justify-between text-sm"><span className="text-[hsl(var(--muted-foreground))]">Productos por surtir</span><strong>{sales.data?.lowStockProducts?.length || 0}</strong></div></div></section></div></>}{confirmSale && <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true" data-testid="modal-confirm-delete-sale"><div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl"><h3 className="font-display text-2xl font-bold">¿Borrar esta venta?</h3><p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se devolverá el inventario de sus productos y la venta desaparecerá de tus reportes.</p><div className="mt-7 flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setConfirmSale(null)} data-testid="button-cancel-delete-sale">Cancelar</Button><Button type="button" variant="danger" onClick={() => deleteSale.mutate({ id: confirmSale }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getGetSalesReportQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); setConfirmSale(null); }, onError: () => setConfirmSale(null) })} disabled={deleteSale.isPending} data-testid="button-confirm-delete-sale">{deleteSale.isPending ? 'Borrando…' : 'Borrar'}</Button></div></div></div>}</Shell>;
 }
 
 function Protected({ children }: { children: React.ReactNode }) {
