@@ -378,7 +378,11 @@ components:
           type: string
         brand:
           type: string
+        category:
+          type: string
         content:
+          type: string
+        description:
           type: string
         cost:
           type: number
@@ -405,7 +409,11 @@ components:
           minLength: 1
         brand:
           type: string
+        category:
+          type: string
         content:
+          type: string
+        description:
           type: string
         cost:
           type: number
@@ -428,7 +436,11 @@ components:
           minLength: 1
         brand:
           type: string
+        category:
+          type: string
         content:
+          type: string
+        description:
           type: string
         cost:
           type: number

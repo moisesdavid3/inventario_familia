@@ -50,7 +50,9 @@ router.post("/products", async (req, res): Promise<void> => {
       userId,
       name: parsed.data.name.trim(),
       brand: parsed.data.brand?.trim() || null,
+      category: parsed.data.category?.trim() || null,
       content: parsed.data.content?.trim() || null,
+      description: parsed.data.description?.trim() || null,
       cost: parsed.data.cost,
       salePrice: parsed.data.salePrice,
       stock: parsed.data.initialStock,
@@ -89,7 +91,9 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
       ...parsed.data,
       name: parsed.data.name?.trim(),
       brand: parsed.data.brand?.trim() || null,
+      category: parsed.data.category?.trim() || null,
       content: parsed.data.content?.trim() || null,
+      description: parsed.data.description?.trim() || null,
       updatedAt: new Date(),
     })
     .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)))

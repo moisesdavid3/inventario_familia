@@ -10,7 +10,9 @@ export interface ProductUpdate {
   /** @minLength 1 */
   name?: string;
   brand?: string;
+  category?: string;
   content?: string;
+  description?: string;
   /** @minimum 0 */
   cost?: number;
   /** @minimum 0 */
