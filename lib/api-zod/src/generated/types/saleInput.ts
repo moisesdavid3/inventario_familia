@@ -10,4 +10,8 @@ import type { SaleItemInput } from './saleItemInput';
 export interface SaleInput {
   /** @minItems 1 */
   items: SaleItemInput[];
+  /** Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR / Llave) */
+  paymentMethod?: string;
+  /** Observaciones del usuario sobre la venta */
+  notes?: string;
 }

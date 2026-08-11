@@ -90,6 +90,10 @@ export interface SaleItemInput {
 export interface SaleInput {
   /** @minItems 1 */
   items: SaleItemInput[];
+  /** Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR / Llave) */
+  paymentMethod?: string;
+  /** Observaciones del usuario sobre la venta */
+  notes?: string;
 }
 
 export interface SaleItem {
@@ -107,6 +111,10 @@ export interface Sale {
   total: number;
   totalItems: number;
   estimatedProfit: number;
+  /** Método de pago de la venta */
+  paymentMethod?: string;
+  /** Observaciones de la venta */
+  notes?: string;
   items: SaleItem[];
 }
 

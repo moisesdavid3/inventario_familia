@@ -85,6 +85,8 @@ router.post("/sales", async (req, res): Promise<void> => {
       total,
       totalItems,
       estimatedProfit,
+      paymentMethod: parsed.data.paymentMethod?.trim() || null,
+      notes: parsed.data.notes?.trim() || null,
     }).returning();
     await tx.insert(saleItemsTable).values(items.map((item) => ({ saleId: sale.id, ...item })));
     for (const { product, quantity } of products) {

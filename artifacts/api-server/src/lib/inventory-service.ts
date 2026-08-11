@@ -194,6 +194,8 @@ export async function saleResponse(sale: typeof salesTable.$inferSelect) {
     total: sale.total,
     totalItems: sale.totalItems,
     estimatedProfit: sale.estimatedProfit,
+    paymentMethod: sale.paymentMethod ?? undefined,
+    notes: sale.notes ?? undefined,
     items: items.map((item) => ({
       productId: item.productId,
       productName: item.productName,

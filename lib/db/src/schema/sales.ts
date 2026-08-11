@@ -9,6 +9,8 @@ export const salesTable = pgTable("inventory_sales", {
   total: integer("total").notNull(),
   totalItems: integer("total_items").notNull(),
   estimatedProfit: integer("estimated_profit").notNull(),
+  paymentMethod: text("payment_method"),
+  notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

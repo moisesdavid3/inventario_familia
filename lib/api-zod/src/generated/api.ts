@@ -242,6 +242,8 @@ export const ListSalesResponseItem = zod.object({
   "total": zod.number(),
   "totalItems": zod.number(),
   "estimatedProfit": zod.number(),
+  "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
+  "notes": zod.string().optional().describe('Observaciones de la venta'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -269,7 +271,9 @@ export const CreateSaleBody = zod.object({
   "productId": zod.number().min(1),
   "quantity": zod.number().min(1),
   "unitPrice": zod.number().min(createSaleBodyItemsItemUnitPriceMin).optional().describe('Precio unitario de venta para esta línea (si se omite, usa el precio del producto)')
-})).min(1)
+})).min(1),
+  "paymentMethod": zod.string().optional().describe('Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR \/ Llave)'),
+  "notes": zod.string().optional().describe('Observaciones del usuario sobre la venta')
 })
 
 export const CreateSaleResponse = zod.object({
@@ -278,6 +282,8 @@ export const CreateSaleResponse = zod.object({
   "total": zod.number(),
   "totalItems": zod.number(),
   "estimatedProfit": zod.number(),
+  "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
+  "notes": zod.string().optional().describe('Observaciones de la venta'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -305,6 +311,8 @@ export const GetSaleResponse = zod.object({
   "total": zod.number(),
   "totalItems": zod.number(),
   "estimatedProfit": zod.number(),
+  "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
+  "notes": zod.string().optional().describe('Observaciones de la venta'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -528,6 +536,8 @@ export const GetSalesReportResponse = zod.object({
   "total": zod.number(),
   "totalItems": zod.number(),
   "estimatedProfit": zod.number(),
+  "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
+  "notes": zod.string().optional().describe('Observaciones de la venta'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),

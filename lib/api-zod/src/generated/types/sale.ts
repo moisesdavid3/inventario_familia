@@ -13,5 +13,9 @@ export interface Sale {
   total: number;
   totalItems: number;
   estimatedProfit: number;
+  /** Método de pago de la venta */
+  paymentMethod?: string;
+  /** Observaciones de la venta */
+  notes?: string;
   items: SaleItem[];
 }

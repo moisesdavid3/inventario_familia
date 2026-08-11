@@ -600,6 +600,12 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/SaleItemInput"
+        paymentMethod:
+          type: string
+          description: Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR / Llave)
+        notes:
+          type: string
+          description: Observaciones del usuario sobre la venta
       required: [items]
     SaleItem:
       type: object
@@ -631,6 +637,12 @@ components:
           type: number
         estimatedProfit:
           type: number
+        paymentMethod:
+          type: string
+          description: Método de pago de la venta
+        notes:
+          type: string
+          description: Observaciones de la venta
         items:
           type: array
           items:
