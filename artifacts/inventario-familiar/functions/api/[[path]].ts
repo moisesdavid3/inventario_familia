@@ -20,7 +20,7 @@ async function createReq(request: Request, url: URL): Promise<any> {
       ? null
       : (await request.text());
 
-  const stream = Readable.from(body ? [body] : []) as any;
+  const stream = Readable.from(body !== null ? [Buffer.from(body, "utf8")] : []) as any;
   stream.method = request.method;
   stream.url = url.pathname + url.search;
   stream.originalUrl = url.pathname + url.search;
@@ -34,7 +34,27 @@ async function createReq(request: Request, url: URL): Promise<any> {
   stream.httpVersionMajor = 1;
   stream.httpVersionMinor = 1;
   stream.query = Object.fromEntries(url.searchParams);
-  const socket = { remoteAddress: "::1", remotePort: 0, encrypted: false, readable: true, writable: true };
+  stream.on("end", () => {
+    stream.complete = true;
+    stream.readable = false;
+  });
+  const socket = new EventEmitter();
+  Object.assign(socket, {
+    remoteAddress: "::1",
+    remotePort: 0,
+    encrypted: false,
+    readable: true,
+    writable: true,
+    destroyed: false,
+    setTimeout: () => socket,
+    setNoDelay: () => socket,
+    setKeepAlive: () => socket,
+    destroy: () => socket,
+    write: () => true,
+    end: () => socket,
+    resume: () => socket,
+    pause: () => socket,
+  });
   stream.connection = socket;
   stream.socket = socket;
   return stream;
@@ -108,6 +128,7 @@ export const onRequest: PagesFunction = async ({ request }) => {
   const url = new URL(request.url);
   const req = await createReq(request, url);
   const res = createRes();
+  res.socket = req.socket;
 
   const { sql, db } = createDbConnection();
   try {
