@@ -1,6 +1,7 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import {
   appSettingsTable,
+  creditPaymentsTable,
   getDb,
   inventoryMovementsTable,
   inventoryUserSettingsTable,
@@ -183,11 +184,20 @@ export async function purchaseResponse(purchase: typeof purchasesTable.$inferSel
   };
 }
 
+async function creditPaidForSale(saleId: number): Promise<number> {
+  const [row] = await getDb()
+    .select({ total: sql<number>`coalesce(sum(${creditPaymentsTable.amount}), 0)` })
+    .from(creditPaymentsTable)
+    .where(eq(creditPaymentsTable.saleId, saleId));
+  return Number(row?.total ?? 0);
+}
+
 export async function saleResponse(sale: typeof salesTable.$inferSelect) {
   const items = await getDb()
     .select()
     .from(saleItemsTable)
     .where(eq(saleItemsTable.saleId, sale.id));
+  const creditPaid = sale.paymentMethod === "Crédito" ? await creditPaidForSale(sale.id) : 0;
   return {
     id: sale.id,
     saleNumber: sale.saleNumber,
@@ -197,6 +207,9 @@ export async function saleResponse(sale: typeof salesTable.$inferSelect) {
     estimatedProfit: sale.estimatedProfit,
     paymentMethod: sale.paymentMethod ?? undefined,
     notes: sale.notes ?? undefined,
+    clientName: sale.clientName,
+    clientPhone: sale.clientPhone,
+    creditPaid,
     items: items.map((item) => ({
       productId: item.productId,
       productName: item.productName,

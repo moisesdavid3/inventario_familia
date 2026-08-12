@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight, BarChart3, Box, Check, ChevronDown, CircleDollarSign, ClipboardList,
-  Download, History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Search, ShoppingBasket,
-  ShoppingCart, Sparkles, Trash2, TriangleAlert, TrendingUp, Upload, Wallet, X
+  CreditCard, Download, History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Search, ShoppingBasket,
+  ShoppingCart, Sparkles, Trash2, TriangleAlert, TrendingUp, Upload, Users, Wallet, X
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -10,9 +10,9 @@ import { supabase } from '@/lib/supabase';
 import { CompanyProvider, useCompany } from '@/lib/company';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useRoute } from 'wouter';
 import {
-  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey,
-  useAddInventory, useCreateProduct, useCreatePurchase, useCreateSale, useDeleteProduct, useDeletePurchase, useDeleteSale,
-  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListProducts, useListPurchases, useListSales,
+  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListCreditPaymentsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey,
+  useAddInventory, useCreateCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useDeleteProduct, useDeletePurchase, useDeleteSale,
+  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListCreditPayments, useListProducts, useListPurchases, useListSales,
   useUpdateDeudaMoises, useUpdateProduct
 } from '@workspace/api-client-react';
 import type { Product, Purchase, PurchaseImportResult, PurchaseInput, Sale } from '@workspace/api-client-react';
@@ -31,7 +31,7 @@ const PROVIDERS = [
 ];
 const supplierOptions = (activeCompanyId: number | undefined, productSuppliers: (string | null | undefined)[]) =>
   Array.from(new Set([...(activeCompanyId === 2 ? PROVIDERS : []), ...productSuppliers.filter((s): s is string => !!s)])).sort((a, b) => a.localeCompare(b));
-const PAYMENT_METHODS = ['Efectivo', 'Nequi', 'Transferencia', 'Datafono', 'QR / Llave'];
+const PAYMENT_METHODS = ['Efectivo', 'Nequi', 'Transferencia', 'Datafono', 'QR / Llave', 'Crédito'];
 
 function crc32(data: Uint8Array): number {
   const table = new Uint32Array(256);
@@ -191,6 +191,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     { href: '/app/productos', label: 'Productos', icon: Box },
     { href: '/app/venta', label: 'Registrar venta', icon: ShoppingCart },
     { href: '/app/compras', label: 'Compras', icon: ShoppingBasket },
+    { href: '/app/cartera', label: 'Cartera', icon: CreditCard },
     { href: '/app/reportes', label: 'Reportes', icon: BarChart3 },
   ];
   return <div className="min-h-[100dvh] bg-background">
@@ -337,15 +338,15 @@ function Products() {
 }
 
 function SalePage() {
-  const products = useListProducts(); const qc = useQueryClient(); const sale = useCreateSale(); const { activeCompany } = useCompany(); const allowNegative = !!activeCompany?.allowNegativeStock; const isPrema = activeCompany?.id === 2; const [items, setItems] = useState<{ productId: number; quantity: number; unitPrice: number }[]>([]); const [selected, setSelected] = useState(''); const [query, setQuery] = useState(''); const [open, setOpen] = useState(false); const [quantity, setQuantity] = useState('1'); const [paymentMethod, setPaymentMethod] = useState('Efectivo'); const [notes, setNotes] = useState(''); const [error, setError] = useState(''); const [result, setResult] = useState<Sale | null>(null);
+  const products = useListProducts(); const qc = useQueryClient(); const sale = useCreateSale(); const { activeCompany } = useCompany(); const allowNegative = !!activeCompany?.allowNegativeStock; const isPrema = activeCompany?.id === 2; const [items, setItems] = useState<{ productId: number; quantity: number; unitPrice: number }[]>([]); const [selected, setSelected] = useState(''); const [query, setQuery] = useState(''); const [open, setOpen] = useState(false); const [quantity, setQuantity] = useState('1'); const [paymentMethod, setPaymentMethod] = useState('Efectivo'); const [notes, setNotes] = useState(''); const [clientName, setClientName] = useState(''); const [clientPhone, setClientPhone] = useState(''); const [error, setError] = useState(''); const [result, setResult] = useState<Sale | null>(null);
   const chosen = products.data?.filter((p) => items.some((i) => i.productId === p.id)) || [];
   const total = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
   const matches = useMemo(() => (products.data || []).filter((p) => (allowNegative || p.stock > 0) && (p.name.toLowerCase().includes(query.trim().toLowerCase()) || (p.supplier || '').toLowerCase().includes(query.trim().toLowerCase()))), [products.data, query, allowNegative]);
   const addItem = () => { const id = Number(selected); const qty = Number(quantity); const p = products.data?.find((x) => x.id === id); if (!p || qty < 1) return; const existing = items.find((i) => i.productId === id); const currentInCart = existing?.quantity || 0; if (!allowNegative && currentInCart + qty > p.stock) { setError(`No hay suficientes unidades de ${p.name}. Solo quedan ${p.stock}.`); return; } setItems(existing ? items.map((i) => i.productId === id ? { ...i, quantity: i.quantity + qty } : i) : [...items, { productId: id, quantity: qty, unitPrice: p.salePrice }]); setSelected(''); setQuery(''); setQuantity('1'); setError(''); };
   const setLine = (productId: number, patch: Partial<{ quantity: number; unitPrice: number }>) => setItems((prev) => prev.map((i) => i.productId === productId ? { ...i, ...patch } : i));
-  const submit = () => { if (!items.length) { setError('Agrega al menos un producto para registrar la venta.'); return; } sale.mutate({ data: { items, paymentMethod, notes: notes.trim() || undefined } }, { onSuccess: (created) => { setResult(created); setItems([]); setNotes(''); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); }, onError: () => setError('No se pudo registrar la venta. Revisa las existencias.') }); };
+  const submit = () => { if (!items.length) { setError('Agrega al menos un producto para registrar la venta.'); return; } sale.mutate({ data: { items, paymentMethod, notes: notes.trim() || undefined, clientName: clientName.trim() || undefined, clientPhone: clientPhone.trim() || undefined } }, { onSuccess: (created) => { setResult(created); setItems([]); setNotes(''); setClientName(''); setClientPhone(''); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); }, onError: () => setError('No se pudo registrar la venta. Revisa las existencias.') }); };
   if (result) return <Shell><div className="mx-auto max-w-xl py-10 text-center"><span className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"><Check size={38} /></span><p className="mt-7 font-mono-app text-[11px] font-bold uppercase tracking-[.18em] text-[hsl(var(--primary))]">Venta registrada · Venta #{result.saleNumber}</p><h1 className="mt-2 font-display text-5xl font-bold">Listo, quedó anotada.</h1><p className="mt-4 text-[hsl(var(--muted-foreground))]">Se actualizaron las existencias de tus productos.</p><div className="mt-8 rounded-2xl border bg-[hsl(var(--card))] p-5 text-left"><div className="flex justify-between border-b pb-4 text-sm"><span className="text-[hsl(var(--muted-foreground))]">Total de la venta</span><strong className="font-mono-app text-xl">{money(result.total)}</strong></div><div className="mt-4 grid gap-2">{result.items.map((item) => <div key={item.productId} className="flex justify-between text-sm"><span>{item.quantity} × {item.productName}</span><span className="font-mono-app">{money(item.subtotal)}</span></div>)}</div><div className="mt-4 grid gap-2 border-t pt-4 text-sm"><div className="flex justify-between"><span className="text-[hsl(var(--muted-foreground))]">Método de pago</span><strong>{result.paymentMethod || 'No indicado'}</strong></div>{result.notes && <div className="rounded-lg bg-[hsl(var(--muted)/.5)] p-3 text-sm"><span className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">Notas</span>{result.notes}</div>}</div></div><div className="mt-7 flex justify-center gap-3"><Button variant="secondary" onClick={() => setResult(null)} data-testid="button-new-sale">Registrar otra</Button><Link href="/app" className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold text-[hsl(var(--primary))]" data-testid="link-sale-dashboard">Volver al inicio <ArrowRight size={16} /></Link></div></div></Shell>;
-  return <Shell><PageHeading eyebrow="Caja" title="Registrar venta" description="Agrega lo que se llevó tu cliente y confirma al final." /><div className="grid gap-6 lg:grid-cols-[1fr_370px]"><section className="rounded-2xl border bg-[hsl(var(--card))] p-5 sm:p-7"><div className="grid gap-4 sm:grid-cols-[1fr_150px_auto] sm:items-end"><label className="grid gap-1.5 text-sm font-semibold">Producto<div className="relative"><input value={query} onChange={(e) => { setQuery(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} placeholder="Buscar un producto..." className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-search" /><ChevronDown size={16} className={`pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))] transition-transform ${open ? 'rotate-180' : ''}`} />{open && <ul className="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-xl border bg-[hsl(var(--card))] p-1 shadow-xl">{matches.slice(0, 20).map((p) => <li key={p.id}><button type="button" onClick={() => { setSelected(String(p.id)); setQuery(p.name); setOpen(false); }} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[hsl(var(--muted))]" data-testid={`option-sale-product-${p.id}`}>{isPrema ? `${p.name}${p.content ? ` · ${p.content}` : ''}` : `${p.name} · ${p.stock > 0 ? `${p.stock} disponibles` : allowNegative ? 'sin existencias' : `${p.stock} disponibles`}`}</button></li>)}{!matches.length && <li className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No encontramos productos con ese nombre.</li>}</ul>}</div></label><Field label="Cantidad" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} data-testid="input-sale-quantity" /><Button type="button" onClick={addItem} className="sm:mb-0" data-testid="button-add-sale-item"><Plus size={18} /> Agregar</Button></div>{error && <p className="mt-4 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]" data-testid="status-sale-error">{error}</p>}<div className="mt-8 grid gap-4 border-t pt-5 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-semibold">Método de pago<div className="relative"><select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-sale-payment-method">{PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))]" /></div></label><label className="grid gap-1.5 text-sm font-semibold">Notas<div className="relative"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Observaciones de la venta (opcional)" className="h-12 w-full resize-none rounded-xl border bg-[hsl(var(--background))] px-3 py-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-notes" /></div></label></div><div className="mt-8 border-t pt-5"><p className="mb-3 font-mono-app text-xs uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Productos de esta venta</p>{!items.length ? <div className="grid min-h-40 place-items-center rounded-xl border border-dashed p-5 text-center"><div><ShoppingBasket size={25} className="mx-auto text-[hsl(var(--muted-foreground))]" /><p className="mt-3 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay productos.<br />Elige uno arriba para comenzar.</p></div></div> : <div className="grid gap-3">{items.map((item) => { const p = products.data?.find((x) => x.id === item.productId); return <div key={item.productId} className="rounded-xl bg-[hsl(var(--muted)/.55)] p-3" data-testid={`row-sale-item-${item.productId}`}><div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate text-base font-bold sm:text-lg">{p?.name}{p?.content ? ` · ${p.content}` : ''}</span><button onClick={() => setItems(items.filter((x) => x.productId !== item.productId))} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--card))]" data-testid={`button-remove-sale-item-${item.productId}`}><X size={17} /></button></div><div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2"><label className="flex items-center gap-2 text-sm font-semibold">Cant.<input type="number" min="1" value={item.quantity} onChange={(e) => setLine(item.productId, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="h-11 w-20 rounded-xl border bg-[hsl(var(--card))] px-2 text-center text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-qty-${item.productId}`} /></label><label className="flex items-center gap-2 text-sm font-semibold">P. unit.<input type="number" min="0" step="1" value={item.unitPrice} onChange={(e) => setLine(item.productId, { unitPrice: Math.max(0, Math.round(Number(e.target.value) || 0)) })} className="h-11 w-28 rounded-xl border bg-[hsl(var(--card))] px-2 text-right text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-price-${item.productId}`} /></label><span className="ml-auto font-mono-app text-lg font-bold sm:text-xl">{money(item.unitPrice * item.quantity)}</span></div></div>})}</div>}</div></section><aside className="h-fit rounded-2xl bg-[hsl(var(--sidebar))] p-6 text-[hsl(var(--sidebar-foreground))]"><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--sidebar-primary))]">Resumen</p><h2 className="mt-2 font-display text-2xl font-bold">Total a cobrar</h2><p className="mt-6 font-mono-app text-5xl font-bold text-[hsl(var(--sidebar-primary))]">{money(total)}</p><p className="mt-2 text-sm text-[hsl(var(--sidebar-foreground)/.6)]">{items.reduce((sum, i) => sum + i.quantity, 0)} productos en total</p><Button className="mt-7 w-full bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))]" onClick={submit} disabled={sale.isPending || !items.length} data-testid="button-confirm-sale">{sale.isPending ? 'Registrando…' : 'Confirmar venta'} <ArrowRight size={17} /></Button><p className="mt-4 text-center text-xs text-[hsl(var(--sidebar-foreground)/.5)]">Al confirmar, se descuentan las existencias automáticamente.</p></aside></div></Shell>;
+  return <Shell><PageHeading eyebrow="Caja" title="Registrar venta" description="Agrega lo que se llevó tu cliente y confirma al final." /><div className="grid gap-6 lg:grid-cols-[1fr_370px]"><section className="rounded-2xl border bg-[hsl(var(--card))] p-5 sm:p-7"><div className="grid gap-4 sm:grid-cols-[1fr_150px_auto] sm:items-end"><label className="grid gap-1.5 text-sm font-semibold">Producto<div className="relative"><input value={query} onChange={(e) => { setQuery(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} placeholder="Buscar un producto..." className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-search" /><ChevronDown size={16} className={`pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))] transition-transform ${open ? 'rotate-180' : ''}`} />{open && <ul className="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-xl border bg-[hsl(var(--card))] p-1 shadow-xl">{matches.slice(0, 20).map((p) => <li key={p.id}><button type="button" onClick={() => { setSelected(String(p.id)); setQuery(p.name); setOpen(false); }} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[hsl(var(--muted))]" data-testid={`option-sale-product-${p.id}`}>{isPrema ? `${p.name}${p.content ? ` · ${p.content}` : ''}` : `${p.name} · ${p.stock > 0 ? `${p.stock} disponibles` : allowNegative ? 'sin existencias' : `${p.stock} disponibles`}`}</button></li>)}{!matches.length && <li className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No encontramos productos con ese nombre.</li>}</ul>}</div></label><Field label="Cantidad" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} data-testid="input-sale-quantity" /><Button type="button" onClick={addItem} className="sm:mb-0" data-testid="button-add-sale-item"><Plus size={18} /> Agregar</Button></div>{error && <p className="mt-4 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]" data-testid="status-sale-error">{error}</p>}<div className="mt-8 grid gap-4 border-t pt-5 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-semibold">Método de pago<div className="relative"><select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-sale-payment-method">{PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))]" /></div></label>{paymentMethod === 'Crédito' && <><label className="grid gap-1.5 text-sm font-semibold">Nombre Cliente<div className="relative"><input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre del cliente (opcional)" className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-client-name" /></div></label><label className="grid gap-1.5 text-sm font-semibold">Teléfono<div className="relative"><input type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Teléfono del cliente (opcional)" className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-client-phone" /></div></label></>}<label className="grid gap-1.5 text-sm font-semibold">Notas<div className="relative"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Observaciones de la venta (opcional)" className="h-12 w-full resize-none rounded-xl border bg-[hsl(var(--background))] px-3 py-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-notes" /></div></label></div><div className="mt-8 border-t pt-5"><p className="mb-3 font-mono-app text-xs uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Productos de esta venta</p>{!items.length ? <div className="grid min-h-40 place-items-center rounded-xl border border-dashed p-5 text-center"><div><ShoppingBasket size={25} className="mx-auto text-[hsl(var(--muted-foreground))]" /><p className="mt-3 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay productos.<br />Elige uno arriba para comenzar.</p></div></div> : <div className="grid gap-3">{items.map((item) => { const p = products.data?.find((x) => x.id === item.productId); return <div key={item.productId} className="rounded-xl bg-[hsl(var(--muted)/.55)] p-3" data-testid={`row-sale-item-${item.productId}`}><div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate text-base font-bold sm:text-lg">{p?.name}{p?.content ? ` · ${p.content}` : ''}</span><button onClick={() => setItems(items.filter((x) => x.productId !== item.productId))} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--card))]" data-testid={`button-remove-sale-item-${item.productId}`}><X size={17} /></button></div><div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2"><label className="flex items-center gap-2 text-sm font-semibold">Cant.<input type="number" min="1" value={item.quantity} onChange={(e) => setLine(item.productId, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="h-11 w-20 rounded-xl border bg-[hsl(var(--card))] px-2 text-center text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-qty-${item.productId}`} /></label><label className="flex items-center gap-2 text-sm font-semibold">P. unit.<input type="number" min="0" step="1" value={item.unitPrice} onChange={(e) => setLine(item.productId, { unitPrice: Math.max(0, Math.round(Number(e.target.value) || 0)) })} className="h-11 w-28 rounded-xl border bg-[hsl(var(--card))] px-2 text-right text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-price-${item.productId}`} /></label><span className="ml-auto font-mono-app text-lg font-bold sm:text-xl">{money(item.unitPrice * item.quantity)}</span></div></div>})}</div>}</div></section><aside className="h-fit rounded-2xl bg-[hsl(var(--sidebar))] p-6 text-[hsl(var(--sidebar-foreground))]"><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--sidebar-primary))]">Resumen</p><h2 className="mt-2 font-display text-2xl font-bold">Total a cobrar</h2><p className="mt-6 font-mono-app text-5xl font-bold text-[hsl(var(--sidebar-primary))]">{money(total)}</p><p className="mt-2 text-sm text-[hsl(var(--sidebar-foreground)/.6)]">{items.reduce((sum, i) => sum + i.quantity, 0)} productos en total</p><Button className="mt-7 w-full bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))]" onClick={submit} disabled={sale.isPending || !items.length} data-testid="button-confirm-sale">{sale.isPending ? 'Registrando…' : 'Confirmar venta'} <ArrowRight size={17} /></Button><p className="mt-4 text-center text-xs text-[hsl(var(--sidebar-foreground)/.5)]">Al confirmar, se descuentan las existencias automáticamente.</p></aside></div></Shell>;
 }
 
 function PurchaseModal({ onClose }: { onClose: () => void }) {
@@ -436,6 +437,231 @@ function Reports() {
   return <Shell><PageHeading eyebrow="Panorama" title="Reportes" description="Una lectura sencilla de cómo se mueve tu negocio." /><div className="mb-6 flex flex-col gap-3 rounded-2xl border bg-[hsl(var(--card))] p-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-1 rounded-xl bg-[hsl(var(--muted))] p-1">{tabs.map((tab) => <button key={tab.value} onClick={() => setFilter(tab.value as typeof filter)} className={`rounded-lg px-3 py-2 text-xs font-bold ${filter === tab.value ? 'bg-[hsl(var(--card))] shadow-sm' : 'text-[hsl(var(--muted-foreground))]'}`} data-testid={`button-inventory-filter-${tab.value}`}>{tab.label}</button>)}</div><div className="flex flex-wrap items-center gap-2"><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadCsv} data-testid="button-export-csv"><Download size={15} /> CSV</Button><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadXlsx} data-testid="button-export-xlsx"><Download size={15} /> XLSX</Button><label className="relative"><select value={period} onChange={(e) => setPeriod(e.target.value as typeof period)} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 pr-8 text-sm font-bold outline-none sm:w-48" data-testid="select-report-period"><option value="today">Hoy</option><option value="last7">Últimos 7 días</option><option value="thisMonth">Este mes</option><option value="previousMonth">Mes pasado</option><option value="all">Todo el tiempo</option></select><ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-3" /></label></div></div>{inventory.isLoading || sales.isLoading ? <div className="grid gap-4 sm:grid-cols-2">{[1, 2, 3, 4].map((n) => <div key={n} className="h-32 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div> : inventory.isError || sales.isError ? <StatusMessage text="No pudimos generar tus reportes." onRetry={() => { inventory.refetch(); sales.refetch(); }} /> : <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Valor de costo" value={money(inventory.data?.totalCostValue || 0)} detail="Lo que has invertido" icon={CircleDollarSign} /><Metric label="Valor de venta" value={money(inventory.data?.totalSaleValue || 0)} detail="Si vendes existencias" icon={TrendingUp} tone="green" /><Metric label="Ventas registradas" value={String(sales.data?.saleCount || 0)} detail={`${sales.data?.itemCount || 0} productos vendidos`} icon={ShoppingCart} tone="orange" /><Metric label="Ganancia estimada" value={money(sales.data?.estimatedProfit || 0)} detail="En el periodo elegido" icon={Sparkles} /></div><section className="mt-6 rounded-2xl border bg-[hsl(var(--card))] p-6" data-testid="section-sales-by-day"><div className="flex items-center gap-3"><History size={20} className="text-[hsl(var(--primary))]" /><h2 className="font-display text-2xl font-bold">Ventas por día</h2></div>{!sales.data?.sales.length ? <p className="py-8 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay ventas en este periodo.</p> : <div className="mt-4 divide-y">{byDay.map(([day, daySales]) => { const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0); return <div key={day} className="py-4" data-testid={`report-day-${day}`}><div className="flex flex-wrap items-center gap-3"><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{dayHeader(day)}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{daySales.length} {daySales.length === 1 ? 'venta' : 'ventas'}</span><span className="flex-1" /><span className="font-mono-app font-bold">Total: {money(dayTotal)}</span></div><div className="mt-3 divide-y rounded-xl bg-[hsl(var(--muted)/.4)] px-4">{daySales.map((s) => <div key={s.id} className="py-3" data-testid={`report-sale-${s.id}`}><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-semibold">Venta #{s.saleNumber}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{s.totalItems} productos</span>{s.paymentMethod && <span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-1 text-xs font-bold">{s.paymentMethod}</span>}<span className="flex-1" /><span className="font-mono-app font-bold">{money(s.total)}</span><span className="hidden rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-1 text-xs font-bold sm:inline">Ganancia {money(s.estimatedProfit)}</span><button type="button" onClick={() => setConfirmSale(s.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar venta" data-testid={`button-delete-sale-${s.id}`}><Trash2 size={15} /></button></div><div className="mt-3 rounded-xl bg-[hsl(var(--muted)/.4)] p-3">{s.items.map((item) => <div key={item.productId} className="flex items-center justify-between gap-3 py-1 text-sm" data-testid={`report-sale-${s.id}-item-${item.productId}`}><span className="min-w-0 flex-1 truncate text-[hsl(var(--muted-foreground))]">{item.quantity} × {item.productName}</span><span className="shrink-0 font-mono-app font-semibold">{money(item.subtotal)}</span></div>)}</div></div>)}</div></div>;})}</div>}</section><div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.85fr]"><section className="rounded-2xl border bg-[hsl(var(--card))] p-6"><div className="flex items-center justify-between border-b pb-4"><div><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Inventario actual</p><h2 className="mt-1 font-display text-2xl font-bold">Lo que tienes hoy</h2></div><Box size={21} className="text-[hsl(var(--primary))]" /></div>{!inventory.data?.products.length ? <p className="py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">No hay productos en este filtro.</p> : <div className="mt-2 divide-y">{inventory.data?.products.slice(0, 8).map((p) => <div key={p.id} className="flex items-center gap-3 py-3" data-testid={`report-product-${p.id}`}><span className="flex-1 text-sm font-semibold">{p.name}</span><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{p.stock} pzas.</span><span className="font-mono-app text-sm font-bold">{money(p.salePrice * p.stock)}</span></div>)}</div>}</section><section className="rounded-2xl border bg-[hsl(var(--card))] p-6"><div className="flex items-center justify-between border-b pb-4"><div><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Ventas</p><h2 className="mt-1 font-display text-2xl font-bold">Lo más importante</h2></div><BarChart3 size={21} className="text-[hsl(var(--primary))]" /></div><div className="mt-5 grid gap-4"><div className="rounded-xl bg-[hsl(var(--accent)/.55)] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Producto más vendido</p><p className="mt-2 text-lg font-bold">{sales.data?.bestSellingProduct || 'Todavía no hay datos'}</p></div><div className="rounded-xl bg-[hsl(var(--secondary)/.65)] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Total vendido</p><p className="mt-2 font-mono-app text-2xl font-bold">{money(sales.data?.totalSold || 0)}</p></div><div className="flex items-center justify-between text-sm"><span className="text-[hsl(var(--muted-foreground))]">Productos por surtir</span><strong>{sales.data?.lowStockProducts?.length || 0}</strong></div></div></section></div></>}{confirmSale && <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true" data-testid="modal-confirm-delete-sale"><div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl"><h3 className="font-display text-2xl font-bold">¿Borrar esta venta?</h3><p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se devolverá el inventario de sus productos y la venta desaparecerá de tus reportes.</p><div className="mt-7 flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setConfirmSale(null)} data-testid="button-cancel-delete-sale">Cancelar</Button><Button type="button" variant="danger" onClick={() => deleteSale.mutate({ id: confirmSale }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getGetSalesReportQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); setConfirmSale(null); }, onError: () => setConfirmSale(null) })} disabled={deleteSale.isPending} data-testid="button-confirm-delete-sale">{deleteSale.isPending ? 'Borrando…' : 'Borrar'}</Button></div></div></div>}</Shell>;
 }
 
+function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void }) {
+  const qc = useQueryClient();
+  const createPayment = useCreateCreditPayment();
+  const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = Number(amount);
+    if (!amount.trim() || !Number.isFinite(v) || v < 1) {
+      setError('Escribe un monto válido.');
+      return;
+    }
+    setError('');
+    createPayment.mutate(
+      { id: sale.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, note: note.trim() || undefined } },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListSalesQueryKey() });
+          qc.invalidateQueries({ queryKey: getListCreditPaymentsQueryKey(sale.id) });
+          onClose();
+        },
+        onError: () => setError('No se pudo registrar el abono.'),
+      }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
+      <form onSubmit={submit} className="w-full max-w-md rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Abono a crédito</p>
+            <h2 className="mt-1 font-display text-3xl font-bold">Registrar abono</h2>
+            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
+              Venta #{sale.saleNumber} · Total {money(sale.total)}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-credit-modal">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="mt-6 grid gap-4">
+          <Field label="Monto del abono" type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus data-testid="input-credit-amount" />
+          <div className="grid gap-1.5 text-sm font-semibold">
+            <label>Método de pago</label>
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-credit-method">
+              <option value="">Sin especificar</option>
+              {PAYMENT_METHODS.filter((m) => m !== 'Crédito').map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <Field label="Nota (opcional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Referencia del pago" data-testid="input-credit-note" />
+        </div>
+        {error && <p className="mt-4 text-sm text-[hsl(var(--destructive))]" data-testid="status-credit-error">{error}</p>}
+        <div className="mt-7 flex justify-end gap-3">
+          <Button type="button" variant="ghost" onClick={onClose} data-testid="button-cancel-credit">Cancelar</Button>
+          <Button type="submit" disabled={createPayment.isPending} data-testid="button-save-credit">{createPayment.isPending ? 'Guardando…' : 'Registrar abono'}</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function SaleCreditPayments({ sale, onClose }: { sale: Sale; onClose: () => void }) {
+  const payments = useListCreditPayments(sale.id);
+  const paid = (payments.data || []).reduce((sum, p) => sum + p.amount, 0);
+  const remaining = sale.total - paid;
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-lg rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Detalle de crédito</p>
+            <h2 className="mt-1 font-display text-3xl font-bold">Venta #{sale.saleNumber}</h2>
+            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">{sale.clientName || 'Cliente sin nombre'}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-payments-modal">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="rounded-xl bg-[hsl(var(--muted)/.4)] p-3 text-center">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Total</p>
+            <p className="mt-1 font-mono-app text-lg font-bold">{money(sale.total)}</p>
+          </div>
+          <div className="rounded-xl bg-[hsl(var(--accent)/.5)] p-3 text-center">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Pagado</p>
+            <p className="mt-1 font-mono-app text-lg font-bold text-green-600">{money(paid)}</p>
+          </div>
+          <div className="rounded-xl bg-[hsl(var(--secondary)/.6)] p-3 text-center">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Pendiente</p>
+            <p className="mt-1 font-mono-app text-lg font-bold text-orange-600">{money(remaining)}</p>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <p className="mb-3 text-sm font-semibold text-[hsl(var(--muted-foreground))]">Abonos registrados</p>
+          {payments.isLoading ? (
+            <div className="space-y-2">{[1, 2].map((n) => <div key={n} className="h-16 animate-pulse rounded-xl bg-[hsl(var(--muted))]" />)}</div>
+          ) : !payments.data?.length ? (
+            <p className="rounded-xl border border-dashed p-4 text-center text-sm text-[hsl(var(--muted-foreground))]">Aún no hay abonos registrados.</p>
+          ) : (
+            <div className="max-h-64 space-y-2 overflow-auto">
+              {payments.data.map((p) => (
+                <div key={p.id} className="flex items-center justify-between rounded-xl border p-3">
+                  <div>
+                    <p className="font-bold">{money(p.amount)}</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod || 'Sin método'}{p.note ? ` · ${p.note}` : ''}</p>
+                  </div>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{dateLabel(p.date)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <Button type="button" onClick={onClose} data-testid="button-close-payments">Cerrar</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CarteraPage() {
+  const sales = useListSales({ period: 'all' });
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<'all' | 'pending' | 'paid'>('all');
+  const [paymentModal, setPaymentModal] = useState<Sale | null>(null);
+  const [detailModal, setDetailModal] = useState<Sale | null>(null);
+
+  const creditSales = useMemo(() => {
+    const all = (sales.data || []).filter((s) => s.paymentMethod === 'Crédito');
+    return all.filter((s) => {
+      const matchesSearch = !search || (s.clientName || '').toLowerCase().includes(search.toLowerCase());
+      const isPaid = (s.creditPaid ?? 0) >= s.total;
+      const matchesStatus = status === 'all' || (status === 'paid' ? isPaid : !isPaid);
+      return matchesSearch && matchesStatus;
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [sales.data, search, status]);
+
+  return (
+    <Shell>
+      <PageHeading eyebrow="Créditos" title="Cartera" description="Gestiona las ventas a crédito y sus abonos." />
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <label className="grid flex-1 gap-1.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Buscar cliente</span>
+          <span className="relative">
+            <Search size={18} className="absolute left-3 top-3 text-[hsl(var(--muted-foreground))]" />
+            <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nombre del cliente..." className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] pl-10 pr-4 outline-none focus:border-[hsl(var(--primary))]" data-testid="input-search-credit" />
+          </span>
+        </label>
+        <div className="grid gap-1.5 sm:w-44">
+          <span className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Estado</span>
+          <label className="relative">
+            <select value={status} onChange={(e) => setStatus(e.target.value as 'all' | 'pending' | 'paid')} className="h-11 w-full appearance-none rounded-xl border bg-[hsl(var(--card))] pl-4 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-status-credit">
+              <option value="all">Todos</option>
+              <option value="pending">Pendientes</option>
+              <option value="paid">Pagadas</option>
+            </select>
+            <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-[hsl(var(--muted-foreground))]" />
+          </label>
+        </div>
+      </div>
+
+      {sales.isLoading ? (
+        <div className="grid gap-3">{[1, 2, 3].map((n) => <div key={n} className="h-28 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div>
+      ) : sales.isError ? (
+        <StatusMessage text="No pudimos cargar las ventas." onRetry={() => sales.refetch()} />
+      ) : creditSales.length === 0 ? (
+        <StatusMessage type="empty" text={search || status !== 'all' ? 'No encontramos créditos con esos filtros.' : 'No hay ventas a crédito registradas.'} />
+      ) : (
+        <div className="grid gap-3">
+          {creditSales.map((sale) => {
+            const paid = sale.creditPaid ?? 0;
+            const remaining = sale.total - paid;
+            const isPaid = remaining <= 0;
+            return (
+              <div key={sale.id} className="overflow-hidden rounded-2xl border bg-[hsl(var(--card))]" data-testid={`credit-sale-${sale.id}`}>
+                <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
+                      <CreditCard size={18} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold">{sale.clientName || 'Cliente sin nombre'}</p>
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">Venta #{sale.saleNumber} · {dateLabel(sale.date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-mono-app text-lg font-bold">{money(sale.total)}</p>
+                      {sale.clientPhone && <p className="text-xs text-[hsl(var(--muted-foreground))]">{sale.clientPhone}</p>}
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`} data-testid={`status-credit-${sale.id}`}>
+                      {isPaid ? 'Pagado' : `Debe ${money(remaining)}`}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" className="min-h-[32px] px-2 text-xs" onClick={() => setDetailModal(sale)} data-testid={`button-view-credit-${sale.id}`}>
+                        Ver abonos
+                      </Button>
+                      {!isPaid && (
+                        <Button className="min-h-[32px] px-2 text-xs" onClick={() => setPaymentModal(sale)} data-testid={`button-add-credit-${sale.id}`}>
+                          Abonar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {paymentModal && <CreditPaymentModal sale={paymentModal} onClose={() => setPaymentModal(null)} />}
+      {detailModal && <SaleCreditPayments sale={detailModal} onClose={() => setDetailModal(null)} />}
+    </Shell>
+  );
+}
+
 function Protected({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   if (!isLoaded) return <div className="grid min-h-[50vh] place-items-center text-sm text-[hsl(var(--muted-foreground))]">Cargando…</div>;
@@ -498,7 +724,7 @@ function SignInPage() { return <AuthCard mode="sign-in" />; }
 function SignUpPage() { return <AuthCard mode="sign-up" />; }
 
 function Routes() {
-  return <Switch><Route path="/" component={Landing} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/app"><Protected><Dashboard /></Protected></Route><Route path="/app/productos"><Protected><Products /></Protected></Route><Route path="/app/venta"><Protected><SalePage /></Protected></Route><Route path="/app/compras"><Protected><Purchases /></Protected></Route><Route path="/app/reportes"><Protected><Reports /></Protected></Route><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Landing} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/app"><Protected><Dashboard /></Protected></Route><Route path="/app/productos"><Protected><Products /></Protected></Route><Route path="/app/venta"><Protected><SalePage /></Protected></Route><Route path="/app/compras"><Protected><Purchases /></Protected></Route><Route path="/app/cartera"><Protected><CarteraPage /></Protected></Route><Route path="/app/reportes"><Protected><Reports /></Protected></Route><Route component={NotFound} /></Switch>;
 }
 
 function App() {

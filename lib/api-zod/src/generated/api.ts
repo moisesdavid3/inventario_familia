@@ -245,6 +245,9 @@ export const ListSalesResponseItem = zod.object({
   "estimatedProfit": zod.number(),
   "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
   "notes": zod.string().optional().describe('Observaciones de la venta'),
+  "clientName": zod.string().nullish().describe('Nombre del cliente'),
+  "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -274,7 +277,9 @@ export const CreateSaleBody = zod.object({
   "unitPrice": zod.number().min(createSaleBodyItemsItemUnitPriceMin).optional().describe('Precio unitario de venta para esta línea (si se omite, usa el precio del producto)')
 })).min(1),
   "paymentMethod": zod.string().optional().describe('Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR \/ Llave)'),
-  "notes": zod.string().optional().describe('Observaciones del usuario sobre la venta')
+  "notes": zod.string().optional().describe('Observaciones del usuario sobre la venta'),
+  "clientName": zod.string().optional().describe('Nombre del cliente'),
+  "clientPhone": zod.string().optional().describe('Teléfono del cliente')
 })
 
 export const CreateSaleResponse = zod.object({
@@ -286,6 +291,9 @@ export const CreateSaleResponse = zod.object({
   "estimatedProfit": zod.number(),
   "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
   "notes": zod.string().optional().describe('Observaciones de la venta'),
+  "clientName": zod.string().nullish().describe('Nombre del cliente'),
+  "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -316,6 +324,9 @@ export const GetSaleResponse = zod.object({
   "estimatedProfit": zod.number(),
   "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
   "notes": zod.string().optional().describe('Observaciones de la venta'),
+  "clientName": zod.string().nullish().describe('Nombre del cliente'),
+  "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -338,6 +349,56 @@ export const DeleteSaleParams = zod.object({
 })
 
 export const DeleteSaleResponse = zod.void()
+
+
+/**
+ * @summary Register a credit payment for a sale
+ */
+
+
+
+export const CreateCreditPaymentParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+
+
+
+export const CreateCreditPaymentBody = zod.object({
+  "amount": zod.number().min(1),
+  "paymentMethod": zod.string().optional(),
+  "note": zod.string().optional()
+})
+
+export const CreateCreditPaymentResponse = zod.object({
+  "id": zod.number(),
+  "saleId": zod.number(),
+  "amount": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "date": zod.coerce.date()
+})
+
+
+/**
+ * @summary List credit payments for a sale
+ */
+
+
+
+export const ListCreditPaymentsParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const ListCreditPaymentsResponseItem = zod.object({
+  "id": zod.number(),
+  "saleId": zod.number(),
+  "amount": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "date": zod.coerce.date()
+})
+export const ListCreditPaymentsResponse = zod.array(ListCreditPaymentsResponseItem)
 
 
 /**
@@ -542,6 +603,9 @@ export const GetSalesReportResponse = zod.object({
   "estimatedProfit": zod.number(),
   "paymentMethod": zod.string().optional().describe('Método de pago de la venta'),
   "notes": zod.string().optional().describe('Observaciones de la venta'),
+  "clientName": zod.string().nullish().describe('Nombre del cliente'),
+  "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),

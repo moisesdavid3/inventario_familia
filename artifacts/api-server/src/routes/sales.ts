@@ -1,11 +1,16 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
-import { companiesTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
+import { companiesTable, creditPaymentsTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
+  CreateCreditPaymentBody,
+  CreateCreditPaymentParams,
+  CreateCreditPaymentResponse,
   CreateSaleBody,
   CreateSaleResponse,
   GetSaleParams,
   GetSaleResponse,
+  ListCreditPaymentsParams,
+  ListCreditPaymentsResponse,
   ListSalesQueryParams,
   ListSalesResponse,
 } from "@workspace/api-zod";
@@ -99,6 +104,8 @@ router.post("/sales", async (req, res): Promise<void> => {
       estimatedProfit,
       paymentMethod: parsed.data.paymentMethod?.trim() || null,
       notes: parsed.data.notes?.trim() || null,
+      clientName: parsed.data.clientName?.trim() || null,
+      clientPhone: parsed.data.clientPhone?.trim() || null,
     }).returning();
     await tx.insert(saleItemsTable).values(items.map((item) => ({ saleId: sale.id, ...item })));
     for (const { product, quantity } of products) {
@@ -178,6 +185,53 @@ router.delete("/sales/:id", async (req, res): Promise<void> => {
     return;
   }
   res.sendStatus(204);
+});
+
+function creditPaymentResponse(payment: typeof creditPaymentsTable.$inferSelect) {
+  return {
+    id: payment.id,
+    saleId: payment.saleId,
+    amount: payment.amount,
+    paymentMethod: payment.paymentMethod,
+    note: payment.note,
+    date: payment.createdAt,
+  };
+}
+
+router.post("/sales/:id/credit-payment", async (req, res): Promise<void> => {
+  const params = CreateCreditPaymentParams.safeParse(req.params);
+  const parsed = CreateCreditPaymentBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: "Datos inválidos para el abono." });
+    return;
+  }
+  const [sale] = await getDb().select().from(salesTable)
+    .where(and(eq(salesTable.id, params.data.id), eq(salesTable.companyId, req.companyId!)));
+  if (!sale) {
+    res.status(404).json({ error: "No encontramos esa venta." });
+    return;
+  }
+  const [payment] = await getDb().insert(creditPaymentsTable).values({
+    companyId: req.companyId!,
+    saleId: sale.id,
+    userId: req.userId!,
+    amount: parsed.data.amount,
+    paymentMethod: parsed.data.paymentMethod?.trim() || null,
+    note: parsed.data.note?.trim() || null,
+  }).returning();
+  res.status(201).json(CreateCreditPaymentResponse.parse(creditPaymentResponse(payment)));
+});
+
+router.get("/sales/:id/credit-payments", async (req, res): Promise<void> => {
+  const params = ListCreditPaymentsParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "ID de venta inválido." });
+    return;
+  }
+  const payments = await getDb().select().from(creditPaymentsTable)
+    .where(and(eq(creditPaymentsTable.saleId, params.data.id), eq(creditPaymentsTable.companyId, req.companyId!)))
+    .orderBy(desc(creditPaymentsTable.createdAt));
+  res.json(ListCreditPaymentsResponse.parse(payments.map(creditPaymentResponse)));
 });
 
 export default router;

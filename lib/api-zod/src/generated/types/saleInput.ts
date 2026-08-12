@@ -14,4 +14,8 @@ export interface SaleInput {
   paymentMethod?: string;
   /** Observaciones del usuario sobre la venta */
   notes?: string;
+  /** Nombre del cliente */
+  clientName?: string;
+  /** Teléfono del cliente */
+  clientPhone?: string;
 }

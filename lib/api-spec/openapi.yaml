@@ -274,6 +274,58 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
+  /sales/{id}/credit-payment:
+    post:
+      operationId: createCreditPayment
+      tags: [sales]
+      summary: Register a credit payment for a sale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditPaymentInput"
+      responses:
+        "201":
+          description: Credit payment registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditPayment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /sales/{id}/credit-payments:
+    get:
+      operationId: listCreditPayments
+      tags: [sales]
+      summary: List credit payments for a sale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "200":
+          description: Credit payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditPayment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /purchases:
     get:
       operationId: listPurchases
@@ -606,6 +658,12 @@ components:
         notes:
           type: string
           description: Observaciones del usuario sobre la venta
+        clientName:
+          type: string
+          description: Nombre del cliente
+        clientPhone:
+          type: string
+          description: Teléfono del cliente
       required: [items]
     SaleItem:
       type: object
@@ -646,11 +704,48 @@ components:
         notes:
           type: string
           description: Observaciones de la venta
+        clientName:
+          type: ["string", "null"]
+          description: Nombre del cliente
+        clientPhone:
+          type: ["string", "null"]
+          description: Teléfono del cliente
+        creditPaid:
+          type: number
+          description: Total abonado hasta ahora (solo aplica a ventas a crédito)
         items:
           type: array
           items:
             $ref: "#/components/schemas/SaleItem"
-      required: [id, saleNumber, date, total, totalItems, estimatedProfit, items]
+      required: [id, saleNumber, date, total, totalItems, estimatedProfit, creditPaid, items]
+    CreditPaymentInput:
+      type: object
+      properties:
+        amount:
+          type: number
+          minimum: 1
+        paymentMethod:
+          type: string
+        note:
+          type: string
+      required: [amount]
+    CreditPayment:
+      type: object
+      properties:
+        id:
+          type: number
+        saleId:
+          type: number
+        amount:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        note:
+          type: ["string", "null"]
+        date:
+          type: string
+          format: date-time
+      required: [id, saleId, amount, date]
     PurchaseItemInput:
       type: object
       properties:

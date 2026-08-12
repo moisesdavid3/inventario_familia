@@ -12,6 +12,19 @@ export const salesTable = pgTable("inventory_sales", {
   estimatedProfit: integer("estimated_profit").notNull(),
   paymentMethod: text("payment_method"),
   notes: text("notes"),
+  clientName: text("client_name"),
+  clientPhone: text("client_phone"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const creditPaymentsTable = pgTable("inventory_credit_payments", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().default(1),
+  saleId: integer("sale_id").notNull(),
+  userId: text("user_id").notNull(),
+  amount: integer("amount").notNull(),
+  paymentMethod: text("payment_method"),
+  note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -30,6 +43,12 @@ export const insertSaleSchema = createInsertSchema(salesTable).omit({
   id: true,
   createdAt: true,
 });
+export const insertCreditPaymentSchema = createInsertSchema(creditPaymentsTable).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertSale = z.infer<typeof insertSaleSchema>;
+export type InsertCreditPayment = z.infer<typeof insertCreditPaymentSchema>;
 export type Sale = typeof salesTable.$inferSelect;
 export type SaleItem = typeof saleItemsTable.$inferSelect;
+export type CreditPayment = typeof creditPaymentsTable.$inferSelect;

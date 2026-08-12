@@ -22,6 +22,8 @@ import type {
 import type {
   BadRequestResponse,
   Company,
+  CreditPayment,
+  CreditPaymentInput,
   Dashboard,
   DeudaMoisesInput,
   Error,
@@ -1110,6 +1112,155 @@ export const useDeleteSale = <TError = ErrorType<BadRequestResponse | NotFoundRe
       > => {
       return useMutation(getDeleteSaleMutationOptions(options));
     }
+
+export const getCreateCreditPaymentUrl = (id: number,) => {
+
+
+
+
+  return `/api/sales/${id}/credit-payment`
+}
+
+/**
+ * @summary Register a credit payment for a sale
+ */
+export const createCreditPayment = async (id: number,
+    creditPaymentInput: CreditPaymentInput, options?: Parameters<typeof customFetch>[1]): Promise<CreditPayment> => {
+
+  return customFetch<CreditPayment>(getCreateCreditPaymentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(creditPaymentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCreditPaymentMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCreditPayment>>, TError,{id: number;data: BodyType<CreditPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCreditPayment>>, TError,{id: number;data: BodyType<CreditPaymentInput>}, TContext> => {
+
+const mutationKey = ['createCreditPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCreditPayment>>, {id: number;data: BodyType<CreditPaymentInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createCreditPayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCreditPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof createCreditPayment>>>
+    export type CreateCreditPaymentMutationBody = BodyType<CreditPaymentInput>
+    export type CreateCreditPaymentMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Register a credit payment for a sale
+ */
+export const useCreateCreditPayment = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCreditPayment>>, TError,{id: number;data: BodyType<CreditPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCreditPayment>>,
+        TError,
+        {id: number;data: BodyType<CreditPaymentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCreditPaymentMutationOptions(options));
+    }
+
+export const getListCreditPaymentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/sales/${id}/credit-payments`
+}
+
+/**
+ * @summary List credit payments for a sale
+ */
+export const listCreditPayments = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<CreditPayment[]> => {
+
+  return customFetch<CreditPayment[]>(getListCreditPaymentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCreditPaymentsQueryKey = (id: number,) => {
+    return [
+    `/api/sales/${id}/credit-payments`
+    ] as const;
+    }
+
+
+export const getListCreditPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof listCreditPayments>>, TError = ErrorType<BadRequestResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCreditPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCreditPaymentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCreditPayments>>> = ({ signal }) => listCreditPayments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCreditPayments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCreditPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof listCreditPayments>>>
+export type ListCreditPaymentsQueryError = ErrorType<BadRequestResponse>
+
+
+/**
+ * @summary List credit payments for a sale
+ */
+
+export function useListCreditPayments<TData = Awaited<ReturnType<typeof listCreditPayments>>, TError = ErrorType<BadRequestResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCreditPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCreditPaymentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListPurchasesUrl = (params?: ListPurchasesParams,) => {
   const normalizedParams = new URLSearchParams();

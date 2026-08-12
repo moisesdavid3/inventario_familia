@@ -8,6 +8,8 @@
 
 export * from './badRequestResponse';
 export * from './company';
+export * from './creditPayment';
+export * from './creditPaymentInput';
 export * from './dashboard';
 export * from './deudaMoisesInput';
 export * from './error';

@@ -19,5 +19,17 @@ export interface Sale {
   paymentMethod?: string;
   /** Observaciones de la venta */
   notes?: string;
+  /**
+     * Nombre del cliente
+     * @nullable
+     */
+  clientName?: string | null;
+  /**
+     * Teléfono del cliente
+     * @nullable
+     */
+  clientPhone?: string | null;
+  /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
+  creditPaid: number;
   items: SaleItem[];
 }

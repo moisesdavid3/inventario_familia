@@ -94,6 +94,10 @@ export interface SaleInput {
   paymentMethod?: string;
   /** Observaciones del usuario sobre la venta */
   notes?: string;
+  /** Nombre del cliente */
+  clientName?: string;
+  /** Teléfono del cliente */
+  clientPhone?: string;
 }
 
 export interface SaleItem {
@@ -117,7 +121,37 @@ export interface Sale {
   paymentMethod?: string;
   /** Observaciones de la venta */
   notes?: string;
+  /**
+     * Nombre del cliente
+     * @nullable
+     */
+  clientName?: string | null;
+  /**
+     * Teléfono del cliente
+     * @nullable
+     */
+  clientPhone?: string | null;
+  /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
+  creditPaid: number;
   items: SaleItem[];
+}
+
+export interface CreditPaymentInput {
+  /** @minimum 1 */
+  amount: number;
+  paymentMethod?: string;
+  note?: string;
+}
+
+export interface CreditPayment {
+  id: number;
+  saleId: number;
+  amount: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  note?: string | null;
+  date: string;
 }
 
 export interface PurchaseItemInput {
