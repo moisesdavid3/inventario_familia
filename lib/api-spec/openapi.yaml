@@ -620,6 +620,10 @@ components:
         minimumStock:
           type: number
           minimum: 0
+        stock:
+          type: number
+          minimum: 0
+          description: Corrige la existencia actual del producto
       minProperties: 1
     InventoryInput:
       type: object

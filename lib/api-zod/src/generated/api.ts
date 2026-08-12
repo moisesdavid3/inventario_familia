@@ -109,6 +109,8 @@ export const updateProductBodySalePriceMin = 0;
 
 export const updateProductBodyMinimumStockMin = 0;
 
+export const updateProductBodyStockMin = 0;
+
 
 
 export const UpdateProductBody = zod.object({
@@ -119,7 +121,8 @@ export const UpdateProductBody = zod.object({
   "description": zod.string().optional(),
   "cost": zod.number().min(updateProductBodyCostMin).optional(),
   "salePrice": zod.number().min(updateProductBodySalePriceMin).optional(),
-  "minimumStock": zod.number().min(updateProductBodyMinimumStockMin).optional()
+  "minimumStock": zod.number().min(updateProductBodyMinimumStockMin).optional(),
+  "stock": zod.number().min(updateProductBodyStockMin).optional().describe('Corrige la existencia actual del producto')
 })
 
 export const UpdateProductResponse = zod.object({

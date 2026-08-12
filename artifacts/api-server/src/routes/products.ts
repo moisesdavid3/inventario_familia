@@ -80,24 +80,42 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Revisa los datos e inténtalo nuevamente." });
     return;
   }
-  const [product] = await getDb().select({ userId: productsTable.userId }).from(productsTable)
-    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)));
-  if (!product) {
+  const { stock: nextStock, ...rest } = parsed.data;
+  const updated = await getDb().transaction(async (tx) => {
+    const [product] = await tx.select().from(productsTable)
+      .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)));
+    if (!product) return null;
+    const [row] = await tx.update(productsTable)
+      .set({
+        ...rest,
+        ...(nextStock !== undefined ? { stock: nextStock } : {}),
+        name: rest.name?.trim(),
+        supplier: rest.supplier?.trim() || null,
+        category: rest.category?.trim() || null,
+        content: rest.content?.trim() || null,
+        description: rest.description?.trim() || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(productsTable.id, product.id))
+      .returning();
+    if (nextStock !== undefined && nextStock !== product.stock) {
+      await tx.insert(inventoryMovementsTable).values({
+        companyId: req.companyId!,
+        userId: product.userId,
+        productId: product.id,
+        type: "ajuste",
+        quantity: nextStock - product.stock,
+        stockBefore: product.stock,
+        stockAfter: nextStock,
+        note: "Ajuste manual de existencia",
+      });
+    }
+    return row;
+  });
+  if (!updated) {
     res.status(404).json({ error: "No encontramos ese producto." });
     return;
   }
-  const [updated] = await getDb().update(productsTable)
-    .set({
-      ...parsed.data,
-      name: parsed.data.name?.trim(),
-      supplier: parsed.data.supplier?.trim() || null,
-      category: parsed.data.category?.trim() || null,
-      content: parsed.data.content?.trim() || null,
-      description: parsed.data.description?.trim() || null,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)))
-    .returning();
   res.json(UpdateProductResponse.parse(productResponse(updated)));
 });
 
