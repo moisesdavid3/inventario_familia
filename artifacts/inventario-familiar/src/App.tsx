@@ -420,12 +420,14 @@ function Reports() {
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }, [sales.data]);
   const exportRows = () => {
-    const rows: (string | number)[][] = [['Fecha', 'Venta', 'Método de pago', 'Producto', 'Cantidad', 'Precio unitario', 'Total producto', 'Total venta', 'Total día']];
+    const rows: (string | number)[][] = [['Fecha', 'Venta', 'Método de pago', 'Producto', 'Cantidad', 'Precio unitario', 'Total producto', 'Total venta']];
     for (const [day, daySales] of byDay) {
       const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0);
       for (const s of daySales) {
-        for (const item of s.items) rows.push([dayHeader(day), `Venta #${s.saleNumber}`, s.paymentMethod || '', item.productName, item.quantity, item.unitPrice, item.subtotal, s.total, dayTotal]);
+        for (const item of s.items) rows.push([dayHeader(day), `Venta #${s.saleNumber}`, s.paymentMethod || '', item.productName, item.quantity, item.unitPrice, item.subtotal, '']);
+        rows.push([dayHeader(day), `TOTAL Venta #${s.saleNumber}`, '', '', '', '', '', s.total]);
       }
+      rows.push([dayHeader(day), 'TOTAL DÍA', '', '', '', '', '', dayTotal]);
     }
     return rows;
   };
