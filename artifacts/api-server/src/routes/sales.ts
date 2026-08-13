@@ -16,18 +16,10 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
-import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere } from "../lib/inventory-service";
+import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere, startOfDayBogota } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/sales", requireAuth, requireCompany);
-
-const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
-
-function startOfDayBogota(date: Date): Date {
-  const shifted = new Date(date.getTime() - BOGOTA_OFFSET_MS);
-  const midnight = new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate()));
-  return new Date(midnight.getTime() + BOGOTA_OFFSET_MS);
-}
 
 function queryDates(query: Record<string, unknown>) {
   const period = typeof query.period === "string" ? query.period : "all";

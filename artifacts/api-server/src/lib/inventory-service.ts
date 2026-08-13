@@ -125,24 +125,44 @@ export async function ensureSeeded(_userId: string): Promise<void> {
   return;
 }
 
+const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+function bogotaParts(date: Date) {
+  const shifted = new Date(date.getTime() - BOGOTA_OFFSET_MS);
+  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth(), day: shifted.getUTCDate() };
+}
+
+function bogotaDate(year: number, month: number, day: number, hour = 0, minute = 0, second = 0, ms = 0): Date {
+  return new Date(Date.UTC(year, month, day, hour, minute, second, ms) + BOGOTA_OFFSET_MS);
+}
+
+export function startOfDayBogota(date: Date): Date {
+  const { year, month, day } = bogotaParts(date);
+  return bogotaDate(year, month, day);
+}
+
+function endOfDayBogota(date: Date): Date {
+  const { year, month, day } = bogotaParts(date);
+  return bogotaDate(year, month, day, 23, 59, 59, 999);
+}
+
 export function dateRangeForPeriod(period: string, from?: Date, to?: Date): DateRange {
   const now = new Date();
-  const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const endOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
   if (from || to) return { from, to };
-  if (period === "today") return { from: startOfDay(now), to: endOfDay(now) };
+  if (period === "today") return { from: startOfDayBogota(now), to: endOfDayBogota(now) };
   if (period === "last7") {
-    const start = new Date(now);
-    start.setDate(start.getDate() - 6);
-    return { from: startOfDay(start), to: endOfDay(now) };
+    const start = new Date(startOfDayBogota(now).getTime() - 6 * 24 * 60 * 60 * 1000);
+    return { from: start, to: endOfDayBogota(now) };
   }
   if (period === "thisMonth") {
-    return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: endOfDay(now) };
+    const { year, month } = bogotaParts(now);
+    return { from: bogotaDate(year, month, 1), to: endOfDayBogota(now) };
   }
   if (period === "previousMonth") {
+    const { year, month } = bogotaParts(now);
     return {
-      from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-      to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999),
+      from: bogotaDate(year, month - 1, 1),
+      to: endOfDayBogota(bogotaDate(year, month, 0)),
     };
   }
   return {};
