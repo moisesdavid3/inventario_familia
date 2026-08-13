@@ -27,7 +27,7 @@ const dateLabel = (date: string) => new Intl.DateTimeFormat('es-CO', { day: 'num
 const PROVIDERS = [
   'Naruna / El Panal', 'Alves', 'Vegeta', 'Sorbetto', 'Suvi Fit', 'Prema', 'Bioessens', 'Vitalsinu',
   'Vitaliah', 'Agroinversiones Franes', 'Gano Excel', 'Cofarnat', 'Manavida', 'Montes de Maria',
-  'Bio Supplements', 'Mauka', 'MultiAloe',
+  'Bio Supplements', 'Mauka', 'MultiAloe', 'Productos Nicolay',
 ];
 const supplierOptions = (activeCompanyId: number | undefined, apiSuppliers: (string | null | undefined)[], productSuppliers: (string | null | undefined)[] = []) =>
   Array.from(new Set([...(activeCompanyId === 2 ? PROVIDERS : []), ...apiSuppliers.filter((s): s is string => !!s), ...productSuppliers.filter((s): s is string => !!s)])).sort((a, b) => a.localeCompare(b));
