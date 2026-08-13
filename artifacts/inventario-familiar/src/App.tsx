@@ -541,8 +541,8 @@ function SaleCreditPayments({ sale, onClose }: { sale: Sale; onClose: () => void
           <div className="space-y-1.5 rounded-xl bg-[hsl(var(--muted)/.4)] p-3">
             {sale.items.map((item) => (
               <div key={item.productId} className="flex items-center justify-between gap-3 text-sm">
-                <span className="min-w-0 flex-1 truncate">{item.quantity} × {item.productName}</span>
-                <span className="shrink-0 font-mono-app font-semibold">{money(item.subtotal)}</span>
+                <span className="min-w-0 flex-1 truncate font-semibold">{item.quantity} × {item.productName}</span>
+                <span className="shrink-0 font-mono-app text-[hsl(var(--muted-foreground))]">{money(item.subtotal)}</span>
               </div>
             ))}
           </div>
@@ -663,9 +663,14 @@ function CarteraPage() {
                   </div>
                 </div>
                 {!!sale.items?.length && (
-                  <p className="truncate border-t px-5 py-2 text-xs text-[hsl(var(--muted-foreground))]" data-testid={`credit-sale-items-${sale.id}`}>
-                    {sale.items.map((item) => `${item.quantity} × ${item.productName}`).join(' · ')}
-                  </p>
+                  <div className="flex flex-wrap gap-2 border-t px-5 py-3" data-testid={`credit-sale-items-${sale.id}`}>
+                    {sale.items.map((item) => (
+                      <span key={item.productId} className="flex items-center gap-1.5 rounded-lg bg-[hsl(var(--muted)/.5)] px-2.5 py-1 text-sm">
+                        <span className="font-semibold">{item.quantity} × {item.productName}</span>
+                        <span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{money(item.subtotal)}</span>
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
             );
