@@ -18,7 +18,7 @@ export const productsTable = pgTable("inventory_products", {
   isDemo: boolean("is_demo").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export const inventoryMovementsTable = pgTable("inventory_movements", {
   id: serial("id").primaryKey(),
@@ -31,13 +31,13 @@ export const inventoryMovementsTable = pgTable("inventory_movements", {
   stockAfter: integer("stock_after").notNull(),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const inventoryUserSettingsTable = pgTable("inventory_user_settings", {
   userId: text("user_id").primaryKey(),
   demoProductsCleared: boolean("demo_products_cleared").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const appSettingsTable = pgTable(
   "inventory_app_settings",
@@ -49,7 +49,7 @@ export const appSettingsTable = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.companyId, t.key] })],
-);
+).enableRLS();
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({
   id: true,

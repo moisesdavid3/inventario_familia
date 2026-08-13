@@ -15,7 +15,7 @@ export const salesTable = pgTable("inventory_sales", {
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const creditPaymentsTable = pgTable("inventory_credit_payments", {
   id: serial("id").primaryKey(),
@@ -26,7 +26,7 @@ export const creditPaymentsTable = pgTable("inventory_credit_payments", {
   paymentMethod: text("payment_method"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const saleItemsTable = pgTable("inventory_sale_items", {
   id: serial("id").primaryKey(),
@@ -37,7 +37,7 @@ export const saleItemsTable = pgTable("inventory_sale_items", {
   unitPrice: integer("unit_price").notNull(),
   unitCost: integer("unit_cost").notNull(),
   subtotal: integer("subtotal").notNull(),
-});
+}).enableRLS();
 
 export const insertSaleSchema = createInsertSchema(salesTable).omit({
   id: true,

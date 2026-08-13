@@ -7,7 +7,7 @@ export const companiesTable = pgTable("companies", {
   allowNegativeStock: boolean("allow_negative_stock").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export const companyMembersTable = pgTable(
   "company_members",
@@ -19,7 +19,7 @@ export const companyMembersTable = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   },
   (t) => [primaryKey({ columns: [t.companyId, t.userId] })],
-);
+).enableRLS();
 
 export type Company = typeof companiesTable.$inferSelect;
 export type CompanyMember = typeof companyMembersTable.$inferSelect;

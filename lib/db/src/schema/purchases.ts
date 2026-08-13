@@ -12,7 +12,7 @@ export const purchasesTable = pgTable("inventory_purchases", {
   total: integer("total").notNull(),
   totalItems: integer("total_items").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const purchaseItemsTable = pgTable("inventory_purchase_items", {
   id: serial("id").primaryKey(),
@@ -22,7 +22,7 @@ export const purchaseItemsTable = pgTable("inventory_purchase_items", {
   quantity: integer("quantity").notNull(),
   unitCost: integer("unit_cost").notNull(),
   subtotal: integer("subtotal").notNull(),
-});
+}).enableRLS();
 
 export const insertPurchaseSchema = createInsertSchema(purchasesTable).omit({
   id: true,
