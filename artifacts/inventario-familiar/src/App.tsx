@@ -548,6 +548,13 @@ function SaleCreditPayments({ sale, onClose }: { sale: Sale; onClose: () => void
           </div>
         </div>
 
+        {!!sale.notes && (
+          <div className="mt-6">
+            <p className="mb-3 text-sm font-semibold text-[hsl(var(--muted-foreground))]">Nota de la venta</p>
+            <p className="rounded-xl bg-[hsl(var(--muted)/.4)] p-3 text-sm" data-testid="text-credit-sale-notes">{sale.notes}</p>
+          </div>
+        )}
+
         <div className="mt-6">
           <p className="mb-3 text-sm font-semibold text-[hsl(var(--muted-foreground))]">Abonos registrados</p>
           {payments.isLoading ? (
@@ -671,6 +678,11 @@ function CarteraPage() {
                       </span>
                     ))}
                   </div>
+                )}
+                {!!sale.notes && (
+                  <p className="border-t px-5 py-2 text-xs text-[hsl(var(--muted-foreground))]" data-testid={`credit-sale-notes-${sale.id}`}>
+                    <span className="font-semibold">Nota:</span> {sale.notes}
+                  </p>
                 )}
               </div>
             );
