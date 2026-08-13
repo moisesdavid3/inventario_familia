@@ -21,6 +21,18 @@ export interface Company {
   allowNegativeStock: boolean;
 }
 
+export interface Supplier {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierInput {
+  /** @minLength 1 */
+  name: string;
+}
+
 export interface Product {
   id: number;
   name: string;

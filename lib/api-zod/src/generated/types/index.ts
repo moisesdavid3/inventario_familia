@@ -41,3 +41,5 @@ export * from './saleInput';
 export * from './saleItem';
 export * from './saleItemInput';
 export * from './salesReport';
+export * from './supplier';
+export * from './supplierInput';

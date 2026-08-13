@@ -47,6 +47,39 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Company"
+  /suppliers:
+    get:
+      operationId: listSuppliers
+      tags: [suppliers]
+      summary: List suppliers for the company
+      responses:
+        "200":
+          description: Suppliers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Supplier"
+    post:
+      operationId: createSupplier
+      tags: [suppliers]
+      summary: Create a supplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierInput"
+      responses:
+        "201":
+          description: Supplier created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supplier"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /products:
     get:
       operationId: listProducts
@@ -538,6 +571,27 @@ components:
           type: boolean
           description: Permite registrar ventas incluso sin inventario suficiente
       required: [id, name, slug, allowNegativeStock]
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, createdAt, updatedAt]
+    SupplierInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+      required: [name]
     Product:
       type: object
       properties:

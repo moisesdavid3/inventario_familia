@@ -44,7 +44,9 @@ import type {
   PurchaseInput,
   Sale,
   SaleInput,
-  SalesReport
+  SalesReport,
+  Supplier,
+  SupplierInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -227,6 +229,148 @@ export function useListCompanies<TData = Awaited<ReturnType<typeof listCompanies
 
 
 
+
+export const getListSuppliersUrl = () => {
+
+
+
+
+  return `/api/suppliers`
+}
+
+/**
+ * @summary List suppliers for the company
+ */
+export const listSuppliers = async ( options?: Parameters<typeof customFetch>[1]): Promise<Supplier[]> => {
+
+  return customFetch<Supplier[]>(getListSuppliersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+export const getListSuppliersQueryKey = () => {
+    return [
+    `/api/suppliers`
+    ] as const;
+    }
+
+
+export const getListSuppliersQueryOptions = <TData = Awaited<ReturnType<typeof listSuppliers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSuppliers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSuppliersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSuppliers>>> = ({ signal }) => listSuppliers({ signal, ...requestOptions });
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSuppliers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSuppliersQueryResult = NonNullable<Awaited<ReturnType<typeof listSuppliers>>>
+export type ListSuppliersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List suppliers for the company
+ */
+
+export function useListSuppliers<TData = Awaited<ReturnType<typeof listSuppliers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSuppliers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSuppliersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+export const getCreateSupplierUrl = () => {
+
+
+
+
+  return `/api/suppliers`
+}
+
+/**
+ * @summary Create a supplier
+ */
+export const createSupplier = async (supplierInput: SupplierInput, options?: Parameters<typeof customFetch>[1]): Promise<Supplier> => {
+
+  return customFetch<Supplier>(getCreateSupplierUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(supplierInput)
+  }
+);}
+
+
+
+
+export const getCreateSupplierMutationOptions = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupplier>>, TError,{data: BodyType<SupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupplier>>, TError,{data: BodyType<SupplierInput>}, TContext> => {
+
+const mutationKey = ['createSupplier'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupplier>>, {data: BodyType<SupplierInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSupplier(data,requestOptions)
+        }
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupplierMutationResult = NonNullable<Awaited<ReturnType<typeof createSupplier>>>
+    export type CreateSupplierMutationBody = BodyType<SupplierInput>
+    export type CreateSupplierMutationError = ErrorType<BadRequestResponse>
+
+    /**
+ * @summary Create a supplier
+ */
+export const useCreateSupplier = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupplier>>, TError,{data: BodyType<SupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSupplier>>,
+        TError,
+        {data: BodyType<SupplierInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSupplierMutationOptions(options));
+    }
 
 export const getListProductsUrl = () => {
 

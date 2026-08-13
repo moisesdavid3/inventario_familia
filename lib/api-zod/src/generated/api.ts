@@ -29,6 +29,32 @@ export const ListCompaniesResponse = zod.array(ListCompaniesResponseItem)
 
 
 /**
+ * @summary List suppliers for the company
+ */
+export const ListSuppliersResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListSuppliersResponse = zod.array(ListSuppliersResponseItem)
+
+
+/**
+ * @summary Create a supplier
+ */
+export const CreateSupplierBody = zod.object({
+  "name": zod.string().min(1)
+})
+export const CreateSupplierResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
  * @summary List products
  */
 export const ListProductsResponseItem = zod.object({
