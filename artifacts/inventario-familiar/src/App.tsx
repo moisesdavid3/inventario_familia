@@ -637,6 +637,18 @@ function CarteraPage() {
       return matchesSearch && matchesStatus;
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [sales.data, search, status]);
+  const exportRows = () => {
+    const rows: (string | number)[][] = [['Cliente', 'Teléfono', 'Venta', 'Fecha', 'Total', 'Abonado', 'Saldo', 'Estado']];
+    for (const sale of creditSales) {
+      const paid = sale.creditPaid ?? 0;
+      rows.push([sale.clientName || 'Cliente sin nombre', sale.clientPhone || '', `#${sale.saleNumber}`, dateLabel(sale.date), sale.total, paid, sale.total - paid, paid >= sale.total ? 'Pagado' : 'Pendiente']);
+    }
+    rows.push([]);
+    rows.push(['TOTAL', '', '', '', creditSales.reduce((sum, s) => sum + s.total, 0), creditSales.reduce((sum, s) => sum + (s.creditPaid ?? 0), 0), creditSales.reduce((sum, s) => sum + (s.total - (s.creditPaid ?? 0)), 0), '']);
+    return rows;
+  };
+  const downloadCsv = () => downloadBlob(new Blob([toCsv(exportRows())], { type: 'text/csv;charset=utf-8' }), `cartera-${new Date().toISOString().slice(0, 10)}.csv`);
+  const downloadXlsx = () => buildXlsxBlob(exportRows()).then((blob) => downloadBlob(blob, `cartera-${new Date().toISOString().slice(0, 10)}.xlsx`));
 
   return (
     <Shell>
@@ -659,6 +671,10 @@ function CarteraPage() {
             </select>
             <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-[hsl(var(--muted-foreground))]" />
           </label>
+        </div>
+        <div className="flex items-end gap-2">
+          <Button variant="secondary" className="min-h-[44px] px-3 text-sm" onClick={downloadCsv} data-testid="button-export-cartera-csv"><Download size={15} /> CSV</Button>
+          <Button variant="secondary" className="min-h-[44px] px-3 text-sm" onClick={downloadXlsx} data-testid="button-export-cartera-xlsx"><Download size={15} /> XLSX</Button>
         </div>
       </div>
 
