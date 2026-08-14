@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import {
   appSettingsTable,
   creditPaymentsTable,
@@ -212,12 +212,7 @@ async function creditPaidForSale(saleId: number): Promise<number> {
   return Number(row?.total ?? 0);
 }
 
-export async function saleResponse(sale: typeof salesTable.$inferSelect) {
-  const items = await getDb()
-    .select()
-    .from(saleItemsTable)
-    .where(eq(saleItemsTable.saleId, sale.id));
-  const creditPaid = sale.paymentMethod === "Crédito" ? await creditPaidForSale(sale.id) : 0;
+function toSaleResponse(sale: typeof salesTable.$inferSelect, items: typeof saleItemsTable.$inferSelect[], creditPaid: number) {
   return {
     id: sale.id,
     saleNumber: sale.saleNumber,
@@ -239,6 +234,15 @@ export async function saleResponse(sale: typeof salesTable.$inferSelect) {
       subtotal: item.subtotal,
     })),
   };
+}
+
+export async function saleResponse(sale: typeof salesTable.$inferSelect) {
+  const items = await getDb()
+    .select()
+    .from(saleItemsTable)
+    .where(eq(saleItemsTable.saleId, sale.id));
+  const creditPaid = sale.paymentMethod === "Crédito" ? await creditPaidForSale(sale.id) : 0;
+  return toSaleResponse(sale, items, creditPaid);
 }
 
 export async function dashboardData(userId: string, companyId: number, userEmail?: string) {
@@ -265,7 +269,28 @@ export async function dashboardData(userId: string, companyId: number, userEmail
 export async function salesReportData(userId: string, companyId: number, userEmail: string | undefined, range: DateRange) {
   await ensureSeeded(userId);
   const sales = await getDb().select().from(salesTable).where(saleWhere(companyId, range)).orderBy(sql`${salesTable.createdAt} desc`);
-  const completeSales = await Promise.all(sales.map(saleResponse));
+  const saleIds = sales.map((s) => s.id);
+  const items = saleIds.length
+    ? await getDb().select().from(saleItemsTable).where(inArray(saleItemsTable.saleId, saleIds))
+    : [];
+  const itemsBySale = new Map<number, typeof items>();
+  for (const item of items) {
+    const list = itemsBySale.get(item.saleId) ?? [];
+    list.push(item);
+    itemsBySale.set(item.saleId, list);
+  }
+  const creditIds = sales.filter((s) => s.paymentMethod === "Crédito").map((s) => s.id);
+  const creditRows = creditIds.length
+    ? await getDb()
+        .select({ saleId: creditPaymentsTable.saleId, total: sql<number>`coalesce(sum(${creditPaymentsTable.amount}), 0)` })
+        .from(creditPaymentsTable)
+        .where(inArray(creditPaymentsTable.saleId, creditIds))
+        .groupBy(creditPaymentsTable.saleId)
+    : [];
+  const creditBySale = new Map(creditRows.map((r) => [r.saleId, Number(r.total)]));
+  const completeSales = sales.map((sale) =>
+    toSaleResponse(sale, itemsBySale.get(sale.id) ?? [], sale.paymentMethod === "Crédito" ? creditBySale.get(sale.id) ?? 0 : 0),
+  );
   const counts = new Map<string, number>();
   completeSales.forEach((sale) => sale.items.forEach((item) => counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity)));
   const bestSellingProduct = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;

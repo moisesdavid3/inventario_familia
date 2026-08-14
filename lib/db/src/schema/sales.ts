@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const salesTable = pgTable("inventory_sales", {
@@ -15,7 +15,9 @@ export const salesTable = pgTable("inventory_sales", {
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}).enableRLS();
+}, (t) => [
+  index("inventory_sales_company_created_idx").on(t.companyId, t.createdAt),
+]).enableRLS();
 
 export const creditPaymentsTable = pgTable("inventory_credit_payments", {
   id: serial("id").primaryKey(),
@@ -26,7 +28,9 @@ export const creditPaymentsTable = pgTable("inventory_credit_payments", {
   paymentMethod: text("payment_method"),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-}).enableRLS();
+}, (t) => [
+  index("inventory_credit_payments_sale_id_idx").on(t.saleId),
+]).enableRLS();
 
 export const saleItemsTable = pgTable("inventory_sale_items", {
   id: serial("id").primaryKey(),
@@ -37,7 +41,9 @@ export const saleItemsTable = pgTable("inventory_sale_items", {
   unitPrice: integer("unit_price").notNull(),
   unitCost: integer("unit_cost").notNull(),
   subtotal: integer("subtotal").notNull(),
-}).enableRLS();
+}, (t) => [
+  index("inventory_sale_items_sale_id_idx").on(t.saleId),
+]).enableRLS();
 
 export const insertSaleSchema = createInsertSchema(salesTable).omit({
   id: true,
