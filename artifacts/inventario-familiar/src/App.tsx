@@ -456,6 +456,17 @@ function Reports() {
       }
       rows.push([dayHeader(day), 'TOTAL DÍA', '', '', '', '', '', dayTotal]);
     }
+    const totals = new Map<string, number>();
+    for (const [, daySales] of byDay) for (const s of daySales) { const m = s.paymentMethod || 'No indicado'; totals.set(m, (totals.get(m) ?? 0) + s.total); }
+    if (totals.size) {
+      rows.push([]);
+      rows.push(['Cuadre de caja por método de pago']);
+      rows.push(['Método de pago', '', '', '', '', '', '', 'Total']);
+      const methods = [...PAYMENT_METHODS.filter((m) => totals.has(m)), ...[...totals.keys()].filter((m) => !PAYMENT_METHODS.includes(m))];
+      let grandTotal = 0;
+      for (const m of methods) { const t = totals.get(m) ?? 0; rows.push([m, '', '', '', '', '', '', t]); grandTotal += t; }
+      rows.push(['TOTAL', '', '', '', '', '', '', grandTotal]);
+    }
     return rows;
   };
   const downloadCsv = () => downloadBlob(new Blob([toCsv(exportRows())], { type: 'text/csv;charset=utf-8' }), `ventas-${day || period}-${new Date().toISOString().slice(0, 10)}.csv`);
