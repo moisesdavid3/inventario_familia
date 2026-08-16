@@ -274,8 +274,11 @@ function Metric({ label, value, detail, icon: Icon, tone = 'cream' }: { label: s
 function Dashboard() {
   const dashboard = useGetDashboard();
   const data = dashboard.data;
-  const now = new Date();
-  const topSales = useGetSalesReport({ from: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(), to: now.toISOString() });
+  const topRange = useMemo(() => {
+    const now = new Date();
+    return { from: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(), to: now.toISOString() };
+  }, []);
+  const topSales = useGetSalesReport(topRange);
   const topProducts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const s of topSales.data?.sales ?? []) for (const item of s.items) counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity);
