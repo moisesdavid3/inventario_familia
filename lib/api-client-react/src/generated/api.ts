@@ -255,6 +255,7 @@ export const listSuppliers = async ( options?: Parameters<typeof customFetch>[1]
 
 
 
+
 export const getListSuppliersQueryKey = () => {
     return [
     `/api/suppliers`
@@ -272,6 +273,7 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof listSuppliers>>> = ({ signal }) => listSuppliers({ signal, ...requestOptions });
+
 
 
 
@@ -303,6 +305,8 @@ export function useListSuppliers<TData = Awaited<ReturnType<typeof listSuppliers
 
 
 
+
+
 export const getCreateSupplierUrl = () => {
 
 
@@ -328,6 +332,7 @@ export const createSupplier = async (supplierInput: SupplierInput, options?: Par
 
 
 
+
 export const getCreateSupplierMutationOptions = <TError = ErrorType<BadRequestResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupplier>>, TError,{data: BodyType<SupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createSupplier>>, TError,{data: BodyType<SupplierInput>}, TContext> => {
@@ -347,6 +352,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
           return  createSupplier(data,requestOptions)
         }
+
 
 
 

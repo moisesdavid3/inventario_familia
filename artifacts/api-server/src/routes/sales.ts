@@ -46,6 +46,11 @@ router.post("/sales", async (req, res): Promise<void> => {
     return;
   }
   const userId = req.userId!;
+  const saleDate = parsed.data.date ?? new Date();
+  if (saleDate.getTime() > Date.now() + 60_000) {
+    res.status(400).json({ error: "La fecha de la venta no puede ser futura." });
+    return;
+  }
   const requested = new Map<number, { quantity: number; unitPrice?: number }>();
   for (const item of parsed.data.items) {
     const existing = requested.get(item.productId);
@@ -84,13 +89,14 @@ router.post("/sales", async (req, res): Promise<void> => {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const estimatedProfit = items.reduce((sum, item) => sum + (item.unitPrice - item.unitCost) * item.quantity, 0);
-    const dayStart = startOfDayBogota(new Date());
+    const dayStart = startOfDayBogota(saleDate);
     const [row] = await tx.select({ count: sql<number>`count(*)` }).from(salesTable)
       .where(and(eq(salesTable.companyId, req.companyId!), gte(salesTable.createdAt, dayStart)));
     const [sale] = await tx.insert(salesTable).values({
       companyId: req.companyId!,
       userId,
       saleNumber: Number(row?.count ?? 0) + 1,
+      createdAt: saleDate,
       total,
       totalItems,
       estimatedProfit,

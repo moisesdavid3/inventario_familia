@@ -10,6 +10,8 @@ import type { SaleItemInput } from './saleItemInput';
 export interface SaleInput {
   /** @minItems 1 */
   items: SaleItemInput[];
+  /** Fecha de la venta (si se omite, se usa la fecha actual) */
+  date?: Date;
   /** Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR / Llave) */
   paymentMethod?: string;
   /** Observaciones del usuario sobre la venta */

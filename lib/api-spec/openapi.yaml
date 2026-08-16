@@ -710,6 +710,10 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/SaleItemInput"
+        date:
+          type: string
+          format: date-time
+          description: Fecha de la venta (si se omite, se usa la fecha actual)
         paymentMethod:
           type: string
           description: Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR / Llave)

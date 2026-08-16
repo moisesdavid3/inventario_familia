@@ -43,9 +43,13 @@ export const ListSuppliersResponse = zod.array(ListSuppliersResponseItem)
 /**
  * @summary Create a supplier
  */
+
+
+
 export const CreateSupplierBody = zod.object({
   "name": zod.string().min(1)
 })
+
 export const CreateSupplierResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -305,6 +309,7 @@ export const CreateSaleBody = zod.object({
   "quantity": zod.number().min(1),
   "unitPrice": zod.number().min(createSaleBodyItemsItemUnitPriceMin).optional().describe('Precio unitario de venta para esta línea (si se omite, usa el precio del producto)')
 })).min(1),
+  "date": zod.coerce.date().optional().describe('Fecha de la venta (si se omite, se usa la fecha actual)'),
   "paymentMethod": zod.string().optional().describe('Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR \/ Llave)'),
   "notes": zod.string().optional().describe('Observaciones del usuario sobre la venta'),
   "clientName": zod.string().optional().describe('Nombre del cliente'),
