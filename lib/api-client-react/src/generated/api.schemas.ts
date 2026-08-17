@@ -278,6 +278,8 @@ export interface SalesReport {
   estimatedProfit: number;
   /** @nullable */
   bestSellingProduct: string | null;
+  /** @nullable */
+  bestSellingProductCount: number | null;
   lowStockProducts: LowStockProduct[];
 }
 

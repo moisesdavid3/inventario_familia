@@ -293,7 +293,7 @@ export async function salesReportData(userId: string, companyId: number, userEma
   );
   const counts = new Map<string, number>();
   completeSales.forEach((sale) => sale.items.forEach((item) => counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity)));
-  const bestSellingProduct = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const bestSellingProduct = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
   const products = await listAllProducts(companyId);
   return {
     sales: completeSales,
@@ -301,7 +301,8 @@ export async function salesReportData(userId: string, companyId: number, userEma
     saleCount: completeSales.length,
     itemCount: completeSales.reduce((sum, sale) => sum + sale.totalItems, 0),
     estimatedProfit: completeSales.reduce((sum, sale) => sum + sale.estimatedProfit, 0),
-    bestSellingProduct,
+    bestSellingProduct: bestSellingProduct[0] ?? null,
+    bestSellingProductCount: bestSellingProduct[1] || null,
     lowStockProducts: products
       .filter((product) => product.stock <= product.minimumStock)
       .map((product) => ({ id: product.id, name: product.name, stock: product.stock, minimumStock: product.minimumStock })),

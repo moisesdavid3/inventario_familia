@@ -654,6 +654,7 @@ export const GetSalesReportResponse = zod.object({
   "itemCount": zod.number(),
   "estimatedProfit": zod.number(),
   "bestSellingProduct": zod.string().nullable(),
+  "bestSellingProductCount": zod.number().nullable(),
   "lowStockProducts": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),

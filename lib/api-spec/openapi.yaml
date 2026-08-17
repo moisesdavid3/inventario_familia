@@ -993,8 +993,10 @@ components:
           type: number
         bestSellingProduct:
           type: ["string", "null"]
+        bestSellingProductCount:
+          type: ["number", "null"]
         lowStockProducts:
           type: array
           items:
             $ref: "#/components/schemas/LowStockProduct"
-      required: [sales, totalSold, saleCount, itemCount, estimatedProfit, bestSellingProduct, lowStockProducts]
+      required: [sales, totalSold, saleCount, itemCount, estimatedProfit, bestSellingProduct, bestSellingProductCount, lowStockProducts]
