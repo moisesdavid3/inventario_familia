@@ -248,6 +248,11 @@ export interface DeudaMoisesInput {
   value: number;
 }
 
+export type DashboardTopProductsItem = {
+  name: string;
+  count: number;
+};
+
 export interface Dashboard {
   productCount: number;
   totalUnits: number;
@@ -261,6 +266,8 @@ export interface Dashboard {
   /** Si el usuario actual puede editar la deuda */
   canEditDeudaMoises?: boolean;
   lowStockProducts: LowStockProduct[];
+  /** Top 10 productos más vendidos en los últimos 15 días */
+  topProducts: DashboardTopProductsItem[];
 }
 
 export interface InventoryReport {

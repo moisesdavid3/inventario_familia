@@ -250,6 +250,17 @@ export async function dashboardData(userId: string, companyId: number, userEmail
   const products = await listAllProducts(companyId);
   const todayRange = dateRangeForPeriod("today");
   const todaySales = await getDb().select().from(salesTable).where(saleWhere(companyId, todayRange));
+
+  const topRange: DateRange = { from: new Date(Date.now() - 15 * 86400000) };
+  const topSales = await getDb().select().from(salesTable).where(saleWhere(companyId, topRange));
+  const topSaleIds = topSales.map((s) => s.id);
+  const topItems = topSaleIds.length
+    ? await getDb().select({ productName: saleItemsTable.productName, quantity: saleItemsTable.quantity }).from(saleItemsTable).where(inArray(saleItemsTable.saleId, topSaleIds))
+    : [];
+  const topCounts = new Map<string, number>();
+  topItems.forEach((item) => topCounts.set(item.productName, (topCounts.get(item.productName) ?? 0) + item.quantity));
+  const topProducts = [...topCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([name, count]) => ({ name, count }));
+
   return {
     productCount: products.length,
     totalUnits: products.reduce((sum, product) => sum + product.stock, 0),
@@ -263,6 +274,7 @@ export async function dashboardData(userId: string, companyId: number, userEmail
     lowStockProducts: products
       .filter((product) => product.stock <= product.minimumStock)
       .map((product) => ({ id: product.id, name: product.name, stock: product.stock, minimumStock: product.minimumStock })),
+    topProducts,
   };
 }
 

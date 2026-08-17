@@ -244,7 +244,11 @@ export const GetDashboardResponse = zod.object({
   "name": zod.string(),
   "stock": zod.number(),
   "minimumStock": zod.number()
-}))
+})),
+  "topProducts": zod.array(zod.object({
+  "name": zod.string(),
+  "count": zod.number()
+})).describe('Top 10 productos más vendidos en los últimos 15 días')
 })
 
 

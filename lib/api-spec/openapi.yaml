@@ -961,7 +961,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LowStockProduct"
-      required: [productCount, totalUnits, inventoryCostValue, inventorySaleValue, potentialProfit, todaySalesCount, todaySalesTotal, lowStockProducts]
+        topProducts:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: number
+            required: [name, count]
+          description: Top 10 productos más vendidos en los últimos 15 días
+      required: [productCount, totalUnits, inventoryCostValue, inventorySaleValue, potentialProfit, todaySalesCount, todaySalesTotal, lowStockProducts, topProducts]
     InventoryReport:
       type: object
       properties:
