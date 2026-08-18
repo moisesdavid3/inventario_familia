@@ -17,6 +17,21 @@ export interface Company {
   id: number;
   name: string;
   slug: string;
+  /**
+     * NIT de la empresa
+     * @nullable
+     */
+  nit?: string | null;
+  /**
+     * Dirección de la empresa
+     * @nullable
+     */
+  address?: string | null;
+  /**
+     * Teléfono de la empresa
+     * @nullable
+     */
+  phone?: string | null;
   /** Permite registrar ventas incluso sin inventario suficiente */
   allowNegativeStock: boolean;
 }

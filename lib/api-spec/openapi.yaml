@@ -567,6 +567,15 @@ components:
           type: string
         slug:
           type: string
+        nit:
+          type: ["string", "null"]
+          description: NIT de la empresa
+        address:
+          type: ["string", "null"]
+          description: Dirección de la empresa
+        phone:
+          type: ["string", "null"]
+          description: Teléfono de la empresa
         allowNegativeStock:
           type: boolean
           description: Permite registrar ventas incluso sin inventario suficiente
