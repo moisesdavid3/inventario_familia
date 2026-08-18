@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { companiesTable, creditPaymentsTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateCreditPaymentBody,
@@ -16,7 +16,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
-import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere, startOfDayBogota } from "../lib/inventory-service";
+import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere, startOfDayBogota, toSaleResponse } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/sales", requireAuth, requireCompany);
@@ -36,7 +36,22 @@ router.get("/sales", async (req, res): Promise<void> => {
   const rows = await getDb().select().from(salesTable)
     .where(saleWhere(req.companyId!, range))
     .orderBy(desc(salesTable.createdAt));
-  res.json(ListSalesResponse.parse(await Promise.all(rows.map(saleResponse))));
+  const saleIds = rows.map((s) => s.id);
+  const allItems = saleIds.length
+    ? await getDb().select().from(saleItemsTable).where(inArray(saleItemsTable.saleId, saleIds))
+    : [];
+  const itemsBySale = new Map<number, typeof allItems>();
+  for (const item of allItems) {
+    const list = itemsBySale.get(item.saleId) ?? [];
+    list.push(item);
+    itemsBySale.set(item.saleId, list);
+  }
+  const creditSaleIds = rows.filter((s) => s.paymentMethod === "Crédito").map((s) => s.id);
+  const creditRows = creditSaleIds.length
+    ? await getDb().select({ saleId: creditPaymentsTable.saleId, total: sql<number>`coalesce(sum(${creditPaymentsTable.amount}), 0)` }).from(creditPaymentsTable).where(inArray(creditPaymentsTable.saleId, creditSaleIds)).groupBy(creditPaymentsTable.saleId)
+    : [];
+  const creditBySale = new Map(creditRows.map((r) => [r.saleId, Number(r.total)]));
+  res.json(ListSalesResponse.parse(rows.map((sale) => toSaleResponse(sale, itemsBySale.get(sale.id) ?? [], sale.paymentMethod === "Crédito" ? creditBySale.get(sale.id) ?? 0 : 0))));
 });
 
 router.post("/sales", async (req, res): Promise<void> => {

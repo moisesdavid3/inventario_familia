@@ -212,7 +212,7 @@ async function creditPaidForSale(saleId: number): Promise<number> {
   return Number(row?.total ?? 0);
 }
 
-function toSaleResponse(sale: typeof salesTable.$inferSelect, items: typeof saleItemsTable.$inferSelect[], creditPaid: number) {
+export function toSaleResponse(sale: typeof salesTable.$inferSelect, items: typeof saleItemsTable.$inferSelect[], creditPaid: number) {
   return {
     id: sale.id,
     saleNumber: sale.saleNumber,
