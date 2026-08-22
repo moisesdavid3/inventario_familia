@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueries, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight, BarChart3, Box, Check, ChevronDown, CircleDollarSign, ClipboardList,
   CreditCard, Download, History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Printer, Search, ShoppingBasket,
@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { CompanyProvider, useCompany } from '@/lib/company';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useRoute } from 'wouter';
 import {
-  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListClientsQueryKey, getListCreditPaymentsQueryKey, getListManualCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey,
+  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListClientsQueryKey, getListCreditPaymentsQueryKey, getListManualCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey, listCreditPayments,
   useAddInventory, useCreateClient, useCreateCreditPayment, useCreateManualCredit, useCreateManualCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteClient, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
   useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCreditPayments, useListManualCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
   useUpdateClient, useUpdateDeudaMoises, useUpdateProduct
@@ -819,8 +819,8 @@ function CarteraPage() {
 }
 
 function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone: string; sales: Sale[]; manualCredits: ManualCredit[]; payments: Map<number, number> }; onClose: () => void }) {
-  const payments = useListCreditPayments(detail.sales[0]?.id ?? 0);
-  const allPayments = payments.data || [];
+  const salePaymentQueries = useQueries({ queries: detail.sales.map((s) => ({ queryKey: getListCreditPaymentsQueryKey(s.id), queryFn: () => listCreditPayments(s.id) })) });
+  const allPayments = salePaymentQueries.flatMap((q) => q.data || []);
   const salesPaid = detail.payments;
   const salesTotal = detail.sales.reduce((sum, s) => sum + s.total, 0);
   const salesPaidTotal = detail.sales.reduce((sum, s) => sum + (salesPaid.get(s.id) ?? 0), 0);
@@ -867,7 +867,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                   return <tr key={`s-${s.id}`} className="border-b last:border-0">
                     <td className="px-3 py-2 text-xs">{dateLabel(s.date)}</td>
                     <td className="px-3 py-2"><span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span></td>
-                    <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{s.items?.length ? s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ').slice(0, 40) : '—'}</td>
+                    <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{s.items?.length ? s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ') : '—'}</td>
                     <td className="px-3 py-2 text-right font-mono-app font-bold">{money(s.total)}</td>
                     <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p)}</td>
                     <td className="px-3 py-2 text-right font-mono-app">{money(s.total - p)}</td>
