@@ -62,6 +62,84 @@ export const CreateSupplierResponse = zod.object({
 
 
 /**
+ * @summary List clients
+ */
+export const ListClientsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "phone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListClientsResponse = zod.array(ListClientsResponseItem)
+
+
+/**
+ * @summary Create a client
+ */
+
+
+
+export const CreateClientBody = zod.object({
+  "name": zod.string().min(1),
+  "phone": zod.string().nullish(),
+  "address": zod.string().nullish()
+})
+
+export const CreateClientResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "phone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a client
+ */
+
+
+
+export const UpdateClientParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+
+
+
+export const UpdateClientBody = zod.object({
+  "name": zod.string().min(1),
+  "phone": zod.string().nullish(),
+  "address": zod.string().nullish()
+})
+
+export const UpdateClientResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "phone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a client
+ */
+
+
+
+export const DeleteClientParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeleteClientResponse = zod.void()
+
+
+/**
  * @summary List products
  */
 export const ListProductsResponseItem = zod.object({
@@ -287,6 +365,7 @@ export const ListSalesResponseItem = zod.object({
   "notes": zod.string().optional().describe('Observaciones de la venta'),
   "clientName": zod.string().nullish().describe('Nombre del cliente'),
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
@@ -334,6 +413,7 @@ export const CreateSaleResponse = zod.object({
   "notes": zod.string().optional().describe('Observaciones de la venta'),
   "clientName": zod.string().nullish().describe('Nombre del cliente'),
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
@@ -367,6 +447,7 @@ export const GetSaleResponse = zod.object({
   "notes": zod.string().optional().describe('Observaciones de la venta'),
   "clientName": zod.string().nullish().describe('Nombre del cliente'),
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
@@ -646,6 +727,7 @@ export const GetSalesReportResponse = zod.object({
   "notes": zod.string().optional().describe('Observaciones de la venta'),
   "clientName": zod.string().nullish().describe('Nombre del cliente'),
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
+  "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
@@ -678,6 +760,7 @@ export const ListManualCreditsResponseItem = zod.object({
   "id": zod.number(),
   "clientName": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
+  "clientId": zod.number().nullish(),
   "total": zod.number(),
   "paid": zod.number(),
   "notes": zod.string().nullish(),
@@ -703,6 +786,7 @@ export const CreateManualCreditResponse = zod.object({
   "id": zod.number(),
   "clientName": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
+  "clientId": zod.number().nullish(),
   "total": zod.number(),
   "paid": zod.number(),
   "notes": zod.string().nullish(),

@@ -16,6 +16,8 @@ tags:
     description: Product and inventory operations
   - name: sales
     description: Sales operations
+  - name: clients
+    description: Client operations
   - name: purchases
     description: Purchase and stock operations
   - name: reports
@@ -80,6 +82,86 @@ paths:
                 $ref: "#/components/schemas/Supplier"
         "400":
           $ref: "#/components/responses/BadRequest"
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      summary: List clients
+      responses:
+        "200":
+          description: Clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+    post:
+      operationId: createClient
+      tags: [clients]
+      summary: Create a client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "201":
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /clients/{id}:
+    put:
+      operationId: updateClient
+      tags: [clients]
+      summary: Update a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "200":
+          description: Client updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteClient
+      tags: [clients]
+      summary: Delete a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /products:
     get:
       operationId: listProducts
@@ -883,6 +965,9 @@ components:
         clientPhone:
           type: ["string", "null"]
           description: Teléfono del cliente
+        clientId:
+          type: ["number", "null"]
+          description: ID del cliente asociado
         creditPaid:
           type: number
           description: Total abonado hasta ahora (solo aplica a ventas a crédito)
@@ -928,6 +1013,8 @@ components:
           type: ["string", "null"]
         clientPhone:
           type: ["string", "null"]
+        clientId:
+          type: ["number", "null"]
         total:
           type: number
         paid:
@@ -951,6 +1038,35 @@ components:
         notes:
           type: ["string", "null"]
       required: [total]
+    Client:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, createdAt, updatedAt]
+    ClientInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+      required: [name]
     PurchaseItemInput:
       type: object
       properties:

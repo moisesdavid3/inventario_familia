@@ -12,6 +12,7 @@ function manualCreditResponse(credit: typeof manualCreditsTable.$inferSelect, pa
     id: credit.id,
     clientName: credit.clientName,
     clientPhone: credit.clientPhone,
+    clientId: credit.clientId ?? null,
     total: credit.total,
     paid,
     notes: credit.notes,

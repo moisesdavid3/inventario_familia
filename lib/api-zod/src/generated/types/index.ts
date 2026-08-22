@@ -7,10 +7,13 @@
  */
 
 export * from './badRequestResponse';
+export * from './client';
+export * from './clientInput';
 export * from './company';
 export * from './creditPayment';
 export * from './creditPaymentInput';
 export * from './dashboard';
+export * from './dashboardTopProductsItem';
 export * from './deudaMoisesInput';
 export * from './error';
 export * from './getInventoryReportFilter';
@@ -25,6 +28,8 @@ export * from './listPurchasesPeriod';
 export * from './listSalesParams';
 export * from './listSalesPeriod';
 export * from './lowStockProduct';
+export * from './manualCredit';
+export * from './manualCreditInput';
 export * from './notFoundResponse';
 export * from './product';
 export * from './productInput';

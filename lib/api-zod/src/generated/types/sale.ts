@@ -29,6 +29,11 @@ export interface Sale {
      * @nullable
      */
   clientPhone?: string | null;
+  /**
+     * ID del cliente asociado
+     * @nullable
+     */
+  clientId?: number | null;
   /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
   creditPaid: number;
   items: SaleItem[];

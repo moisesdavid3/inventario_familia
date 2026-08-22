@@ -2,6 +2,19 @@ import { createInsertSchema } from "drizzle-zod";
 import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
+export const clientsTable = pgTable("inventory_clients", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().default(1),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  address: text("address"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("inventory_clients_company_idx").on(t.companyId),
+]).enableRLS();
+
 export const salesTable = pgTable("inventory_sales", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull().default(1),
@@ -14,6 +27,7 @@ export const salesTable = pgTable("inventory_sales", {
   notes: text("notes"),
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
+  clientId: integer("client_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("inventory_sales_company_created_idx").on(t.companyId, t.createdAt),
@@ -40,6 +54,7 @@ export const manualCreditsTable = pgTable("inventory_manual_credits", {
   userId: text("user_id").notNull(),
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
+  clientId: integer("client_id"),
   total: integer("total").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -72,10 +87,17 @@ export const insertManualCreditSchema = createInsertSchema(manualCreditsTable).o
   id: true,
   createdAt: true,
 });
+export const insertClientSchema = createInsertSchema(clientsTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export type InsertSale = z.infer<typeof insertSaleSchema>;
 export type InsertCreditPayment = z.infer<typeof insertCreditPaymentSchema>;
 export type InsertManualCredit = z.infer<typeof insertManualCreditSchema>;
+export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Sale = typeof salesTable.$inferSelect;
 export type SaleItem = typeof saleItemsTable.$inferSelect;
 export type CreditPayment = typeof creditPaymentsTable.$inferSelect;
 export type ManualCredit = typeof manualCreditsTable.$inferSelect;
+export type Client = typeof clientsTable.$inferSelect;

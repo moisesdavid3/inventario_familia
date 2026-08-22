@@ -5,6 +5,7 @@
  * API for a simple private inventory and sales app
  * OpenAPI spec version: 0.1.0
  */
+import type { DashboardTopProductsItem } from './dashboardTopProductsItem';
 import type { LowStockProduct } from './lowStockProduct';
 
 export interface Dashboard {
@@ -20,4 +21,6 @@ export interface Dashboard {
   /** Si el usuario actual puede editar la deuda */
   canEditDeudaMoises?: boolean;
   lowStockProducts: LowStockProduct[];
+  /** Top 10 productos más vendidos en los últimos 15 días */
+  topProducts: DashboardTopProductsItem[];
 }

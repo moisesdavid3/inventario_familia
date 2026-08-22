@@ -165,6 +165,11 @@ export interface Sale {
      * @nullable
      */
   clientPhone?: string | null;
+  /**
+     * ID del cliente asociado
+     * @nullable
+     */
+  clientId?: number | null;
   /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
   creditPaid: number;
   items: SaleItem[];
@@ -194,6 +199,8 @@ export interface ManualCredit {
   clientName?: string | null;
   /** @nullable */
   clientPhone?: string | null;
+  /** @nullable */
+  clientId?: number | null;
   total: number;
   paid: number;
   /** @nullable */
@@ -210,6 +217,26 @@ export interface ManualCreditInput {
   total: number;
   /** @nullable */
   notes?: string | null;
+}
+
+export interface Client {
+  id: number;
+  name: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  address?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientInput {
+  /** @minLength 1 */
+  name: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  address?: string | null;
 }
 
 export interface PurchaseItemInput {
