@@ -188,6 +188,30 @@ export interface CreditPayment {
   date: string;
 }
 
+export interface ManualCredit {
+  id: number;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  clientPhone?: string | null;
+  total: number;
+  paid: number;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface ManualCreditInput {
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  clientPhone?: string | null;
+  /** @minimum 1 */
+  total: number;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface PurchaseItemInput {
   /** @minimum 1 */
   productId: number;

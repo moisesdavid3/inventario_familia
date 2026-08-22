@@ -34,6 +34,8 @@ import type {
   InventoryReport,
   ListPurchasesParams,
   ListSalesParams,
+  ManualCredit,
+  ManualCreditInput,
   NotFoundResponse,
   Product,
   ProductInput,
@@ -1942,6 +1944,374 @@ export function useGetSalesReport<TData = Awaited<ReturnType<typeof getSalesRepo
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetSalesReportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListManualCreditsUrl = () => {
+
+
+
+
+  return `/api/manual-credits`
+}
+
+/**
+ * @summary List manual credit entries
+ */
+export const listManualCredits = async ( options?: Parameters<typeof customFetch>[1]): Promise<ManualCredit[]> => {
+
+  return customFetch<ManualCredit[]>(getListManualCreditsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManualCreditsQueryKey = () => {
+    return [
+    `/api/manual-credits`
+    ] as const;
+    }
+
+
+export const getListManualCreditsQueryOptions = <TData = Awaited<ReturnType<typeof listManualCredits>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCredits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManualCreditsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManualCredits>>> = ({ signal }) => listManualCredits({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManualCredits>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListManualCreditsQueryResult = NonNullable<Awaited<ReturnType<typeof listManualCredits>>>
+export type ListManualCreditsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List manual credit entries
+ */
+
+export function useListManualCredits<TData = Awaited<ReturnType<typeof listManualCredits>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCredits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListManualCreditsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateManualCreditUrl = () => {
+
+
+
+
+  return `/api/manual-credits`
+}
+
+/**
+ * @summary Create a manual credit entry for past debts
+ */
+export const createManualCredit = async (manualCreditInput: ManualCreditInput, options?: Parameters<typeof customFetch>[1]): Promise<ManualCredit> => {
+
+  return customFetch<ManualCredit>(getCreateManualCreditUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(manualCreditInput)
+  }
+);}
+
+
+
+
+
+export const getCreateManualCreditMutationOptions = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualCredit>>, TError,{data: BodyType<ManualCreditInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createManualCredit>>, TError,{data: BodyType<ManualCreditInput>}, TContext> => {
+
+const mutationKey = ['createManualCredit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createManualCredit>>, {data: BodyType<ManualCreditInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createManualCredit(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateManualCreditMutationResult = NonNullable<Awaited<ReturnType<typeof createManualCredit>>>
+    export type CreateManualCreditMutationBody = BodyType<ManualCreditInput>
+    export type CreateManualCreditMutationError = ErrorType<BadRequestResponse>
+
+    /**
+ * @summary Create a manual credit entry for past debts
+ */
+export const useCreateManualCredit = <TError = ErrorType<BadRequestResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualCredit>>, TError,{data: BodyType<ManualCreditInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createManualCredit>>,
+        TError,
+        {data: BodyType<ManualCreditInput>},
+        TContext
+      > => {
+      return useMutation(getCreateManualCreditMutationOptions(options));
+    }
+
+export const getDeleteManualCreditUrl = (id: number,) => {
+
+
+
+
+  return `/api/manual-credits/${id}`
+}
+
+/**
+ * @summary Delete a manual credit entry
+ */
+export const deleteManualCredit = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteManualCreditUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteManualCreditMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteManualCredit>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteManualCredit>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteManualCredit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteManualCredit>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteManualCredit(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteManualCreditMutationResult = NonNullable<Awaited<ReturnType<typeof deleteManualCredit>>>
+
+    export type DeleteManualCreditMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Delete a manual credit entry
+ */
+export const useDeleteManualCredit = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteManualCredit>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteManualCredit>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteManualCreditMutationOptions(options));
+    }
+
+export const getCreateManualCreditPaymentUrl = (id: number,) => {
+
+
+
+
+  return `/api/manual-credits/${id}/credit-payment`
+}
+
+/**
+ * @summary Register a payment on a manual credit
+ */
+export const createManualCreditPayment = async (id: number,
+    creditPaymentInput: CreditPaymentInput, options?: Parameters<typeof customFetch>[1]): Promise<CreditPayment> => {
+
+  return customFetch<CreditPayment>(getCreateManualCreditPaymentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(creditPaymentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateManualCreditPaymentMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualCreditPayment>>, TError,{id: number;data: BodyType<CreditPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createManualCreditPayment>>, TError,{id: number;data: BodyType<CreditPaymentInput>}, TContext> => {
+
+const mutationKey = ['createManualCreditPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createManualCreditPayment>>, {id: number;data: BodyType<CreditPaymentInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createManualCreditPayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateManualCreditPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof createManualCreditPayment>>>
+    export type CreateManualCreditPaymentMutationBody = BodyType<CreditPaymentInput>
+    export type CreateManualCreditPaymentMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Register a payment on a manual credit
+ */
+export const useCreateManualCreditPayment = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createManualCreditPayment>>, TError,{id: number;data: BodyType<CreditPaymentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createManualCreditPayment>>,
+        TError,
+        {id: number;data: BodyType<CreditPaymentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateManualCreditPaymentMutationOptions(options));
+    }
+
+export const getListManualCreditPaymentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/manual-credits/${id}/credit-payments`
+}
+
+/**
+ * @summary List payments for a manual credit
+ */
+export const listManualCreditPayments = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<CreditPayment[]> => {
+
+  return customFetch<CreditPayment[]>(getListManualCreditPaymentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManualCreditPaymentsQueryKey = (id: number,) => {
+    return [
+    `/api/manual-credits/${id}/credit-payments`
+    ] as const;
+    }
+
+
+export const getListManualCreditPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof listManualCreditPayments>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCreditPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManualCreditPaymentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManualCreditPayments>>> = ({ signal }) => listManualCreditPayments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManualCreditPayments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListManualCreditPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof listManualCreditPayments>>>
+export type ListManualCreditPaymentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List payments for a manual credit
+ */
+
+export function useListManualCreditPayments<TData = Awaited<ReturnType<typeof listManualCreditPayments>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCreditPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListManualCreditPaymentsQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

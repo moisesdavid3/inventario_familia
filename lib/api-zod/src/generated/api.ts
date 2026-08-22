@@ -671,3 +671,105 @@ export const GetSalesReportResponse = zod.object({
 })
 
 
+/**
+ * @summary List manual credit entries
+ */
+export const ListManualCreditsResponseItem = zod.object({
+  "id": zod.number(),
+  "clientName": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "total": zod.number(),
+  "paid": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListManualCreditsResponse = zod.array(ListManualCreditsResponseItem)
+
+
+/**
+ * @summary Create a manual credit entry for past debts
+ */
+
+
+
+export const CreateManualCreditBody = zod.object({
+  "clientName": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "total": zod.number().min(1),
+  "notes": zod.string().nullish()
+})
+
+export const CreateManualCreditResponse = zod.object({
+  "id": zod.number(),
+  "clientName": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "total": zod.number(),
+  "paid": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a manual credit entry
+ */
+
+
+
+export const DeleteManualCreditParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeleteManualCreditResponse = zod.void()
+
+
+/**
+ * @summary Register a payment on a manual credit
+ */
+
+
+
+export const CreateManualCreditPaymentParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+
+
+
+export const CreateManualCreditPaymentBody = zod.object({
+  "amount": zod.number().min(1),
+  "paymentMethod": zod.string().optional(),
+  "note": zod.string().optional()
+})
+
+export const CreateManualCreditPaymentResponse = zod.object({
+  "id": zod.number(),
+  "saleId": zod.number(),
+  "amount": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "date": zod.coerce.date()
+})
+
+
+/**
+ * @summary List payments for a manual credit
+ */
+
+
+
+export const ListManualCreditPaymentsParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const ListManualCreditPaymentsResponseItem = zod.object({
+  "id": zod.number(),
+  "saleId": zod.number(),
+  "amount": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "date": zod.coerce.date()
+})
+export const ListManualCreditPaymentsResponse = zod.array(ListManualCreditPaymentsResponseItem)
+
+

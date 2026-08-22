@@ -10,12 +10,12 @@ import { supabase } from '@/lib/supabase';
 import { CompanyProvider, useCompany } from '@/lib/company';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useRoute } from 'wouter';
 import {
-  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListCreditPaymentsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey,
-  useAddInventory, useCreateCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteProduct, useDeletePurchase, useDeleteSale,
-  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListCreditPayments, useListProducts, useListPurchases, useListSales, useListSuppliers,
+  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListCreditPaymentsQueryKey, getListManualCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey,
+  useAddInventory, useCreateCreditPayment, useCreateManualCredit, useCreateManualCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
+  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListCreditPayments, useListManualCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
   useUpdateDeudaMoises, useUpdateProduct
 } from '@workspace/api-client-react';
-import type { Product, Purchase, PurchaseImportResult, PurchaseInput, Sale } from '@workspace/api-client-react';
+import type { ManualCredit, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale } from '@workspace/api-client-react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -644,10 +644,18 @@ function SaleCreditPayments({ sale, onClose }: { sale: Sale; onClose: () => void
 
 function CarteraPage() {
   const sales = useListSales({ period: 'all' });
+  const manualCredits = useListManualCredits();
+  const createManualCredit = useCreateManualCredit();
+  const deleteManualCredit = useDeleteManualCredit();
+  const createManualPayment = useCreateManualCreditPayment();
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | 'pending' | 'paid'>('all');
   const [paymentModal, setPaymentModal] = useState<Sale | null>(null);
   const [detailModal, setDetailModal] = useState<Sale | null>(null);
+  const [manualPaymentModal, setManualPaymentModal] = useState<ManualCredit | null>(null);
+  const [manualDetailModal, setManualDetailModal] = useState<ManualCredit | null>(null);
+  const [newCreditModal, setNewCreditModal] = useState(false);
 
   const creditSales = useMemo(() => {
     const all = (sales.data || []).filter((s) => s.paymentMethod === 'Crédito');
@@ -658,14 +666,55 @@ function CarteraPage() {
       return matchesSearch && matchesStatus;
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [sales.data, search, status]);
+
+  const filteredManualCredits = useMemo(() => {
+    return (manualCredits.data || []).filter((c) => {
+      const matchesSearch = !search || (c.clientName || '').toLowerCase().includes(search.toLowerCase());
+      const isPaid = c.paid >= c.total;
+      const matchesStatus = status === 'all' || (status === 'paid' ? isPaid : !isPaid);
+      return matchesSearch && matchesStatus;
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [manualCredits.data, search, status]);
+
+  const allRows = useMemo(() => {
+    const saleRows = creditSales.map((s) => ({
+      type: 'sale' as const,
+      id: s.id,
+      clientName: s.clientName || 'Cliente sin nombre',
+      clientPhone: s.clientPhone || '',
+      ref: `Venta #${s.saleNumber}`,
+      date: s.date,
+      total: s.total,
+      paid: s.creditPaid ?? 0,
+      sale: s,
+      manualCredit: null as ManualCredit | null,
+    }));
+    const manualRows = filteredManualCredits.map((c) => ({
+      type: 'manual' as const,
+      id: c.id,
+      clientName: c.clientName || 'Cliente sin nombre',
+      clientPhone: c.clientPhone || '',
+      ref: 'Crédito manual',
+      date: c.createdAt,
+      total: c.total,
+      paid: c.paid,
+      sale: null as Sale | null,
+      manualCredit: c,
+    }));
+    return [...saleRows, ...manualRows].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [creditSales, filteredManualCredits]);
+
+  const totalDebt = allRows.reduce((sum, r) => sum + (r.total - r.paid), 0);
+  const totalPaid = allRows.reduce((sum, r) => sum + r.paid, 0);
+
   const exportRows = () => {
-    const rows: (string | number)[][] = [['Cliente', 'Teléfono', 'Venta', 'Fecha', 'Total', 'Abonado', 'Saldo', 'Estado']];
-    for (const sale of creditSales) {
-      const paid = sale.creditPaid ?? 0;
-      rows.push([sale.clientName || 'Cliente sin nombre', sale.clientPhone || '', `#${sale.saleNumber}`, dateLabel(sale.date), sale.total, paid, sale.total - paid, paid >= sale.total ? 'Pagado' : 'Pendiente']);
+    const rows: (string | number)[][] = [['Cliente', 'Teléfono', 'Referencia', 'Fecha', 'Total', 'Abonado', 'Saldo', 'Estado']];
+    for (const r of allRows) {
+      const remaining = r.total - r.paid;
+      rows.push([r.clientName, r.clientPhone, r.ref, dateLabel(r.date), r.total, r.paid, remaining, remaining <= 0 ? 'Pagado' : 'Pendiente']);
     }
     rows.push([]);
-    rows.push(['TOTAL', '', '', '', creditSales.reduce((sum, s) => sum + s.total, 0), creditSales.reduce((sum, s) => sum + (s.creditPaid ?? 0), 0), creditSales.reduce((sum, s) => sum + (s.total - (s.creditPaid ?? 0)), 0), '']);
+    rows.push(['TOTAL', '', '', '', allRows.reduce((sum, r) => sum + r.total, 0), totalPaid, totalDebt, '']);
     return rows;
   };
   const downloadCsv = () => downloadBlob(new Blob([toCsv(exportRows())], { type: 'text/csv;charset=utf-8' }), `cartera-${new Date().toISOString().slice(0, 10)}.csv`);
@@ -673,7 +722,7 @@ function CarteraPage() {
 
   return (
     <Shell>
-      <PageHeading eyebrow="Créditos" title="Cartera" description="Gestiona las ventas a crédito y sus abonos." />
+      <PageHeading eyebrow="Créditos" title="Cartera" description="Gestiona las ventas a crédito, créditos manuales y sus abonos." action={<Button onClick={() => setNewCreditModal(true)} className="min-h-[28px] px-2.5 text-sm" data-testid="button-new-manual-credit"><Plus size={14} /> Nuevo crédito</Button>} />
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end">
         <label className="grid flex-1 gap-1.5">
           <span className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Buscar cliente</span>
@@ -699,74 +748,256 @@ function CarteraPage() {
         </div>
       </div>
 
-      {sales.isLoading ? (
-        <div className="grid gap-3">{[1, 2, 3].map((n) => <div key={n} className="h-28 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div>
-      ) : sales.isError ? (
-        <StatusMessage text="No pudimos cargar las ventas." onRetry={() => sales.refetch()} />
-      ) : creditSales.length === 0 ? (
-        <StatusMessage type="empty" text={search || status !== 'all' ? 'No encontramos créditos con esos filtros.' : 'No hay ventas a crédito registradas.'} />
+      {(sales.isLoading || manualCredits.isLoading) ? (
+        <div className="grid gap-3">{[1, 2, 3].map((n) => <div key={n} className="h-16 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div>
+      ) : (sales.isError || manualCredits.isError) ? (
+        <StatusMessage text="No pudimos cargar la cartera." onRetry={() => { sales.refetch(); manualCredits.refetch(); }} />
+      ) : allRows.length === 0 ? (
+        <StatusMessage type="empty" text={search || status !== 'all' ? 'No encontramos créditos con esos filtros.' : 'No hay créditos registrados.'} />
       ) : (
-        <div className="grid gap-3">
-          {creditSales.map((sale) => {
-            const paid = sale.creditPaid ?? 0;
-            const remaining = sale.total - paid;
-            const isPaid = remaining <= 0;
-            return (
-              <div key={sale.id} className="overflow-hidden rounded-2xl border bg-[hsl(var(--card))]" data-testid={`credit-sale-${sale.id}`}>
-                <div className="flex flex-wrap items-center gap-3 px-5 py-4">
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]">
-                      <CreditCard size={18} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate font-bold">{sale.clientName || 'Cliente sin nombre'}</p>
-                      <p className="text-xs text-[hsl(var(--muted-foreground))]">Venta #{sale.saleNumber} · {dateLabel(sale.date)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-mono-app text-lg font-bold">{money(sale.total)}</p>
-                      {sale.clientPhone && <p className="text-xs text-[hsl(var(--muted-foreground))]">{sale.clientPhone}</p>}
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`} data-testid={`status-credit-${sale.id}`}>
-                      {isPaid ? 'Pagado' : `Debe ${money(remaining)}`}
-                    </span>
-                    <div className="flex gap-2">
-                      <Button variant="secondary" className="min-h-[32px] px-2 text-xs" onClick={() => setDetailModal(sale)} data-testid={`button-view-credit-${sale.id}`}>
-                        Ver abonos
-                      </Button>
-                      {!isPaid && (
-                        <Button className="min-h-[32px] px-2 text-xs" onClick={() => setPaymentModal(sale)} data-testid={`button-add-credit-${sale.id}`}>
-                          Abonar
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                {!!sale.items?.length && (
-                  <div className="flex flex-wrap gap-2 border-t px-5 py-3" data-testid={`credit-sale-items-${sale.id}`}>
-                    {sale.items.map((item) => (
-                      <span key={item.productId} className="flex items-center gap-1.5 rounded-lg bg-[hsl(var(--muted)/.5)] px-2.5 py-1 text-sm">
-                        <span className="font-semibold">{item.quantity} × {item.productName}</span>
-                        <span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{money(item.subtotal)}</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {!!sale.notes && (
-                  <p className="border-t px-5 py-2 text-xs text-[hsl(var(--muted-foreground))]" data-testid={`credit-sale-notes-${sale.id}`}>
-                    <span className="font-semibold">Nota:</span> {sale.notes}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <>
+          <div className="mb-3 flex gap-4 text-sm">
+            <span className="text-[hsl(var(--muted-foreground))]">Pendiente: <strong className="font-mono-app text-[hsl(var(--destructive))]">{money(totalDebt)}</strong></span>
+            <span className="text-[hsl(var(--muted-foreground))]">Pagado: <strong className="font-mono-app text-green-600">{money(totalPaid)}</strong></span>
+          </div>
+          <div className="overflow-x-auto rounded-2xl border bg-[hsl(var(--card))]">
+            <table className="w-full text-sm" data-testid="table-cartera">
+              <thead>
+                <tr className="border-b text-left text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                  <th className="px-4 py-3">Cliente</th>
+                  <th className="px-4 py-3 hidden sm:table-cell">Teléfono</th>
+                  <th className="px-4 py-3">Referencia</th>
+                  <th className="px-4 py-3 hidden md:table-cell">Fecha</th>
+                  <th className="px-4 py-3 text-right">Total</th>
+                  <th className="px-4 py-3 text-right">Abonado</th>
+                  <th className="px-4 py-3 text-right">Saldo</th>
+                  <th className="px-4 py-3 text-center">Estado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allRows.map((r) => {
+                  const remaining = r.total - r.paid;
+                  const isPaid = remaining <= 0;
+                  return (
+                    <tr key={`${r.type}-${r.id}`} className="border-b last:border-0 hover:bg-[hsl(var(--muted)/.3)]" data-testid={`cartera-row-${r.type}-${r.id}`}>
+                      <td className="px-4 py-3 font-semibold">{r.clientName}</td>
+                      <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden sm:table-cell">{r.clientPhone || '—'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${r.type === 'manual' ? 'bg-purple-100 text-purple-700' : 'bg-[hsl(var(--accent)/.6)] text-[hsl(var(--primary))]'}`}>
+                          {r.ref}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden md:table-cell">{dateLabel(r.date)}</td>
+                      <td className="px-4 py-3 text-right font-mono-app font-bold">{money(r.total)}</td>
+                      <td className="px-4 py-3 text-right font-mono-app text-green-600">{money(r.paid)}</td>
+                      <td className="px-4 py-3 text-right font-mono-app font-bold">{money(remaining)}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {isPaid ? 'Pagado' : 'Pendiente'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1.5">
+                          <Button variant="secondary" className="min-h-[28px] px-2 text-xs" onClick={() => r.type === 'sale' ? setDetailModal(r.sale!) : setManualDetailModal(r.manualCredit!)} data-testid={`button-view-${r.type}-${r.id}`}>Ver</Button>
+                          {!isPaid && <Button className="min-h-[28px] px-2 text-xs" onClick={() => r.type === 'sale' ? setPaymentModal(r.sale!) : setManualPaymentModal(r.manualCredit!)} data-testid={`button-abonar-${r.type}-${r.id}`}>Abonar</Button>}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {paymentModal && <CreditPaymentModal sale={paymentModal} onClose={() => setPaymentModal(null)} />}
       {detailModal && <SaleCreditPayments sale={detailModal} onClose={() => setDetailModal(null)} />}
+      {manualPaymentModal && <ManualCreditPaymentModal credit={manualPaymentModal} onClose={() => setManualPaymentModal(null)} />}
+      {manualDetailModal && <ManualCreditPayments credit={manualDetailModal} onClose={() => setManualDetailModal(null)} />}
+      {newCreditModal && <NewManualCreditModal onClose={() => setNewCreditModal(false)} />}
     </Shell>
+  );
+}
+
+function NewManualCreditModal({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient();
+  const create = useCreateManualCredit();
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [total, setTotal] = useState('');
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState('');
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = Number(total);
+    if (!Number.isFinite(v) || v < 1) { setError('Escribe un monto válido.'); return; }
+    setError('');
+    create.mutate({ data: { clientName: clientName.trim() || undefined, clientPhone: clientPhone.trim() || undefined, total: Math.round(v), notes: notes.trim() || undefined } }, {
+      onSuccess: () => { qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() }); onClose(); },
+      onError: () => setError('No se pudo crear el crédito.'),
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
+      <form onSubmit={submit} className="w-full max-w-md rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Crédito manual</p>
+            <h2 className="mt-1 font-display text-3xl font-bold">Nuevo crédito</h2>
+            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Registra una deuda que existía antes de usar la app.</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-new-credit"><X size={20} /></button>
+        </div>
+        <div className="mt-6 grid gap-4">
+          <Field label="Nombre del cliente" value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre o razón social" data-testid="input-manual-credit-name" />
+          <Field label="Teléfono (opcional)" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Número de contacto" data-testid="input-manual-credit-phone" />
+          <Field label="Monto total de la deuda" type="number" min="1" step="1" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="0" autoFocus data-testid="input-manual-credit-total" />
+          <Field label="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Referencia, productos, etc." data-testid="input-manual-credit-notes" />
+        </div>
+        {error && <p className="mt-3 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</p>}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" disabled={create.isPending} data-testid="button-submit-manual-credit">{create.isPending ? 'Creando…' : 'Crear crédito'}</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function ManualCreditPaymentModal({ credit, onClose }: { credit: ManualCredit; onClose: () => void }) {
+  const qc = useQueryClient();
+  const createPayment = useCreateManualCreditPayment();
+  const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const v = Number(amount);
+    if (!amount.trim() || !Number.isFinite(v) || v < 1) { setError('Escribe un monto válido.'); return; }
+    setError('');
+    createPayment.mutate({ id: credit.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, note: note.trim() || undefined } }, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() });
+        qc.invalidateQueries({ queryKey: getListManualCreditPaymentsQueryKey(credit.id) });
+        onClose();
+      },
+      onError: () => setError('No se pudo registrar el abono.'),
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
+      <form onSubmit={submit} className="w-full max-w-md rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Abono a crédito manual</p>
+            <h2 className="mt-1 font-display text-3xl font-bold">Registrar abono</h2>
+            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">{credit.clientName || 'Cliente sin nombre'} · Total {money(credit.total)}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-manual-payment"><X size={20} /></button>
+        </div>
+        <div className="mt-6 grid gap-4">
+          <Field label="Monto del abono" type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus data-testid="input-manual-payment-amount" />
+          <div className="grid gap-1.5 text-sm font-semibold">
+            <label>Método de pago</label>
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-manual-payment-method">
+              <option value="">Sin especificar</option>
+              {PAYMENT_METHODS.filter((m) => m !== 'Crédito').map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <Field label="Nota (opcional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Referencia del pago" data-testid="input-manual-payment-note" />
+        </div>
+        {error && <p className="mt-3 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</p>}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" disabled={createPayment.isPending} data-testid="button-submit-manual-payment">{createPayment.isPending ? 'Guardando…' : 'Registrar abono'}</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function ManualCreditPayments({ credit, onClose }: { credit: ManualCredit; onClose: () => void }) {
+  const payments = useListManualCreditPayments(credit.id);
+  const deleteManualCredit = useDeleteManualCredit();
+  const qc = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-lg rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Crédito manual</p>
+            <h2 className="mt-1 font-display text-3xl font-bold">{credit.clientName || 'Cliente sin nombre'}</h2>
+            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">{credit.clientPhone || ''}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-manual-detail"><X size={20} /></button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="rounded-xl bg-[hsl(var(--muted)/.4)] p-3 text-center">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Total</p>
+            <p className="mt-1 font-mono-app text-lg font-bold">{money(credit.total)}</p>
+          </div>
+          <div className="rounded-xl bg-[hsl(var(--accent)/.5)] p-3 text-center">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Pagado</p>
+            <p className="mt-1 font-mono-app text-lg font-bold text-green-600">{money(credit.paid)}</p>
+          </div>
+          <div className="rounded-xl bg-[hsl(var(--secondary)/.6)] p-3 text-center">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Pendiente</p>
+            <p className="mt-1 font-mono-app text-lg font-bold text-orange-600">{money(credit.total - credit.paid)}</p>
+          </div>
+        </div>
+
+        {credit.notes && <p className="mt-4 rounded-xl bg-[hsl(var(--muted)/.3)] p-3 text-sm text-[hsl(var(--muted-foreground))]"><span className="font-semibold">Nota:</span> {credit.notes}</p>}
+
+        <div className="mt-5 max-h-60 overflow-y-auto">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Abonos</p>
+          {payments.isLoading ? (
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">Cargando…</p>
+          ) : (payments.data || []).length === 0 ? (
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">Aún no hay abonos registrados.</p>
+          ) : (
+            <div className="divide-y rounded-xl bg-[hsl(var(--muted)/.4)]">
+              {(payments.data || []).map((p) => (
+                <div key={p.id} className="flex items-center justify-between px-4 py-3" data-testid={`manual-payment-${p.id}`}>
+                  <div>
+                    <p className="font-semibold">{money(p.amount)}</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod ? ` · ${p.paymentMethod}` : ''}{p.note ? ` · ${p.note}` : ''}</p>
+                  </div>
+                  <span className="text-xs text-[hsl(var(--muted-foreground))]">{dateLabel(p.date)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="danger" className="text-xs" onClick={() => setConfirmDelete(true)} data-testid="button-delete-manual-credit">Eliminar crédito</Button>
+          <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+        </div>
+
+        {confirmDelete && (
+          <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4">
+            <div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
+              <h3 className="font-display text-2xl font-bold">¿Eliminar este crédito?</h3>
+              <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se borrarán todos los abonos asociados. Esta acción no se puede deshacer.</p>
+              <div className="mt-7 flex justify-end gap-3">
+                <Button type="button" variant="ghost" onClick={() => setConfirmDelete(false)}>Cancelar</Button>
+                <Button type="button" variant="danger" onClick={() => deleteManualCredit.mutate({ id: credit.id }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() }); onClose(); } })} disabled={deleteManualCredit.isPending}>{deleteManualCredit.isPending ? 'Borrando…' : 'Eliminar'}</Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 

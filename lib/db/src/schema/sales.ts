@@ -22,7 +22,8 @@ export const salesTable = pgTable("inventory_sales", {
 export const creditPaymentsTable = pgTable("inventory_credit_payments", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull().default(1),
-  saleId: integer("sale_id").notNull(),
+  saleId: integer("sale_id"),
+  manualCreditId: integer("manual_credit_id"),
   userId: text("user_id").notNull(),
   amount: integer("amount").notNull(),
   paymentMethod: text("payment_method"),
@@ -30,6 +31,20 @@ export const creditPaymentsTable = pgTable("inventory_credit_payments", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("inventory_credit_payments_sale_id_idx").on(t.saleId),
+  index("inventory_credit_payments_manual_credit_id_idx").on(t.manualCreditId),
+]).enableRLS();
+
+export const manualCreditsTable = pgTable("inventory_manual_credits", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().default(1),
+  userId: text("user_id").notNull(),
+  clientName: text("client_name"),
+  clientPhone: text("client_phone"),
+  total: integer("total").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index("inventory_manual_credits_company_idx").on(t.companyId),
 ]).enableRLS();
 
 export const saleItemsTable = pgTable("inventory_sale_items", {
@@ -53,8 +68,14 @@ export const insertCreditPaymentSchema = createInsertSchema(creditPaymentsTable)
   id: true,
   createdAt: true,
 });
+export const insertManualCreditSchema = createInsertSchema(manualCreditsTable).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertSale = z.infer<typeof insertSaleSchema>;
 export type InsertCreditPayment = z.infer<typeof insertCreditPaymentSchema>;
+export type InsertManualCredit = z.infer<typeof insertManualCreditSchema>;
 export type Sale = typeof salesTable.$inferSelect;
 export type SaleItem = typeof saleItemsTable.$inferSelect;
 export type CreditPayment = typeof creditPaymentsTable.$inferSelect;
+export type ManualCredit = typeof manualCreditsTable.$inferSelect;

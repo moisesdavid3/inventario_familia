@@ -523,6 +523,108 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SalesReport"
+  /manual-credits:
+    get:
+      operationId: listManualCredits
+      tags: [sales]
+      summary: List manual credit entries
+      responses:
+        "200":
+          description: Manual credits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManualCredit"
+    post:
+      operationId: createManualCredit
+      tags: [sales]
+      summary: Create a manual credit entry for past debts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualCreditInput"
+      responses:
+        "201":
+          description: Manual credit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualCredit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /manual-credits/{id}:
+    delete:
+      operationId: deleteManualCredit
+      tags: [sales]
+      summary: Delete a manual credit entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /manual-credits/{id}/credit-payment:
+    post:
+      operationId: createManualCreditPayment
+      tags: [sales]
+      summary: Register a payment on a manual credit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditPaymentInput"
+      responses:
+        "201":
+          description: Payment registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditPayment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /manual-credits/{id}/credit-payments:
+    get:
+      operationId: listManualCreditPayments
+      tags: [sales]
+      summary: List payments for a manual credit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "200":
+          description: Payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditPayment"
 components:
   parameters:
     ProductId:
@@ -817,6 +919,38 @@ components:
           type: string
           format: date-time
       required: [id, saleId, amount, date]
+    ManualCredit:
+      type: object
+      properties:
+        id:
+          type: number
+        clientName:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        total:
+          type: number
+        paid:
+          type: number
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, total, paid, createdAt]
+    ManualCreditInput:
+      type: object
+      properties:
+        clientName:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        total:
+          type: number
+          minimum: 1
+        notes:
+          type: ["string", "null"]
+      required: [total]
     PurchaseItemInput:
       type: object
       properties:
