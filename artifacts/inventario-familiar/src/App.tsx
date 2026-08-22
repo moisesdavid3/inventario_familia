@@ -221,6 +221,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     { href: '/app/venta', label: 'Registrar venta', icon: ShoppingCart },
     { href: '/app/compras', label: 'Compras', icon: ShoppingBasket },
     { href: '/app/cartera', label: 'Cartera', icon: CreditCard },
+    { href: '/app/clientes', label: 'Clientes', icon: Users },
     { href: '/app/reportes', label: 'Reportes', icon: BarChart3 },
   ];
   return <div className="min-h-[100dvh] bg-background">
@@ -1133,6 +1134,94 @@ function NewManualCreditModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function ClientsPage() {
+  const clientsList = useListClients();
+  const createClient = useCreateClient();
+  const updateClient = useUpdateClient();
+  const deleteClient = useDeleteClient();
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<Client | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [error, setError] = useState('');
+
+  const startEdit = (c: Client) => { setEditing(c); setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setShowForm(true); setError(''); };
+  const startNew = () => { setEditing(null); setName(''); setPhone(''); setAddress(''); setShowForm(true); setError(''); };
+  const submitForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) { setError('Escribe el nombre.'); return; }
+    setError('');
+    const data = { name: name.trim(), phone: phone.trim() || undefined, address: address.trim() || undefined };
+    if (editing) {
+      updateClient.mutate({ id: editing.id, data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); setShowForm(false); setEditing(null); }, onError: () => setError('No se pudo guardar.') });
+    } else {
+      createClient.mutate({ data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); setShowForm(false); setName(''); setPhone(''); setAddress(''); }, onError: () => setError('No se pudo crear.') });
+    }
+  };
+
+  return (
+    <Shell>
+      <PageHeading eyebrow="Base de datos" title="Clientes" description="Gestiona los clientes de tu negocio." action={!showForm ? <Button onClick={startNew} data-testid="button-new-client-page"><Plus size={14} /> Nuevo cliente</Button> : undefined} />
+      {showForm ? (
+        <div className="mx-auto max-w-lg rounded-2xl border bg-[hsl(var(--card))] p-6">
+          <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">{editing ? 'Editar' : 'Nuevo'} cliente</p>
+          <form onSubmit={submitForm} className="mt-4 grid gap-4">
+            <Field label="Nombre *" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del cliente" autoFocus data-testid="input-client-page-name" />
+            <Field label="Teléfono" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Opcional" data-testid="input-client-page-phone" />
+            <Field label="Dirección" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Opcional" data-testid="input-client-page-address" />
+            {error && <p className="rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</p>}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setEditing(null); }}>Cancelar</Button>
+              <Button type="submit" disabled={createClient.isPending || updateClient.isPending} data-testid="button-submit-client-page">{editing ? 'Guardar' : 'Crear'}</Button>
+            </div>
+          </form>
+        </div>
+      ) : clientsList.isLoading ? (
+        <div className="grid gap-3">{[1, 2, 3].map((n) => <div key={n} className="h-16 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div>
+      ) : (clientsList.data || []).length === 0 ? (
+        <StatusMessage type="empty" text="No hay clientes registrados." />
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border bg-[hsl(var(--card))]">
+          <table className="w-full text-sm" data-testid="table-clients">
+            <thead>
+              <tr className="border-b text-left text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                <th className="px-4 py-3">Nombre</th>
+                <th className="px-4 py-3 hidden sm:table-cell">Teléfono</th>
+                <th className="px-4 py-3 hidden sm:table-cell">Dirección</th>
+                <th className="px-4 py-3 hidden md:table-cell">Creado</th>
+                <th className="px-4 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(clientsList.data || []).map((c) => (
+                <tr key={c.id} className="border-b last:border-0 hover:bg-[hsl(var(--muted)/.3)]" data-testid={`client-row-${c.id}`}>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-xs font-bold text-[hsl(var(--primary))]">{c.name.charAt(0).toUpperCase()}</span>
+                      <span className="font-semibold">{c.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden sm:table-cell">{c.phone || '—'}</td>
+                  <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden sm:table-cell">{c.address || '—'}</td>
+                  <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden md:table-cell">{dateLabel(c.createdAt)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-1.5">
+                      <Button variant="secondary" className="min-h-[28px] px-2 text-xs" onClick={() => startEdit(c)} data-testid={`button-edit-client-${c.id}`}>Editar</Button>
+                      <Button variant="danger" className="min-h-[28px] px-2 text-xs" onClick={() => { if (confirm('¿Eliminar este cliente?')) deleteClient.mutate({ id: c.id }, { onSuccess: () => qc.invalidateQueries({ queryKey: getListClientsQueryKey() }) }); }} data-testid={`button-delete-client-${c.id}`}>Eliminar</Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Shell>
+  );
+}
+
 function Protected({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   if (!isLoaded) return <div className="grid min-h-[50vh] place-items-center text-sm text-[hsl(var(--muted-foreground))]">Cargando…</div>;
@@ -1195,7 +1284,7 @@ function SignInPage() { return <AuthCard mode="sign-in" />; }
 function SignUpPage() { return <AuthCard mode="sign-up" />; }
 
 function Routes() {
-  return <Switch><Route path="/" component={Landing} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/app"><Protected><Dashboard /></Protected></Route><Route path="/app/productos"><Protected><Products /></Protected></Route><Route path="/app/venta"><Protected><SalePage /></Protected></Route><Route path="/app/compras"><Protected><Purchases /></Protected></Route><Route path="/app/cartera"><Protected><CarteraPage /></Protected></Route><Route path="/app/reportes"><Protected><Reports /></Protected></Route><Route component={NotFound} /></Switch>;
+  return <Switch><Route path="/" component={Landing} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route path="/app"><Protected><Dashboard /></Protected></Route><Route path="/app/productos"><Protected><Products /></Protected></Route><Route path="/app/venta"><Protected><SalePage /></Protected></Route><Route path="/app/compras"><Protected><Purchases /></Protected></Route><Route path="/app/cartera"><Protected><CarteraPage /></Protected></Route><Route path="/app/clientes"><Protected><ClientsPage /></Protected></Route><Route path="/app/reportes"><Protected><Reports /></Protected></Route><Route component={NotFound} /></Switch>;
 }
 
 function App() {
