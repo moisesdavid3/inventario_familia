@@ -20,4 +20,6 @@ export interface SaleInput {
   clientName?: string;
   /** Teléfono del cliente */
   clientPhone?: string;
+  /** ID del cliente existente */
+  clientId?: number;
 }

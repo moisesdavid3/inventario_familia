@@ -119,6 +119,7 @@ router.post("/sales", async (req, res): Promise<void> => {
       notes: parsed.data.notes?.trim() || null,
       clientName: parsed.data.clientName?.trim() || null,
       clientPhone: parsed.data.clientPhone?.trim() || null,
+      clientId: parsed.data.clientId ?? null,
     }).returning();
     await tx.insert(saleItemsTable).values(items.map((item) => ({ saleId: sale.id, ...item })));
     for (const { product, quantity } of products) {

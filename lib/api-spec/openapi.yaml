@@ -919,6 +919,9 @@ components:
         clientPhone:
           type: string
           description: Teléfono del cliente
+        clientId:
+          type: number
+          description: ID del cliente existente
       required: [items]
     SaleItem:
       type: object
@@ -1032,6 +1035,8 @@ components:
           type: ["string", "null"]
         clientPhone:
           type: ["string", "null"]
+        clientId:
+          type: ["number", "null"]
         total:
           type: number
           minimum: 1

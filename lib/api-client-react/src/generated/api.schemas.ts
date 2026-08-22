@@ -132,6 +132,8 @@ export interface SaleInput {
   clientName?: string;
   /** Teléfono del cliente */
   clientPhone?: string;
+  /** ID del cliente existente */
+  clientId?: number;
 }
 
 export interface SaleItem {
@@ -213,6 +215,8 @@ export interface ManualCreditInput {
   clientName?: string | null;
   /** @nullable */
   clientPhone?: string | null;
+  /** @nullable */
+  clientId?: number | null;
   /** @minimum 1 */
   total: number;
   /** @nullable */

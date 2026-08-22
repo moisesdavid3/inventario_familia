@@ -11,6 +11,8 @@ export interface ManualCreditInput {
   clientName?: string | null;
   /** @nullable */
   clientPhone?: string | null;
+  /** @nullable */
+  clientId?: number | null;
   /** @minimum 1 */
   total: number;
   /** @nullable */

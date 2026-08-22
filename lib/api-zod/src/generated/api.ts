@@ -399,7 +399,8 @@ export const CreateSaleBody = zod.object({
   "paymentMethod": zod.string().optional().describe('Método de pago (Efectivo, Nequi, Transferencia, Datafono, QR \/ Llave)'),
   "notes": zod.string().optional().describe('Observaciones del usuario sobre la venta'),
   "clientName": zod.string().optional().describe('Nombre del cliente'),
-  "clientPhone": zod.string().optional().describe('Teléfono del cliente')
+  "clientPhone": zod.string().optional().describe('Teléfono del cliente'),
+  "clientId": zod.number().optional().describe('ID del cliente existente')
 })
 
 export const CreateSaleResponse = zod.object({
@@ -778,6 +779,7 @@ export const ListManualCreditsResponse = zod.array(ListManualCreditsResponseItem
 export const CreateManualCreditBody = zod.object({
   "clientName": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
+  "clientId": zod.number().nullish(),
   "total": zod.number().min(1),
   "notes": zod.string().nullish()
 })
