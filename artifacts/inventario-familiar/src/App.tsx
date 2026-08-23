@@ -924,7 +924,7 @@ function ClientsManagerModal({ onClose }: { onClose: () => void }) {
     setError('');
     const data = { name: name.trim(), phone: phone.trim() || undefined, address: address.trim() || undefined };
     if (editing) {
-      updateClient.mutate({ id: editing.id, data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); setShowForm(false); setEditing(null); }, onError: () => setError('No se pudo guardar.') });
+      updateClient.mutate({ id: editing.id, data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() }); setShowForm(false); setEditing(null); }, onError: () => setError('No se pudo guardar.') });
     } else {
       createClient.mutate({ data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); setShowForm(false); }, onError: () => setError('No se pudo crear.') });
     }
@@ -1155,7 +1155,7 @@ function ClientsPage() {
     setError('');
     const data = { name: name.trim(), phone: phone.trim() || undefined, address: address.trim() || undefined };
     if (editing) {
-      updateClient.mutate({ id: editing.id, data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); setShowForm(false); setEditing(null); }, onError: () => setError('No se pudo guardar.') });
+      updateClient.mutate({ id: editing.id, data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() }); setShowForm(false); setEditing(null); }, onError: () => setError('No se pudo guardar.') });
     } else {
       createClient.mutate({ data }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getListClientsQueryKey() }); setShowForm(false); setName(''); setPhone(''); setAddress(''); }, onError: () => setError('No se pudo crear.') });
     }

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { desc, eq } from "drizzle-orm";
-import { clientsTable, getDb } from "@workspace/db";
+import { clientsTable, getDb, manualCreditsTable, salesTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
 
@@ -65,6 +65,9 @@ router.put("/clients/:id", async (req, res): Promise<void> => {
     address: typeof body.address === "string" && body.address.trim() ? body.address.trim() : null,
     updatedAt: new Date(),
   }).where(eq(clientsTable.id, id)).returning();
+  const phoneVal = typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null;
+  await getDb().update(salesTable).set({ clientName: name, clientPhone: phoneVal }).where(eq(salesTable.clientId, id));
+  await getDb().update(manualCreditsTable).set({ clientName: name, clientPhone: phoneVal }).where(eq(manualCreditsTable.clientId, id));
   res.json(clientResponse(updated));
 });
 
