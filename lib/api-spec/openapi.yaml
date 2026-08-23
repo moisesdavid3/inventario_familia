@@ -316,6 +316,14 @@ paths:
           schema:
             type: string
             format: date
+        - name: scope
+          in: query
+          required: false
+          description: company filtra por empresa actual, all retorna de todas las empresas
+          schema:
+            type: string
+            enum: [company, all]
+            default: company
       responses:
         "200":
           description: Sales
@@ -610,6 +618,15 @@ paths:
       operationId: listManualCredits
       tags: [sales]
       summary: List manual credit entries
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          description: company filtra por empresa actual, all retorna de todas las empresas
+          schema:
+            type: string
+            enum: [company, all]
+            default: company
       responses:
         "200":
           description: Manual credits

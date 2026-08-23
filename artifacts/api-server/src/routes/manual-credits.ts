@@ -33,8 +33,10 @@ function creditPaymentResponse(payment: typeof creditPaymentsTable.$inferSelect)
 }
 
 router.get("/manual-credits", async (req, res): Promise<void> => {
+  const scope = typeof req.query.scope === "string" ? req.query.scope : "company";
+  const where = scope === "all" ? undefined : eq(manualCreditsTable.companyId, req.companyId!);
   const credits = await getDb().select().from(manualCreditsTable)
-    .where(eq(manualCreditsTable.companyId, req.companyId!))
+    .where(where)
     .orderBy(desc(manualCreditsTable.createdAt));
 
   if (credits.length === 0) {

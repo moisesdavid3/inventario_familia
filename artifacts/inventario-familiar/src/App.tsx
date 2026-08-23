@@ -644,8 +644,8 @@ function SaleCreditPayments({ sale, onClose }: { sale: Sale; onClose: () => void
 }
 
 function CarteraPage() {
-  const sales = useListSales({ period: 'all' });
-  const manualCredits = useListManualCredits();
+  const sales = useListSales({ period: 'all', scope: 'all' });
+  const manualCredits = useListManualCredits({ scope: 'all' });
   const clientsList = useListClients();
   const createManualCredit = useCreateManualCredit();
   const createManualPayment = useCreateManualCreditPayment();

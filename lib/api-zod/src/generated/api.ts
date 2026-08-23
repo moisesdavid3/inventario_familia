@@ -347,11 +347,13 @@ export const UpdateDeudaMoisesResponse = zod.void()
  * @summary List sales
  */
 export const listSalesQueryPeriodDefault = `all`;
+export const listSalesQueryScopeDefault = `company`;
 
 export const ListSalesQueryParams = zod.object({
   "period": zod.enum(['today', 'last7', 'thisMonth', 'previousMonth', 'all']).default(listSalesQueryPeriodDefault),
   "from": zod.date().optional(),
-  "to": zod.date().optional()
+  "to": zod.date().optional(),
+  "scope": zod.enum(['company', 'all']).default(listSalesQueryScopeDefault).describe('company filtra por empresa actual, all retorna de todas las empresas')
 })
 
 export const ListSalesResponseItem = zod.object({
@@ -757,6 +759,12 @@ export const GetSalesReportResponse = zod.object({
 /**
  * @summary List manual credit entries
  */
+export const listManualCreditsQueryScopeDefault = `company`;
+
+export const ListManualCreditsQueryParams = zod.object({
+  "scope": zod.enum(['company', 'all']).default(listManualCreditsQueryScopeDefault).describe('company filtra por empresa actual, all retorna de todas las empresas')
+})
+
 export const ListManualCreditsResponseItem = zod.object({
   "id": zod.number(),
   "clientName": zod.string().nullish(),

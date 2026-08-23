@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { companiesTable, creditPaymentsTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateCreditPaymentBody,
@@ -32,9 +32,15 @@ router.get("/sales", async (req, res): Promise<void> => {
   const userId = req.userId!;
   await ensureSeeded(userId);
   const { period, from, to } = queryDates(req.query as Record<string, unknown>);
+  const scope = typeof req.query.scope === "string" ? req.query.scope : "company";
   const range = dateRangeForPeriod(period, from, to);
+  const conditions: ReturnType<typeof eq>[] = [];
+  if (scope !== "all") conditions.push(eq(salesTable.companyId, req.companyId!));
+  if (range.from) conditions.push(gte(salesTable.createdAt, range.from));
+  if (range.to) conditions.push(lte(salesTable.createdAt, range.to));
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
   const rows = await getDb().select().from(salesTable)
-    .where(saleWhere(req.companyId!, range))
+    .where(where)
     .orderBy(desc(salesTable.createdAt));
   const saleIds = rows.map((s) => s.id);
   const allItems = saleIds.length

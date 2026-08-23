@@ -374,6 +374,10 @@ export type ListSalesParams = {
 period?: ListSalesPeriod;
 from?: string;
 to?: string;
+/**
+ * company filtra por empresa actual, all retorna de todas las empresas
+ */
+scope?: ListSalesScope;
 };
 
 export type ListSalesPeriod = typeof ListSalesPeriod[keyof typeof ListSalesPeriod];
@@ -384,6 +388,14 @@ export const ListSalesPeriod = {
   last7: 'last7',
   thisMonth: 'thisMonth',
   previousMonth: 'previousMonth',
+  all: 'all',
+} as const;
+
+export type ListSalesScope = typeof ListSalesScope[keyof typeof ListSalesScope];
+
+
+export const ListSalesScope = {
+  company: 'company',
   all: 'all',
 } as const;
 
@@ -431,6 +443,21 @@ export const GetSalesReportPeriod = {
   last7: 'last7',
   thisMonth: 'thisMonth',
   previousMonth: 'previousMonth',
+  all: 'all',
+} as const;
+
+export type ListManualCreditsParams = {
+/**
+ * company filtra por empresa actual, all retorna de todas las empresas
+ */
+scope?: ListManualCreditsScope;
+};
+
+export type ListManualCreditsScope = typeof ListManualCreditsScope[keyof typeof ListManualCreditsScope];
+
+
+export const ListManualCreditsScope = {
+  company: 'company',
   all: 'all',
 } as const;
 

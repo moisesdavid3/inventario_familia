@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { clientsTable, getDb } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
@@ -20,7 +20,6 @@ function clientResponse(client: typeof clientsTable.$inferSelect) {
 
 router.get("/clients", async (req, res): Promise<void> => {
   const clients = await getDb().select().from(clientsTable)
-    .where(eq(clientsTable.companyId, req.companyId!))
     .orderBy(desc(clientsTable.createdAt));
   res.json(clients.map(clientResponse));
 });
@@ -55,7 +54,7 @@ router.put("/clients/:id", async (req, res): Promise<void> => {
     return;
   }
   const [existing] = await getDb().select().from(clientsTable)
-    .where(and(eq(clientsTable.id, id), eq(clientsTable.companyId, req.companyId!)));
+    .where(eq(clientsTable.id, id));
   if (!existing) {
     res.status(404).json({ error: "No encontramos ese cliente." });
     return;
@@ -76,7 +75,7 @@ router.delete("/clients/:id", async (req, res): Promise<void> => {
     return;
   }
   const [existing] = await getDb().select().from(clientsTable)
-    .where(and(eq(clientsTable.id, id), eq(clientsTable.companyId, req.companyId!)));
+    .where(eq(clientsTable.id, id));
   if (!existing) {
     res.status(404).json({ error: "No encontramos ese cliente." });
     return;

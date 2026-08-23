@@ -34,6 +34,7 @@ import type {
   HealthStatus,
   InventoryInput,
   InventoryReport,
+  ListManualCreditsParams,
   ListPurchasesParams,
   ListSalesParams,
   ManualCredit,
@@ -2249,20 +2250,27 @@ export function useGetSalesReport<TData = Awaited<ReturnType<typeof getSalesRepo
 
 
 
-export const getListManualCreditsUrl = () => {
+export const getListManualCreditsUrl = (params?: ListManualCreditsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/manual-credits`
+  return stringifiedParams.length > 0 ? `/api/manual-credits?${stringifiedParams}` : `/api/manual-credits`
 }
 
 /**
  * @summary List manual credit entries
  */
-export const listManualCredits = async ( options?: Parameters<typeof customFetch>[1]): Promise<ManualCredit[]> => {
+export const listManualCredits = async (params?: ListManualCreditsParams, options?: Parameters<typeof customFetch>[1]): Promise<ManualCredit[]> => {
 
-  return customFetch<ManualCredit[]>(getListManualCreditsUrl(),
+  return customFetch<ManualCredit[]>(getListManualCreditsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2275,23 +2283,23 @@ export const listManualCredits = async ( options?: Parameters<typeof customFetch
 
 
 
-export const getListManualCreditsQueryKey = () => {
+export const getListManualCreditsQueryKey = (params?: ListManualCreditsParams,) => {
     return [
-    `/api/manual-credits`
+    `/api/manual-credits`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListManualCreditsQueryOptions = <TData = Awaited<ReturnType<typeof listManualCredits>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCredits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListManualCreditsQueryOptions = <TData = Awaited<ReturnType<typeof listManualCredits>>, TError = ErrorType<unknown>>(params?: ListManualCreditsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCredits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListManualCreditsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListManualCreditsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManualCredits>>> = ({ signal }) => listManualCredits({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManualCredits>>> = ({ signal }) => listManualCredits(params, { signal, ...requestOptions });
 
 
 
@@ -2309,11 +2317,11 @@ export type ListManualCreditsQueryError = ErrorType<unknown>
  */
 
 export function useListManualCredits<TData = Awaited<ReturnType<typeof listManualCredits>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCredits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListManualCreditsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualCredits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListManualCreditsQueryOptions(options)
+  const queryOptions = getListManualCreditsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

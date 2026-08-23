@@ -5,15 +5,11 @@
  * API for a simple private inventory and sales app
  * OpenAPI spec version: 0.1.0
  */
-import type { ListSalesPeriod } from './listSalesPeriod';
-import type { ListSalesScope } from './listSalesScope';
+import type { ListManualCreditsScope } from './listManualCreditsScope';
 
-export type ListSalesParams = {
-period?: ListSalesPeriod;
-from?: Date;
-to?: Date;
+export type ListManualCreditsParams = {
 /**
  * company filtra por empresa actual, all retorna de todas las empresas
  */
-scope?: ListSalesScope;
+scope?: ListManualCreditsScope;
 };
