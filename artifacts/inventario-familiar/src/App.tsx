@@ -964,7 +964,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                   return <tr key={`s-${s.id}`} className="border-b last:border-0">
                     <td className="px-3 py-2 text-xs">{dateLabel(s.date)}</td>
                     <td className="px-3 py-2"><span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span><span className="ml-1 rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span></td>
-                    <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))] max-w-[200px] truncate">{s.items?.length ? s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ') : '—'}</td>
+                    <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))] max-w-[200px]">{s.items?.length ? <div className="flex flex-col gap-0.5">{s.items.map((it, idx) => <span key={idx}>{it.quantity}× {it.productName}</span>)}</div> : '—'}</td>
                     <td className="px-3 py-2 text-right font-mono-app font-bold">{money(s.total)}</td>
                     <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p)}</td>
                     <td className="px-3 py-2 text-right font-mono-app">{money(s.total - p)}</td>
