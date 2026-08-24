@@ -895,7 +895,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
           <div className="rounded-xl bg-[hsl(var(--accent)/.5)] p-3 text-center"><p className="text-xs text-[hsl(var(--muted-foreground))]">Pagado</p><p className="mt-1 font-mono-app text-lg font-bold text-green-600">{money(paid)}</p></div>
           <div className="rounded-xl bg-[hsl(var(--secondary)/.6)] p-3 text-center"><p className="text-xs text-[hsl(var(--muted-foreground))]">Pendiente</p><p className="mt-1 font-mono-app text-lg font-bold text-orange-600">{money(remaining)}</p></div>
         </div>
-        {companyBreakdown.length > 1 && (
+        {companyBreakdown.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-3">
             {companyBreakdown.map(([cid, cb]) => (
               <div key={cid} className="flex-1 min-w-[140px] rounded-xl border bg-[hsl(var(--muted)/.2)] px-3 py-2">
