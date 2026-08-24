@@ -38,5 +38,9 @@ export interface Sale {
   creditPaid: number;
   /** ID de la empresa */
   companyId?: number;
+  /** Venta para envío a domicilio */
+  isDelivery?: boolean;
+  /** Costo del domicilio */
+  deliveryCost?: number;
   items: SaleItem[];
 }

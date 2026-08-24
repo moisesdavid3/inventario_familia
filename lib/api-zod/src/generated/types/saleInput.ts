@@ -22,4 +22,8 @@ export interface SaleInput {
   clientPhone?: string;
   /** ID del cliente existente */
   clientId?: number;
+  /** Venta para envío a domicilio */
+  isDelivery?: boolean;
+  /** Costo del domicilio (se suma al total) */
+  deliveryCost?: number;
 }

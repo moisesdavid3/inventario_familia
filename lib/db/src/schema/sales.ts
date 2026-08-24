@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const clientsTable = pgTable("inventory_clients", {
@@ -28,6 +28,8 @@ export const salesTable = pgTable("inventory_sales", {
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
   clientId: integer("client_id"),
+  isDelivery: boolean("is_delivery").notNull().default(false),
+  deliveryCost: integer("delivery_cost").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("inventory_sales_company_created_idx").on(t.companyId, t.createdAt),

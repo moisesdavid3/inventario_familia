@@ -110,6 +110,9 @@ router.post("/sales", async (req, res): Promise<void> => {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
     const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
     const estimatedProfit = items.reduce((sum, item) => sum + (item.unitPrice - item.unitCost) * item.quantity, 0);
+    const isDelivery = parsed.data.isDelivery === true;
+    const deliveryCost = isDelivery ? (parsed.data.deliveryCost ?? 0) : 0;
+    const finalTotal = total + deliveryCost;
     const dayStart = startOfDayBogota(saleDate);
     const [row] = await tx.select({ count: sql<number>`count(*)` }).from(salesTable)
       .where(and(eq(salesTable.companyId, req.companyId!), gte(salesTable.createdAt, dayStart)));
@@ -118,7 +121,7 @@ router.post("/sales", async (req, res): Promise<void> => {
       userId,
       saleNumber: Number(row?.count ?? 0) + 1,
       createdAt: saleDate,
-      total,
+      total: finalTotal,
       totalItems,
       estimatedProfit,
       paymentMethod: parsed.data.paymentMethod?.trim() || null,
@@ -126,6 +129,8 @@ router.post("/sales", async (req, res): Promise<void> => {
       clientName: parsed.data.clientName?.trim() || null,
       clientPhone: parsed.data.clientPhone?.trim() || null,
       clientId: parsed.data.clientId ?? null,
+      isDelivery,
+      deliveryCost,
     }).returning();
     await tx.insert(saleItemsTable).values(items.map((item) => ({ saleId: sale.id, ...item })));
     for (const { product, quantity } of products) {

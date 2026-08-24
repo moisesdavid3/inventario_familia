@@ -370,6 +370,8 @@ export const ListSalesResponseItem = zod.object({
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "companyId": zod.number().optional().describe('ID de la empresa'),
+  "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
+  "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -403,7 +405,9 @@ export const CreateSaleBody = zod.object({
   "notes": zod.string().optional().describe('Observaciones del usuario sobre la venta'),
   "clientName": zod.string().optional().describe('Nombre del cliente'),
   "clientPhone": zod.string().optional().describe('Teléfono del cliente'),
-  "clientId": zod.number().optional().describe('ID del cliente existente')
+  "clientId": zod.number().optional().describe('ID del cliente existente'),
+  "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
+  "deliveryCost": zod.number().optional().describe('Costo del domicilio (se suma al total)')
 })
 
 export const CreateSaleResponse = zod.object({
@@ -420,6 +424,8 @@ export const CreateSaleResponse = zod.object({
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "companyId": zod.number().optional().describe('ID de la empresa'),
+  "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
+  "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -455,6 +461,8 @@ export const GetSaleResponse = zod.object({
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "companyId": zod.number().optional().describe('ID de la empresa'),
+  "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
+  "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -758,6 +766,8 @@ export const GetSalesReportResponse = zod.object({
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
   "companyId": zod.number().optional().describe('ID de la empresa'),
+  "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
+  "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),

@@ -227,6 +227,8 @@ export function toSaleResponse(sale: typeof salesTable.$inferSelect, items: type
     clientId: sale.clientId ?? null,
     creditPaid,
     companyId: sale.companyId,
+    isDelivery: sale.isDelivery,
+    deliveryCost: sale.deliveryCost,
     items: items.map((item) => ({
       productId: item.productId,
       productName: item.productName,

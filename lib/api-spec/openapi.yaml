@@ -981,6 +981,12 @@ components:
         clientId:
           type: number
           description: ID del cliente existente
+        isDelivery:
+          type: boolean
+          description: Venta para envío a domicilio
+        deliveryCost:
+          type: number
+          description: Costo del domicilio (se suma al total)
       required: [items]
     SaleItem:
       type: object
@@ -1036,6 +1042,12 @@ components:
         companyId:
           type: number
           description: ID de la empresa
+        isDelivery:
+          type: boolean
+          description: Venta para envío a domicilio
+        deliveryCost:
+          type: number
+          description: Costo del domicilio
         items:
           type: array
           items:
