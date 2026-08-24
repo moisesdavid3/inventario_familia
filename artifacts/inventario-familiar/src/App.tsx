@@ -784,11 +784,12 @@ function CarteraPage() {
             <span className="text-[hsl(var(--muted-foreground))]">Clientes: <strong>{clientGroups.length}</strong></span>
           </div>
           <div className="overflow-x-auto rounded-2xl border bg-[hsl(var(--card))]">
-            <table className="w-full text-sm" data-testid="table-cartera">
+            {/* Desktop table */}
+            <table className="w-full text-sm hidden sm:table" data-testid="table-cartera">
               <thead>
                 <tr className="border-b text-left text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
                   <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3 hidden sm:table-cell">Teléfono</th>
+                  <th className="px-4 py-3">Teléfono</th>
                   <th className="px-4 py-3 text-right">Total</th>
                   <th className="px-4 py-3 text-right">Abonado</th>
                   <th className="px-4 py-3 text-right">Saldo</th>
@@ -806,7 +807,7 @@ function CarteraPage() {
                         <span className="font-semibold">{g.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden sm:table-cell">{g.phone || '—'}</td>
+                    <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">{g.phone || '—'}</td>
                     <td className="px-4 py-3 text-right font-mono-app font-bold">{money(g.total)}</td>
                     <td className="px-4 py-3 text-right font-mono-app text-green-600">{money(g.paid)}</td>
                     <td className="px-4 py-3 text-right font-mono-app font-bold">{money(g.remaining)}</td>
@@ -830,6 +831,37 @@ function CarteraPage() {
                 ))}
               </tbody>
             </table>
+            {/* Mobile cards */}
+            <div className="sm:hidden divide-y" data-testid="cards-cartera">
+              {clientGroups.map((g, i) => (
+                <div key={i} className="p-4 space-y-2.5" data-testid={`cartera-client-${i}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-sm font-bold text-[hsl(var(--primary))]">{g.name.charAt(0).toUpperCase()}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold truncate">{g.name}</p>
+                      {g.phone && <p className="text-xs text-[hsl(var(--muted-foreground))]">{g.phone}</p>}
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${g.isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                      {g.isPaid ? 'Pagado' : 'Pendiente'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-lg bg-[hsl(var(--muted)/.3)] py-1.5"><p className="text-[10px] text-[hsl(var(--muted-foreground))]">Total</p><p className="font-mono-app text-xs font-bold">{money(g.total)}</p></div>
+                    <div className="rounded-lg bg-green-50 py-1.5"><p className="text-[10px] text-[hsl(var(--muted-foreground))]">Pagado</p><p className="font-mono-app text-xs font-bold text-green-600">{money(g.paid)}</p></div>
+                    <div className="rounded-lg bg-orange-50 py-1.5"><p className="text-[10px] text-[hsl(var(--muted-foreground))]">Saldo</p><p className="font-mono-app text-xs font-bold text-orange-600">{money(g.remaining)}</p></div>
+                  </div>
+                  {g.phone && <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Último: {dateLabel(g.lastActivity)}</p>}
+                  <div className="flex gap-2">
+                    <Button variant="secondary" className="flex-1 min-h-[40px] text-sm" onClick={() => openDetail(g)} data-testid={`button-view-client-${i}`}>Ver detalle</Button>
+                    {!g.isPaid && <Button className="flex-1 min-h-[40px] text-sm" onClick={() => {
+                      if (g.sales.length === 1 && g.manualCredits.length === 0) setPaymentTarget({ type: 'sale', sale: g.sales[0] });
+                      else if (g.manualCredits.length === 1 && g.sales.length === 0) setPaymentTarget({ type: 'manual', credit: g.manualCredits[0] });
+                      else setPaymentTarget({ type: 'manual', credit: g.manualCredits[0] || g.sales[0] as any });
+                    }} data-testid={`button-abonar-client-${i}`}>Abonar</Button>}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </>
       )}
@@ -880,36 +912,41 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
   }, [detail.sales, detail.manualCredits, salesPaid]);
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-2xl rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
-        <div className="flex items-start justify-between">
-          <div>
+    <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-[hsl(var(--foreground)/.45)] sm:p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-2xl rounded-t-2xl sm:rounded-2xl border bg-[hsl(var(--card))] shadow-2xl max-h-[92dvh] flex flex-col">
+        <div className="flex items-start justify-between p-5 pb-0 sm:p-6">
+          <div className="min-w-0 flex-1">
             <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Detalle de cliente</p>
-            <h2 className="mt-1 font-display text-3xl font-bold">{detail.name}</h2>
+            <h2 className="mt-1 font-display text-2xl sm:text-3xl font-bold truncate">{detail.name}</h2>
             {detail.phone && <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">{detail.phone}</p>}
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-client-detail"><X size={20} /></button>
+          <button type="button" onClick={onClose} className="shrink-0 ml-3 rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-client-detail"><X size={20} /></button>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-[hsl(var(--muted)/.4)] p-3 text-center"><p className="text-xs text-[hsl(var(--muted-foreground))]">Total</p><p className="mt-1 font-mono-app text-lg font-bold">{money(total)}</p></div>
-          <div className="rounded-xl bg-[hsl(var(--accent)/.5)] p-3 text-center"><p className="text-xs text-[hsl(var(--muted-foreground))]">Pagado</p><p className="mt-1 font-mono-app text-lg font-bold text-green-600">{money(paid)}</p></div>
-          <div className="rounded-xl bg-[hsl(var(--secondary)/.6)] p-3 text-center"><p className="text-xs text-[hsl(var(--muted-foreground))]">Pendiente</p><p className="mt-1 font-mono-app text-lg font-bold text-orange-600">{money(remaining)}</p></div>
-        </div>
-        {companyBreakdown.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-3">
-            {companyBreakdown.map(([cid, cb]) => (
-              <div key={cid} className="flex-1 min-w-[140px] rounded-xl border bg-[hsl(var(--muted)/.2)] px-3 py-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{companyName(cid)}</p>
-                <p className="mt-1 font-mono-app text-sm font-bold text-orange-600">Pendiente: {money(cb.remaining)}</p>
-                <p className="font-mono-app text-xs text-green-600">Pagado: {money(cb.paid)}</p>
-              </div>
-            ))}
-          </div>
-        )}
 
-        <div className="mt-5 max-h-[60vh] overflow-y-auto">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Movimientos</p>
-          <div className="overflow-x-auto rounded-xl border bg-[hsl(var(--muted)/.2)]">
+        <div className="px-5 sm:px-6 pt-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-xl bg-[hsl(var(--muted)/.4)] p-2.5 sm:p-3 text-center"><p className="text-[10px] sm:text-xs text-[hsl(var(--muted-foreground))]">Total</p><p className="mt-0.5 font-mono-app text-base sm:text-lg font-bold">{money(total)}</p></div>
+            <div className="rounded-xl bg-[hsl(var(--accent)/.5)] p-2.5 sm:p-3 text-center"><p className="text-[10px] sm:text-xs text-[hsl(var(--muted-foreground))]">Pagado</p><p className="mt-0.5 font-mono-app text-base sm:text-lg font-bold text-green-600">{money(paid)}</p></div>
+            <div className="rounded-xl bg-[hsl(var(--secondary)/.6)] p-2.5 sm:p-3 text-center"><p className="text-[10px] sm:text-xs text-[hsl(var(--muted-foreground))]">Pendiente</p><p className="mt-0.5 font-mono-app text-base sm:text-lg font-bold text-orange-600">{money(remaining)}</p></div>
+          </div>
+          {companyBreakdown.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {companyBreakdown.map(([cid, cb]) => (
+                <div key={cid} className="flex-1 min-w-[120px] rounded-xl border bg-[hsl(var(--muted)/.2)] px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{companyName(cid)}</p>
+                  <p className="mt-1 font-mono-app text-xs sm:text-sm font-bold text-orange-600">Pendiente: {money(cb.remaining)}</p>
+                  <p className="font-mono-app text-[10px] sm:text-xs text-green-600">Pagado: {money(cb.paid)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 flex-1 overflow-y-auto px-5 sm:px-6 pb-5 sm:pb-6 min-h-0">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Movimientos ({detail.sales.length + detail.manualCredits.length + allPayments.length})</p>
+
+          {/* Desktop: table */}
+          <div className="hidden sm:block overflow-x-auto rounded-xl border bg-[hsl(var(--muted)/.2)]">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
@@ -927,7 +964,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                   return <tr key={`s-${s.id}`} className="border-b last:border-0">
                     <td className="px-3 py-2 text-xs">{dateLabel(s.date)}</td>
                     <td className="px-3 py-2"><span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span><span className="ml-1 rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span></td>
-                    <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{s.items?.length ? s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ') : '—'}</td>
+                    <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))] max-w-[200px] truncate">{s.items?.length ? s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ') : '—'}</td>
                     <td className="px-3 py-2 text-right font-mono-app font-bold">{money(s.total)}</td>
                     <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p)}</td>
                     <td className="px-3 py-2 text-right font-mono-app">{money(s.total - p)}</td>
@@ -952,10 +989,56 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
               </tbody>
             </table>
           </div>
+
+          {/* Mobile: cards */}
+          <div className="sm:hidden space-y-2">
+            {detail.sales.map((s) => {
+              const p = salesPaid.get(s.id) ?? 0;
+              return <div key={`s-${s.id}`} className="rounded-xl border bg-[hsl(var(--muted)/.2)] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span>
+                    <span className="rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span>
+                  </div>
+                  <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(s.date)}</span>
+                </div>
+                {s.items?.length > 0 && <p className="mt-1.5 text-xs text-[hsl(var(--muted-foreground))] line-clamp-2">{s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ')}</p>}
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="font-mono-app font-bold">{money(s.total)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-green-600">Pagado: {money(p)}</span>
+                    <span className="font-bold text-orange-600">{money(s.total - p)}</span>
+                  </div>
+                </div>
+              </div>;
+            })}
+            {detail.manualCredits.map((mc) => <div key={`mc-${mc.id}`} className="rounded-xl border bg-purple-50/50 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">Crédito manual</span>
+                <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(mc.createdAt)}</span>
+              </div>
+              {mc.notes && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{mc.notes}</p>}
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="font-mono-app font-bold">{money(mc.total)}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-green-600">Pagado: {money(mc.paid)}</span>
+                  <span className="font-bold text-orange-600">{money(mc.total - mc.paid)}</span>
+                </div>
+              </div>
+            </div>)}
+            {allPayments.map((p) => <div key={`p-${p.id}`} className="rounded-xl border border-green-200 bg-green-50/50 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">Abono</span>
+                <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(p.date)}</span>
+              </div>
+              {p.paymentMethod && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod}{p.note ? ` · ${p.note}` : ''}</p>}
+              <p className="mt-2 text-xs font-mono-app font-bold text-green-600">+{money(p.amount)}</p>
+            </div>)}
+          </div>
         </div>
 
-        <div className="mt-5 flex justify-end">
-          <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+        <div className="border-t px-5 sm:px-6 py-3 sm:py-5 flex justify-end">
+          <Button variant="ghost" onClick={onClose} className="min-h-[44px] px-6">Cerrar</Button>
         </div>
       </div>
     </div>
