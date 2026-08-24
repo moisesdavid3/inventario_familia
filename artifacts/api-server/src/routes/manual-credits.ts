@@ -17,6 +17,7 @@ function manualCreditResponse(credit: typeof manualCreditsTable.$inferSelect, pa
     paid,
     notes: credit.notes,
     createdAt: credit.createdAt,
+    companyId: credit.companyId,
   };
 }
 

@@ -36,5 +36,7 @@ export interface Sale {
   clientId?: number | null;
   /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
   creditPaid: number;
+  /** ID de la empresa */
+  companyId?: number;
   items: SaleItem[];
 }

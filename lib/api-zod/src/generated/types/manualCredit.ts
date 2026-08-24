@@ -19,4 +19,6 @@ export interface ManualCredit {
   /** @nullable */
   notes?: string | null;
   createdAt: Date;
+  /** ID de la empresa */
+  companyId?: number;
 }

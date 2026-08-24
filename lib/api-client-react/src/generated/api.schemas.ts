@@ -174,6 +174,8 @@ export interface Sale {
   clientId?: number | null;
   /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
   creditPaid: number;
+  /** ID de la empresa */
+  companyId?: number;
   items: SaleItem[];
 }
 
@@ -208,6 +210,8 @@ export interface ManualCredit {
   /** @nullable */
   notes?: string | null;
   createdAt: string;
+  /** ID de la empresa */
+  companyId?: number;
 }
 
 export interface ManualCreditInput {

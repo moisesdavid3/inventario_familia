@@ -369,6 +369,7 @@ export const ListSalesResponseItem = zod.object({
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
+  "companyId": zod.number().optional().describe('ID de la empresa'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -418,6 +419,7 @@ export const CreateSaleResponse = zod.object({
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
+  "companyId": zod.number().optional().describe('ID de la empresa'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -452,6 +454,7 @@ export const GetSaleResponse = zod.object({
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
+  "companyId": zod.number().optional().describe('ID de la empresa'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -754,6 +757,7 @@ export const GetSalesReportResponse = zod.object({
   "clientPhone": zod.string().nullish().describe('Teléfono del cliente'),
   "clientId": zod.number().nullish().describe('ID del cliente asociado'),
   "creditPaid": zod.number().describe('Total abonado hasta ahora (solo aplica a ventas a crédito)'),
+  "companyId": zod.number().optional().describe('ID de la empresa'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -795,7 +799,8 @@ export const ListManualCreditsResponseItem = zod.object({
   "total": zod.number(),
   "paid": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "companyId": zod.number().optional().describe('ID de la empresa')
 })
 export const ListManualCreditsResponse = zod.array(ListManualCreditsResponseItem)
 
@@ -822,7 +827,8 @@ export const CreateManualCreditResponse = zod.object({
   "total": zod.number(),
   "paid": zod.number(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.coerce.date()
+  "createdAt": zod.coerce.date(),
+  "companyId": zod.number().optional().describe('ID de la empresa')
 })
 
 

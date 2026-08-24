@@ -12,7 +12,7 @@ import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, use
 import {
   getGetDashboardQueryKey, getGetSalesReportQueryKey, getListClientsQueryKey, getListCreditPaymentsQueryKey, getListManualCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey, listCreditPayments, patchSaleDetails,
   useAddInventory, useCreateClient, useCreateCreditPayment, useCreateManualCredit, useCreateManualCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteClient, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
-  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCreditPayments, useListManualCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
+  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCompanies, useListCreditPayments, useListManualCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
   useUpdateClient, useUpdateDeudaMoises, useUpdateProduct
 } from '@workspace/api-client-react';
 import type { Client, ManualCredit, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale } from '@workspace/api-client-react';
@@ -846,6 +846,8 @@ function CarteraPage() {
 function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone: string; sales: Sale[]; manualCredits: ManualCredit[]; payments: Map<number, number> }; onClose: () => void }) {
   const salePaymentQueries = useQueries({ queries: detail.sales.map((s) => ({ queryKey: getListCreditPaymentsQueryKey(s.id), queryFn: () => listCreditPayments(s.id) })) });
   const allPayments = salePaymentQueries.flatMap((q) => q.data || []);
+  const companies = useListCompanies();
+  const companyName = (id: number) => companies.data?.find((c) => c.id === id)?.name || `Empresa ${id}`;
   const salesPaid = detail.payments;
   const salesTotal = detail.sales.reduce((sum, s) => sum + s.total, 0);
   const salesPaidTotal = detail.sales.reduce((sum, s) => sum + (salesPaid.get(s.id) ?? 0), 0);
@@ -854,6 +856,28 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
   const total = salesTotal + mcTotal;
   const paid = salesPaidTotal + mcPaid;
   const remaining = total - paid;
+
+  const companyBreakdown = useMemo(() => {
+    const map = new Map<number, { total: number; paid: number; remaining: number }>();
+    for (const s of detail.sales) {
+      const cid = s.companyId ?? 0;
+      const prev = map.get(cid) || { total: 0, paid: 0, remaining: 0 };
+      const p = salesPaid.get(s.id) ?? 0;
+      prev.total += s.total;
+      prev.paid += p;
+      prev.remaining += s.total - p;
+      map.set(cid, prev);
+    }
+    for (const mc of detail.manualCredits) {
+      const cid = mc.companyId ?? 0;
+      const prev = map.get(cid) || { total: 0, paid: 0, remaining: 0 };
+      prev.total += mc.total;
+      prev.paid += mc.paid;
+      prev.remaining += mc.total - mc.paid;
+      map.set(cid, prev);
+    }
+    return [...map.entries()].sort((a, b) => b[1].remaining - a[1].remaining);
+  }, [detail.sales, detail.manualCredits, salesPaid]);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
@@ -871,6 +895,17 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
           <div className="rounded-xl bg-[hsl(var(--accent)/.5)] p-3 text-center"><p className="text-xs text-[hsl(var(--muted-foreground))]">Pagado</p><p className="mt-1 font-mono-app text-lg font-bold text-green-600">{money(paid)}</p></div>
           <div className="rounded-xl bg-[hsl(var(--secondary)/.6)] p-3 text-center"><p className="text-xs text-[hsl(var(--muted-foreground))]">Pendiente</p><p className="mt-1 font-mono-app text-lg font-bold text-orange-600">{money(remaining)}</p></div>
         </div>
+        {companyBreakdown.length > 1 && (
+          <div className="mt-3 flex flex-wrap gap-3">
+            {companyBreakdown.map(([cid, cb]) => (
+              <div key={cid} className="flex-1 min-w-[140px] rounded-xl border bg-[hsl(var(--muted)/.2)] px-3 py-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{companyName(cid)}</p>
+                <p className="mt-1 font-mono-app text-sm font-bold text-orange-600">Pendiente: {money(cb.remaining)}</p>
+                <p className="font-mono-app text-xs text-green-600">Pagado: {money(cb.paid)}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="mt-5 max-h-[60vh] overflow-y-auto">
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Movimientos</p>
@@ -891,7 +926,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                   const p = salesPaid.get(s.id) ?? 0;
                   return <tr key={`s-${s.id}`} className="border-b last:border-0">
                     <td className="px-3 py-2 text-xs">{dateLabel(s.date)}</td>
-                    <td className="px-3 py-2"><span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span></td>
+                    <td className="px-3 py-2"><span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span><span className="ml-1 rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span></td>
                     <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{s.items?.length ? s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ') : '—'}</td>
                     <td className="px-3 py-2 text-right font-mono-app font-bold">{money(s.total)}</td>
                     <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p)}</td>
