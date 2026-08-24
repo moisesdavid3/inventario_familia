@@ -167,6 +167,34 @@ router.get("/sales/:id", async (req, res): Promise<void> => {
   res.json(GetSaleResponse.parse(await saleResponse(sale)));
 });
 
+router.patch("/sales/:id", async (req, res): Promise<void> => {
+  const params = GetSaleParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "No encontramos esa venta." });
+    return;
+  }
+  const body = req.body as Record<string, unknown>;
+  const updates: Record<string, unknown> = {};
+  if ("paymentMethod" in body) {
+    updates.paymentMethod = typeof body.paymentMethod === "string" ? body.paymentMethod.trim() || null : body.paymentMethod === null ? null : undefined;
+  }
+  if ("notes" in body) {
+    updates.notes = typeof body.notes === "string" ? body.notes.trim() || null : body.notes === null ? null : undefined;
+  }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "Nada que actualizar." });
+    return;
+  }
+  const [updated] = await getDb().update(salesTable).set(updates)
+    .where(and(eq(salesTable.id, params.data.id), eq(salesTable.companyId, req.companyId!)))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "No encontramos esa venta." });
+    return;
+  }
+  res.json({ id: updated.id, paymentMethod: updated.paymentMethod, notes: updated.notes });
+});
+
 router.delete("/sales/:id", async (req, res): Promise<void> => {
   const params = GetSaleParams.safeParse(req.params);
   if (!params.success) {

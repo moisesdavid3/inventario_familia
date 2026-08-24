@@ -464,6 +464,28 @@ export const GetSaleResponse = zod.object({
 
 
 /**
+ * @summary Update payment method or notes of a sale
+ */
+
+
+
+export const PatchSaleDetailsParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const PatchSaleDetailsBody = zod.object({
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const PatchSaleDetailsResponse = zod.object({
+  "id": zod.number().optional(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
  * @summary Delete a sale and return its items to inventory
  */
 

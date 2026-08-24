@@ -40,6 +40,8 @@ import type {
   ManualCredit,
   ManualCreditInput,
   NotFoundResponse,
+  PatchSaleDetails200,
+  PatchSaleDetailsBody,
   Product,
   ProductInput,
   ProductUpdate,
@@ -1487,6 +1489,78 @@ export function useGetSale<TData = Awaited<ReturnType<typeof getSale>>, TError =
 
 
 
+
+export const getPatchSaleDetailsUrl = (id: number,) => {
+
+
+
+
+  return `/api/sales/${id}`
+}
+
+/**
+ * @summary Update payment method or notes of a sale
+ */
+export const patchSaleDetails = async (id: number,
+    patchSaleDetailsBody: PatchSaleDetailsBody, options?: Parameters<typeof customFetch>[1]): Promise<PatchSaleDetails200> => {
+
+  return customFetch<PatchSaleDetails200>(getPatchSaleDetailsUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(patchSaleDetailsBody)
+  }
+);}
+
+
+
+
+
+export const getPatchSaleDetailsMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchSaleDetails>>, TError,{id: number;data: BodyType<PatchSaleDetailsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchSaleDetails>>, TError,{id: number;data: BodyType<PatchSaleDetailsBody>}, TContext> => {
+
+const mutationKey = ['patchSaleDetails'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchSaleDetails>>, {id: number;data: BodyType<PatchSaleDetailsBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  patchSaleDetails(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchSaleDetailsMutationResult = NonNullable<Awaited<ReturnType<typeof patchSaleDetails>>>
+    export type PatchSaleDetailsMutationBody = BodyType<PatchSaleDetailsBody>
+    export type PatchSaleDetailsMutationError = ErrorType<NotFoundResponse>
+
+    /**
+ * @summary Update payment method or notes of a sale
+ */
+export const usePatchSaleDetails = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchSaleDetails>>, TError,{id: number;data: BodyType<PatchSaleDetailsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof patchSaleDetails>>,
+        TError,
+        {id: number;data: BodyType<PatchSaleDetailsBody>},
+        TContext
+      > => {
+      return useMutation(getPatchSaleDetailsMutationOptions(options));
+    }
 
 export const getDeleteSaleUrl = (id: number,) => {
 

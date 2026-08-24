@@ -379,6 +379,48 @@ paths:
                 $ref: "#/components/schemas/Sale"
         "404":
           $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: patchSaleDetails
+      tags: [sales]
+      summary: Update payment method or notes of a sale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paymentMethod:
+                  type: string
+                  nullable: true
+                notes:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Updated sale
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  paymentMethod:
+                    type: string
+                    nullable: true
+                  notes:
+                    type: string
+                    nullable: true
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       operationId: deleteSale
       tags: [sales]

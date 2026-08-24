@@ -399,6 +399,17 @@ export const ListSalesScope = {
   all: 'all',
 } as const;
 
+export type PatchSaleDetailsBody = {
+  paymentMethod?: string | null;
+  notes?: string | null;
+};
+
+export type PatchSaleDetails200 = {
+  id?: number;
+  paymentMethod?: string | null;
+  notes?: string | null;
+};
+
 export type ListPurchasesParams = {
 period?: ListPurchasesPeriod;
 from?: string;
