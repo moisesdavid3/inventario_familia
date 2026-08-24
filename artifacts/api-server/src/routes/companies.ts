@@ -13,6 +13,9 @@ router.get("/companies", async (req, res): Promise<void> => {
       id: companiesTable.id,
       name: companiesTable.name,
       slug: companiesTable.slug,
+      nit: companiesTable.nit,
+      address: companiesTable.address,
+      phone: companiesTable.phone,
       allowNegativeStock: companiesTable.allowNegativeStock,
     })
     .from(companyMembersTable)
