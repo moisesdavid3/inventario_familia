@@ -33,28 +33,8 @@ paths:
           description: Healthy
           content:
             application/json:
-                schema:
-                  $ref: "#/components/schemas/HealthStatus"
-  /store/products:
-    get:
-      operationId: listStoreProducts
-      tags: [store]
-      summary: Lista productos publicos para la tienda web (sin auth)
-      parameters:
-        - name: company
-          in: query
-          schema:
-            type: string
-          description: "Slug o id de la empresa (default: prema)"
-      responses:
-        "200":
-          description: Lista de productos
-          content:
-            application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/StoreProduct"
+                $ref: "#/components/schemas/HealthStatus"
   /companies:
     get:
       operationId: listCompanies
@@ -879,9 +859,6 @@ components:
           type: string
         description:
           type: string
-        imageUrl:
-          type: ["string", "null"]
-          description: URL de la imagen del producto
         cost:
           type: number
         salePrice:
@@ -913,9 +890,6 @@ components:
           type: string
         description:
           type: string
-        imageUrl:
-          type: ["string", "null"]
-          description: URL de la imagen del producto
         cost:
           type: number
           minimum: 0
@@ -943,9 +917,6 @@ components:
           type: string
         description:
           type: string
-        imageUrl:
-          type: ["string", "null"]
-          description: URL de la imagen del producto
         cost:
           type: number
           minimum: 0
@@ -1381,24 +1352,3 @@ components:
           items:
             $ref: "#/components/schemas/LowStockProduct"
       required: [sales, totalSold, saleCount, itemCount, estimatedProfit, bestSellingProduct, bestSellingProductCount, lowStockProducts]
-    StoreProduct:
-      type: object
-      description: Producto para la tienda publica (sin auth)
-      properties:
-        id:
-          type: number
-        name:
-          type: string
-        category:
-          type: ["string", "null"]
-        content:
-          type: ["string", "null"]
-        description:
-          type: ["string", "null"]
-        imageUrl:
-          type: ["string", "null"]
-        salePrice:
-          type: number
-        stock:
-          type: number
-      required: [id, name, salePrice, stock]

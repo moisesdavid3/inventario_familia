@@ -55,11 +55,6 @@ export interface Product {
   category?: string;
   content?: string;
   description?: string;
-  /**
-     * URL de la imagen del producto
-     * @nullable
-     */
-  imageUrl?: string | null;
   cost: number;
   salePrice: number;
   stock: number;
@@ -76,11 +71,6 @@ export interface ProductInput {
   category?: string;
   content?: string;
   description?: string;
-  /**
-     * URL de la imagen del producto
-     * @nullable
-     */
-  imageUrl?: string | null;
   /** @minimum 0 */
   cost: number;
   /** @minimum 0 */
@@ -98,11 +88,6 @@ export interface ProductUpdate {
   category?: string;
   content?: string;
   description?: string;
-  /**
-     * URL de la imagen del producto
-     * @nullable
-     */
-  imageUrl?: string | null;
   /** @minimum 0 */
   cost?: number;
   /** @minimum 0 */
@@ -388,24 +373,6 @@ export interface SalesReport {
 }
 
 /**
- * Producto para la tienda publica (sin auth)
- */
-export interface StoreProduct {
-  id: number;
-  name: string;
-  /** @nullable */
-  category?: string | null;
-  /** @nullable */
-  content?: string | null;
-  /** @nullable */
-  description?: string | null;
-  /** @nullable */
-  imageUrl?: string | null;
-  salePrice: number;
-  stock: number;
-}
-
-/**
  * Invalid request
  */
 export type BadRequestResponse = Error;
@@ -414,13 +381,6 @@ export type BadRequestResponse = Error;
  * Not found
  */
 export type NotFoundResponse = Error;
-
-export type ListStoreProductsParams = {
-/**
- * Slug o id de la empresa (default: prema)
- */
-company?: string;
-};
 
 export type ListSalesParams = {
 period?: ListSalesPeriod;

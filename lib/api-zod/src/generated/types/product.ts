@@ -13,11 +13,6 @@ export interface Product {
   category?: string;
   content?: string;
   description?: string;
-  /**
-     * URL de la imagen del producto
-     * @nullable
-     */
-  imageUrl?: string | null;
   cost: number;
   salePrice: number;
   stock: number;

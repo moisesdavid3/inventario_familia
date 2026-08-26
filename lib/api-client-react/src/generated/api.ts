@@ -37,7 +37,6 @@ import type {
   ListManualCreditsParams,
   ListPurchasesParams,
   ListSalesParams,
-  ListStoreProductsParams,
   ManualCredit,
   ManualCreditInput,
   NotFoundResponse,
@@ -53,7 +52,6 @@ import type {
   Sale,
   SaleInput,
   SalesReport,
-  StoreProduct,
   Supplier,
   SupplierInput
 } from './api.schemas';
@@ -150,90 +148,6 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-
-export const getListStoreProductsUrl = (params?: ListStoreProductsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/store/products?${stringifiedParams}` : `/api/store/products`
-}
-
-/**
- * @summary Lista productos publicos para la tienda web (sin auth)
- */
-export const listStoreProducts = async (params?: ListStoreProductsParams, options?: Parameters<typeof customFetch>[1]): Promise<StoreProduct[]> => {
-
-  return customFetch<StoreProduct[]>(getListStoreProductsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListStoreProductsQueryKey = (params?: ListStoreProductsParams,) => {
-    return [
-    `/api/store/products`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getListStoreProductsQueryOptions = <TData = Awaited<ReturnType<typeof listStoreProducts>>, TError = ErrorType<unknown>>(params?: ListStoreProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoreProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListStoreProductsQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStoreProducts>>> = ({ signal }) => listStoreProducts(params, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStoreProducts>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type ListStoreProductsQueryResult = NonNullable<Awaited<ReturnType<typeof listStoreProducts>>>
-export type ListStoreProductsQueryError = ErrorType<unknown>
-
-
-/**
- * @summary Lista productos publicos para la tienda web (sin auth)
- */
-
-export function useListStoreProducts<TData = Awaited<ReturnType<typeof listStoreProducts>>, TError = ErrorType<unknown>>(
- params?: ListStoreProductsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStoreProducts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getListStoreProductsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
