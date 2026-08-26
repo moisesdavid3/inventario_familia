@@ -17,6 +17,26 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Lista productos publicos para la tienda web (sin auth)
+ */
+export const ListStoreProductsQueryParams = zod.object({
+  "company": zod.coerce.string().optional().describe('Slug o id de la empresa (default: prema)')
+})
+
+export const ListStoreProductsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "category": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "salePrice": zod.number(),
+  "stock": zod.number()
+}).describe('Producto para la tienda publica (sin auth)')
+export const ListStoreProductsResponse = zod.array(ListStoreProductsResponseItem)
+
+
+/**
  * @summary List companies the user belongs to
  */
 export const ListCompaniesResponseItem = zod.object({
@@ -149,6 +169,7 @@ export const ListProductsResponseItem = zod.object({
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
+  "imageUrl": zod.string().nullish().describe('URL de la imagen del producto'),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -180,6 +201,7 @@ export const CreateProductBody = zod.object({
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
+  "imageUrl": zod.string().nullish().describe('URL de la imagen del producto'),
   "cost": zod.number().min(createProductBodyCostMin),
   "salePrice": zod.number().min(createProductBodySalePriceMin),
   "initialStock": zod.number().min(createProductBodyInitialStockMin),
@@ -193,6 +215,7 @@ export const CreateProductResponse = zod.object({
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
+  "imageUrl": zod.string().nullish().describe('URL de la imagen del producto'),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -230,6 +253,7 @@ export const UpdateProductBody = zod.object({
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
+  "imageUrl": zod.string().nullish().describe('URL de la imagen del producto'),
   "cost": zod.number().min(updateProductBodyCostMin).optional(),
   "salePrice": zod.number().min(updateProductBodySalePriceMin).optional(),
   "minimumStock": zod.number().min(updateProductBodyMinimumStockMin).optional(),
@@ -243,6 +267,7 @@ export const UpdateProductResponse = zod.object({
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
+  "imageUrl": zod.string().nullish().describe('URL de la imagen del producto'),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -291,6 +316,7 @@ export const AddInventoryResponse = zod.object({
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
+  "imageUrl": zod.string().nullish().describe('URL de la imagen del producto'),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),
@@ -726,6 +752,7 @@ export const GetInventoryReportResponse = zod.object({
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
+  "imageUrl": zod.string().nullish().describe('URL de la imagen del producto'),
   "cost": zod.number(),
   "salePrice": zod.number(),
   "stock": zod.number(),

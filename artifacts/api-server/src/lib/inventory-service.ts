@@ -78,6 +78,7 @@ export function productResponse(product: typeof productsTable.$inferSelect) {
     category: product.category ?? undefined,
     content: product.content ?? undefined,
     description: product.description ?? undefined,
+    imageUrl: product.imageUrl ?? null,
     cost: product.cost,
     salePrice: product.salePrice,
     stock: product.stock,

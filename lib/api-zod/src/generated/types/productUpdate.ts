@@ -13,6 +13,11 @@ export interface ProductUpdate {
   category?: string;
   content?: string;
   description?: string;
+  /**
+     * URL de la imagen del producto
+     * @nullable
+     */
+  imageUrl?: string | null;
   /** @minimum 0 */
   cost?: number;
   /** @minimum 0 */

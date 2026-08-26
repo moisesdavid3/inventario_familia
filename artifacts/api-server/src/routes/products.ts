@@ -53,6 +53,7 @@ router.post("/products", async (req, res): Promise<void> => {
       category: parsed.data.category?.trim() || null,
       content: parsed.data.content?.trim() || null,
       description: parsed.data.description?.trim() || null,
+      imageUrl: parsed.data.imageUrl ?? null,
       cost: parsed.data.cost,
       salePrice: parsed.data.salePrice,
       stock: parsed.data.initialStock,
@@ -94,6 +95,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
         category: rest.category?.trim() || null,
         content: rest.content?.trim() || null,
         description: rest.description?.trim() || null,
+        imageUrl: rest.imageUrl !== undefined ? (rest.imageUrl || null) : undefined,
         updatedAt: new Date(),
       })
       .where(eq(productsTable.id, product.id))
@@ -220,6 +222,21 @@ router.patch("/dashboard", requireAuth, requireCompany, async (req, res): Promis
   }
   await setDeudaMoises(req.companyId!, Math.round(parsed.data.value), req.userEmail);
   res.sendStatus(204);
+});
+
+router.post("/products/:id/image", requireAuth, requireCompany, async (req, res): Promise<void> => {
+  const { id } = req.params;
+  const productId = Number(id);
+  if (!Number.isFinite(productId)) { res.status(400).json({ error: "ID inválido." }); return; }
+  const { image } = req.body as { image?: string };
+  if (!image || typeof image !== "string") { res.status(400).json({ error: "Envía la imagen en base64." }); return; }
+  const match = image.match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!match) { res.status(400).json({ error: "Formato de imagen inválido. Usa data:image/...;base64,..." }); return; }
+  const [product] = await getDb().select().from(productsTable)
+    .where(and(eq(productsTable.id, productId), eq(productsTable.companyId, req.companyId!)));
+  if (!product) { res.status(404).json({ error: "Producto no encontrado." }); return; }
+  await getDb().update(productsTable).set({ imageUrl: image, updatedAt: new Date() }).where(eq(productsTable.id, productId));
+  res.json({ imageUrl: image });
 });
 
 export default router;

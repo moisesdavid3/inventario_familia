@@ -8,10 +8,12 @@ import reportsRouter from "./reports";
 import suppliersRouter from "./suppliers";
 import manualCreditsRouter from "./manual-credits";
 import clientsRouter from "./clients";
+import storeRouter from "./store";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(storeRouter);
 router.use(companiesRouter);
 router.use(productsRouter);
 router.use(salesRouter);
