@@ -141,7 +141,7 @@ export function startOfDayBogota(date: Date): Date {
   return bogotaDate(year, month, day);
 }
 
-function endOfDayBogota(date: Date): Date {
+export function endOfDayBogota(date: Date): Date {
   const { year, month, day } = bogotaParts(date);
   return bogotaDate(year, month, day, 23, 59, 59, 999);
 }

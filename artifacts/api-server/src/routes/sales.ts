@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import { companiesTable, creditPaymentsTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateCreditPaymentBody,
@@ -16,7 +16,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
-import { dateRangeForPeriod, ensureSeeded, saleResponse, saleWhere, startOfDayBogota, toSaleResponse } from "../lib/inventory-service";
+import { dateRangeForPeriod, ensureSeeded, endOfDayBogota, saleResponse, saleWhere, startOfDayBogota, toSaleResponse } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/sales", requireAuth, requireCompany);
@@ -114,8 +114,9 @@ router.post("/sales", async (req, res): Promise<void> => {
     const deliveryCost = isDelivery ? (parsed.data.deliveryCost ?? 0) : 0;
     const finalTotal = total + deliveryCost;
     const dayStart = startOfDayBogota(saleDate);
+    const dayEnd = endOfDayBogota(saleDate);
     const [row] = await tx.select({ count: sql<number>`count(*)` }).from(salesTable)
-      .where(and(eq(salesTable.companyId, req.companyId!), gte(salesTable.createdAt, dayStart)));
+      .where(and(eq(salesTable.companyId, req.companyId!), gte(salesTable.createdAt, dayStart), lt(salesTable.createdAt, dayEnd)));
     const [sale] = await tx.insert(salesTable).values({
       companyId: req.companyId!,
       userId,
