@@ -2479,6 +2479,77 @@ export const useCreateManualCredit = <TError = ErrorType<BadRequestResponse>,
       return useMutation(getCreateManualCreditMutationOptions(options));
     }
 
+export const getDeleteCreditPaymentUrl = (id: number,) => {
+
+
+
+
+  return `/api/credit-payments/${id}`
+}
+
+/**
+ * @summary Delete a credit payment (abono)
+ */
+export const deleteCreditPayment = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteCreditPaymentUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteCreditPaymentMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCreditPayment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCreditPayment>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteCreditPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCreditPayment>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteCreditPayment(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCreditPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCreditPayment>>>
+
+    export type DeleteCreditPaymentMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Delete a credit payment (abono)
+ */
+export const useDeleteCreditPayment = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCreditPayment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCreditPayment>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteCreditPaymentMutationOptions(options));
+    }
+
 export const getDeleteManualCreditUrl = (id: number,) => {
 
 

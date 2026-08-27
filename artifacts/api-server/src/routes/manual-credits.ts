@@ -122,6 +122,22 @@ router.post("/manual-credits/:id/credit-payment", async (req, res): Promise<void
   res.status(201).json(creditPaymentResponse(payment));
 });
 
+router.delete("/credit-payments/:id", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id < 1) {
+    res.status(400).json({ error: "ID inválido." });
+    return;
+  }
+  const [payment] = await getDb().select().from(creditPaymentsTable)
+    .where(and(eq(creditPaymentsTable.id, id), eq(creditPaymentsTable.companyId, req.companyId!)));
+  if (!payment) {
+    res.status(404).json({ error: "No encontramos ese abono." });
+    return;
+  }
+  await getDb().delete(creditPaymentsTable).where(eq(creditPaymentsTable.id, id));
+  res.sendStatus(204);
+});
+
 router.get("/manual-credits/:id/credit-payments", async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id) || id < 1) {

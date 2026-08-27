@@ -697,6 +697,25 @@ paths:
                 $ref: "#/components/schemas/ManualCredit"
         "400":
           $ref: "#/components/responses/BadRequest"
+  /credit-payments/{id}:
+    delete:
+      operationId: deleteCreditPayment
+      tags: [customers]
+      summary: Delete a credit payment (abono)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+            minimum: 1
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /manual-credits/{id}:
     delete:
       operationId: deleteManualCredit

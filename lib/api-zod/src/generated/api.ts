@@ -844,6 +844,19 @@ export const CreateManualCreditResponse = zod.object({
 
 
 /**
+ * @summary Delete a credit payment (abono)
+ */
+
+
+
+export const DeleteCreditPaymentParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeleteCreditPaymentResponse = zod.void()
+
+
+/**
  * @summary Delete a manual credit entry
  */
 

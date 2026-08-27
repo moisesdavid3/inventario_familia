@@ -11,11 +11,11 @@ import { CompanyProvider, useCompany } from '@/lib/company';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useRoute } from 'wouter';
 import {
   getGetDashboardQueryKey, getGetSalesReportQueryKey, getListClientsQueryKey, getListCreditPaymentsQueryKey, getListManualCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey, listCreditPayments, patchSaleDetails,
-  useAddInventory, useCreateClient, useCreateCreditPayment, useCreateManualCredit, useCreateManualCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteClient, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
+  useAddInventory,   useCreateClient, useCreateCreditPayment, useCreateManualCredit, useCreateManualCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteClient, useDeleteCreditPayment, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
   useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCompanies, useListCreditPayments, useListManualCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
   useUpdateClient, useUpdateDeudaMoises, useUpdateProduct
 } from '@workspace/api-client-react';
-import type { Client, ManualCredit, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale } from '@workspace/api-client-react';
+import type { Client, CreditPayment, ManualCredit, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale } from '@workspace/api-client-react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -879,6 +879,25 @@ function CarteraPage() {
 function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone: string; sales: Sale[]; manualCredits: ManualCredit[]; payments: Map<number, number> }; onClose: () => void }) {
   const salePaymentQueries = useQueries({ queries: detail.sales.map((s) => ({ queryKey: getListCreditPaymentsQueryKey(s.id), queryFn: () => listCreditPayments(s.id) })) });
   const allPayments = salePaymentQueries.flatMap((q) => q.data || []);
+  const qc = useQueryClient();
+  const deletePayment = useDeleteCreditPayment();
+  const deleteCredit = useDeleteManualCredit();
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() });
+    qc.invalidateQueries({ queryKey: getListSalesQueryKey() });
+    onClose();
+  };
+
+  const removeCredit = (id: number) => {
+    if (!window.confirm('¿Borrar este crédito manual y sus abonos?')) return;
+    deleteCredit.mutate({ id }, { onSuccess: invalidate });
+  };
+
+  const removePayment = (id: number) => {
+    if (!window.confirm('¿Borrar este abono?')) return;
+    deletePayment.mutate({ id }, { onSuccess: invalidate });
+  };
   const companies = useListCompanies();
   const companyName = (id: number) => companies.data?.find((c) => c.id === id)?.name || `Empresa ${id}`;
   const salesPaid = detail.payments;
@@ -957,6 +976,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                   <th className="px-3 py-2 text-right">Monto</th>
                   <th className="px-3 py-2 text-right">Abonado</th>
                   <th className="px-3 py-2 text-right">Saldo</th>
+                  <th className="px-3 py-2 text-right">Borrar</th>
                 </tr>
               </thead>
               <tbody>
@@ -978,6 +998,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                   <td className="px-3 py-2 text-right font-mono-app font-bold">{money(mc.total)}</td>
                   <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(mc.paid)}</td>
                   <td className="px-3 py-2 text-right font-mono-app">{money(mc.total - mc.paid)}</td>
+                  <td className="px-3 py-2 text-right"><button type="button" onClick={() => removeCredit(mc.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-manual-credit-${mc.id}`} title="Borrar crédito"><Trash2 size={15} /></button></td>
                 </tr>)}
                 {allPayments.map((p) => <tr key={`p-${p.id}`} className="border-b last:border-0 bg-green-50/50">
                   <td className="px-3 py-2 text-xs">{dateLabel(p.date)}</td>
@@ -986,6 +1007,7 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                   <td className="px-3 py-2 text-right font-mono-app font-bold text-green-600">-{money(p.amount)}</td>
                   <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p.amount)}</td>
                   <td className="px-3 py-2"></td>
+                  <td className="px-3 py-2 text-right"><button type="button" onClick={() => removePayment(p.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-payment-${p.id}`} title="Borrar abono"><Trash2 size={15} /></button></td>
                 </tr>)}
               </tbody>
             </table>
@@ -1021,9 +1043,10 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
               {mc.notes && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{mc.notes}</p>}
               <div className="mt-2 flex items-center justify-between text-xs">
                 <span className="font-mono-app font-bold">{money(mc.total)}</span>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <span className="text-green-600">Pagado: {money(mc.paid)}</span>
                   <span className="font-bold text-orange-600">{money(mc.total - mc.paid)}</span>
+                  <button type="button" onClick={() => removeCredit(mc.id)} className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-manual-credit-${mc.id}`} title="Borrar crédito"><Trash2 size={14} /></button>
                 </div>
               </div>
             </div>)}
@@ -1033,7 +1056,10 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                 <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(p.date)}</span>
               </div>
               {p.paymentMethod && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod}{p.note ? ` · ${p.note}` : ''}</p>}
-              <p className="mt-2 text-xs font-mono-app font-bold text-green-600">+{money(p.amount)}</p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="text-xs font-mono-app font-bold text-green-600">+{money(p.amount)}</p>
+                <button type="button" onClick={() => removePayment(p.id)} className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-payment-${p.id}`} title="Borrar abono"><Trash2 size={14} /></button>
+              </div>
             </div>)}
           </div>
         </div>
