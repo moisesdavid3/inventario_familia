@@ -1119,6 +1119,10 @@ components:
           minimum: 1
         notes:
           type: ["string", "null"]
+        date:
+          type: string
+          format: date-time
+          description: Fecha del crédito (por defecto ahora)
       required: [total]
     Client:
       type: object

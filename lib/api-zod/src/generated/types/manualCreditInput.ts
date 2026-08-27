@@ -17,4 +17,6 @@ export interface ManualCreditInput {
   total: number;
   /** @nullable */
   notes?: string | null;
+  /** Fecha del crédito (por defecto ahora) */
+  date?: Date;
 }

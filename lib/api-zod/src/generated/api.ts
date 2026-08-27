@@ -826,7 +826,8 @@ export const CreateManualCreditBody = zod.object({
   "clientPhone": zod.string().nullish(),
   "clientId": zod.number().nullish(),
   "total": zod.number().min(1),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "date": zod.coerce.date().optional().describe('Fecha del crédito (por defecto ahora)')
 })
 
 export const CreateManualCreditResponse = zod.object({

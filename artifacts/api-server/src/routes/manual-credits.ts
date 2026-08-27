@@ -68,8 +68,10 @@ router.post("/manual-credits", async (req, res): Promise<void> => {
     userId: req.userId!,
     clientName: typeof body.clientName === "string" && body.clientName.trim() ? body.clientName.trim() : null,
     clientPhone: typeof body.clientPhone === "string" && body.clientPhone.trim() ? body.clientPhone.trim() : null,
+    clientId: typeof body.clientId === "number" ? body.clientId : null,
     total: Math.round(total),
     notes: typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null,
+    createdAt: typeof body.date === "string" && body.date ? new Date(body.date) : undefined,
   }).returning();
   res.status(201).json(manualCreditResponse(credit, 0));
 });

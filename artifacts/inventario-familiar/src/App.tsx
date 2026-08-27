@@ -1226,6 +1226,7 @@ function NewManualCreditModal({ onClose }: { onClose: () => void }) {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [total, setTotal] = useState('');
+  const [date, setDate] = useState(() => toLocalDateString(new Date()));
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [newClientModal, setNewClientModal] = useState(false);
@@ -1235,7 +1236,7 @@ function NewManualCreditModal({ onClose }: { onClose: () => void }) {
     const v = Number(total);
     if (!Number.isFinite(v) || v < 1) { setError('Escribe un monto válido.'); return; }
     setError('');
-    create.mutate({ data: { clientName: clientName.trim() || undefined, clientPhone: clientPhone.trim() || undefined, clientId: clientName.trim() ? (clients.data?.find((c) => c.name === clientName.trim())?.id || undefined) : undefined, total: Math.round(v), notes: notes.trim() || undefined } }, {
+    create.mutate({ data: { clientName: clientName.trim() || undefined, clientPhone: clientPhone.trim() || undefined, clientId: clientName.trim() ? (clients.data?.find((c) => c.name === clientName.trim())?.id || undefined) : undefined, total: Math.round(v), date: (() => { if (!date) return undefined; const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), notes: notes.trim() || undefined } }, {
       onSuccess: () => { qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() }); onClose(); },
       onError: () => setError('No se pudo crear el crédito.'),
     });
@@ -1264,6 +1265,7 @@ function NewManualCreditModal({ onClose }: { onClose: () => void }) {
           {!clientName && <><Field label="Nombre del cliente (manual)" value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre o razón social" data-testid="input-manual-credit-name" />
           <Field label="Teléfono (opcional)" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Número de contacto" data-testid="input-manual-credit-phone" /></>}
           <Field label="Monto total de la deuda" type="number" min="1" step="1" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="0" autoFocus data-testid="input-manual-credit-total" />
+          <Field label="Fecha del crédito" type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-manual-credit-date" />
           <Field label="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Referencia, productos, etc." data-testid="input-manual-credit-notes" />
         </div>
         {error && <p className="mt-3 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</p>}
