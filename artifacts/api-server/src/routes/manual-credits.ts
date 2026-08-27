@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { creditPaymentsTable, getDb, manualCreditsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
@@ -49,7 +49,7 @@ router.get("/manual-credits", async (req, res): Promise<void> => {
   const paymentRows = await getDb()
     .select({ manualCreditId: creditPaymentsTable.manualCreditId, total: sql<number>`coalesce(sum(${creditPaymentsTable.amount}), 0)` })
     .from(creditPaymentsTable)
-    .where(sql`${creditPaymentsTable.manualCreditId} = ANY(${creditIds})`)
+    .where(inArray(creditPaymentsTable.manualCreditId, creditIds))
     .groupBy(creditPaymentsTable.manualCreditId);
   const paidByCredit = new Map(paymentRows.map((r) => [r.manualCreditId, Number(r.total)]));
 
