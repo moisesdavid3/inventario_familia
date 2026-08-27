@@ -525,7 +525,8 @@ export const CreateCreditPaymentParams = zod.object({
 export const CreateCreditPaymentBody = zod.object({
   "amount": zod.number().min(1),
   "paymentMethod": zod.string().optional(),
-  "note": zod.string().optional()
+  "note": zod.string().optional(),
+  "date": zod.coerce.date().optional().describe('Fecha del abono (por defecto ahora)')
 })
 
 export const CreateCreditPaymentResponse = zod.object({
@@ -894,7 +895,8 @@ export const CreateManualCreditPaymentParams = zod.object({
 export const CreateManualCreditPaymentBody = zod.object({
   "amount": zod.number().min(1),
   "paymentMethod": zod.string().optional(),
-  "note": zod.string().optional()
+  "note": zod.string().optional(),
+  "date": zod.coerce.date().optional().describe('Fecha del abono (por defecto ahora)')
 })
 
 export const CreateManualCreditPaymentResponse = zod.object({

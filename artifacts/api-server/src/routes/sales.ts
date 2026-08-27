@@ -272,6 +272,7 @@ router.post("/sales/:id/credit-payment", async (req, res): Promise<void> => {
     amount: parsed.data.amount,
     paymentMethod: parsed.data.paymentMethod?.trim() || null,
     note: parsed.data.note?.trim() || null,
+    createdAt: parsed.data.date ? new Date(parsed.data.date) : undefined,
   }).returning();
   res.status(201).json(CreateCreditPaymentResponse.parse(creditPaymentResponse(payment)));
 });

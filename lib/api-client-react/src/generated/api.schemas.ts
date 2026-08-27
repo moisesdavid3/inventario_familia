@@ -192,6 +192,8 @@ export interface CreditPaymentInput {
   amount: number;
   paymentMethod?: string;
   note?: string;
+  /** Fecha del abono (por defecto ahora) */
+  date?: string;
 }
 
 export interface CreditPayment {

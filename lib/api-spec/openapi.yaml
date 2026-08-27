@@ -1082,6 +1082,10 @@ components:
           type: string
         note:
           type: string
+        date:
+          type: string
+          format: date-time
+          description: Fecha del abono (por defecto ahora)
       required: [amount]
     CreditPayment:
       type: object

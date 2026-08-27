@@ -539,6 +539,7 @@ function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void
   const createPayment = useCreateCreditPayment();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [date, setDate] = useState(() => toLocalDateString(new Date()));
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
@@ -551,7 +552,7 @@ function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void
     }
     setError('');
     createPayment.mutate(
-      { id: sale.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, note: note.trim() || undefined } },
+      { id: sale.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, date: (() => { if (!date) return undefined; const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), note: note.trim() || undefined } },
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getListSalesQueryKey() });
@@ -580,6 +581,7 @@ function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void
         </div>
         <div className="mt-6 grid gap-4">
           <Field label="Monto del abono" type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus data-testid="input-credit-amount" />
+          <Field label="Fecha del abono" type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-credit-date" />
           <div className="grid gap-1.5 text-sm font-semibold">
             <label>Método de pago</label>
             <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-credit-method">
@@ -1165,6 +1167,7 @@ function ManualCreditPaymentModal({ credit, onClose }: { credit: ManualCredit; o
   const createPayment = useCreateManualCreditPayment();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [date, setDate] = useState(() => toLocalDateString(new Date()));
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
 
@@ -1173,7 +1176,7 @@ function ManualCreditPaymentModal({ credit, onClose }: { credit: ManualCredit; o
     const v = Number(amount);
     if (!amount.trim() || !Number.isFinite(v) || v < 1) { setError('Escribe un monto válido.'); return; }
     setError('');
-    createPayment.mutate({ id: credit.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, note: note.trim() || undefined } }, {
+    createPayment.mutate({ id: credit.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, date: (() => { if (!date) return undefined; const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), note: note.trim() || undefined } }, {
       onSuccess: () => {
         qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() });
         qc.invalidateQueries({ queryKey: getListManualCreditPaymentsQueryKey(credit.id) });
@@ -1196,6 +1199,7 @@ function ManualCreditPaymentModal({ credit, onClose }: { credit: ManualCredit; o
         </div>
         <div className="mt-6 grid gap-4">
           <Field label="Monto del abono" type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus data-testid="input-manual-payment-amount" />
+          <Field label="Fecha del abono" type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-manual-payment-date" />
           <div className="grid gap-1.5 text-sm font-semibold">
             <label>Método de pago</label>
             <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-manual-payment-method">

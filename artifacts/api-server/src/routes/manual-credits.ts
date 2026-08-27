@@ -118,6 +118,7 @@ router.post("/manual-credits/:id/credit-payment", async (req, res): Promise<void
     amount: Math.round(amount),
     paymentMethod: typeof body.paymentMethod === "string" && body.paymentMethod.trim() ? body.paymentMethod.trim() : null,
     note: typeof body.note === "string" && body.note.trim() ? body.note.trim() : null,
+    createdAt: typeof body.date === "string" && body.date ? new Date(body.date) : undefined,
   }).returning();
   res.status(201).json(creditPaymentResponse(payment));
 });
