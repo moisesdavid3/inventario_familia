@@ -62,6 +62,44 @@ export const CreateSupplierResponse = zod.object({
 
 
 /**
+ * @summary Rename a supplier
+ */
+
+
+
+export const UpdateSupplierParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+
+
+
+export const UpdateSupplierBody = zod.object({
+  "name": zod.string().min(1)
+})
+
+export const UpdateSupplierResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a supplier
+ */
+
+
+
+export const DeleteSupplierParams = zod.object({
+  "id": zod.coerce.number().min(1)
+})
+
+export const DeleteSupplierResponse = zod.void()
+
+
+/**
  * @summary List clients
  */
 export const ListClientsResponseItem = zod.object({
