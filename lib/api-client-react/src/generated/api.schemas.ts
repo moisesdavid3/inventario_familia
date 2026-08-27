@@ -361,8 +361,23 @@ export interface InventoryReport {
   potentialProfit: number;
 }
 
+export interface PaymentActivity {
+  id: number;
+  /** @nullable */
+  saleId: number | null;
+  /** @nullable */
+  manualCreditId: number | null;
+  amount: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  note?: string | null;
+  date: string;
+}
+
 export interface SalesReport {
   sales: Sale[];
+  payments: PaymentActivity[];
   totalSold: number;
   saleCount: number;
   itemCount: number;

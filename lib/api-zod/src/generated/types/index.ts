@@ -34,6 +34,7 @@ export * from './lowStockProduct';
 export * from './manualCredit';
 export * from './manualCreditInput';
 export * from './notFoundResponse';
+export * from './paymentActivity';
 export * from './product';
 export * from './productInput';
 export * from './productUpdate';

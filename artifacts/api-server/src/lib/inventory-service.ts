@@ -182,6 +182,13 @@ export function purchaseWhere(companyId: number, range: DateRange) {
   return and(...conditions);
 }
 
+export function paymentWhere(companyId: number, range: DateRange) {
+  const conditions = [eq(creditPaymentsTable.companyId, companyId)];
+  if (range.from) conditions.push(gte(creditPaymentsTable.createdAt, range.from));
+  if (range.to) conditions.push(lte(creditPaymentsTable.createdAt, range.to));
+  return and(...conditions);
+}
+
 export async function purchaseResponse(purchase: typeof purchasesTable.$inferSelect) {
   const items = await getDb()
     .select()
@@ -307,12 +314,25 @@ export async function salesReportData(userId: string, companyId: number, userEma
   const completeSales = sales.map((sale) =>
     toSaleResponse(sale, itemsBySale.get(sale.id) ?? [], sale.paymentMethod === "Crédito" ? creditBySale.get(sale.id) ?? 0 : 0),
   );
+  const paymentRows = await getDb().select().from(creditPaymentsTable)
+    .where(paymentWhere(companyId, range))
+    .orderBy(sql`${creditPaymentsTable.createdAt} desc`);
+  const payments = paymentRows.map((p) => ({
+    id: p.id,
+    saleId: p.saleId,
+    manualCreditId: p.manualCreditId,
+    amount: p.amount,
+    paymentMethod: p.paymentMethod,
+    note: p.note,
+    date: p.createdAt,
+  }));
   const counts = new Map<string, number>();
   completeSales.forEach((sale) => sale.items.forEach((item) => counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity)));
   const bestSellingProduct = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
   const products = await listAllProducts(companyId);
   return {
     sales: completeSales,
+    payments,
     totalSold: completeSales.reduce((sum, sale) => sum + sale.total, 0),
     saleCount: completeSales.length,
     itemCount: completeSales.reduce((sum, sale) => sum + sale.totalItems, 0),

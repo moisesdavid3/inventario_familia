@@ -1358,6 +1358,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Sale"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentActivity"
         totalSold:
           type: number
         saleCount:
@@ -1374,4 +1378,23 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LowStockProduct"
-      required: [sales, totalSold, saleCount, itemCount, estimatedProfit, bestSellingProduct, bestSellingProductCount, lowStockProducts]
+      required: [sales, payments, totalSold, saleCount, itemCount, estimatedProfit, bestSellingProduct, bestSellingProductCount, lowStockProducts]
+    PaymentActivity:
+      type: object
+      properties:
+        id:
+          type: number
+        saleId:
+          type: ["number", "null"]
+        manualCreditId:
+          type: ["number", "null"]
+        amount:
+          type: number
+        paymentMethod:
+          type: ["string", "null"]
+        note:
+          type: ["string", "null"]
+        date:
+          type: string
+          format: date-time
+      required: [id, saleId, manualCreditId, amount, date]

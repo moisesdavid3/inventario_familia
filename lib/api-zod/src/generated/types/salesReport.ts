@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LowStockProduct } from './lowStockProduct';
+import type { PaymentActivity } from './paymentActivity';
 import type { Sale } from './sale';
 
 export interface SalesReport {
   sales: Sale[];
+  payments: PaymentActivity[];
   totalSold: number;
   saleCount: number;
   itemCount: number;

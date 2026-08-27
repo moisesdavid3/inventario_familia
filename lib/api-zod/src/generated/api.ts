@@ -777,6 +777,15 @@ export const GetSalesReportResponse = zod.object({
   "subtotal": zod.number()
 }))
 })),
+  "payments": zod.array(zod.object({
+  "id": zod.number(),
+  "saleId": zod.number().nullable(),
+  "manualCreditId": zod.number().nullable(),
+  "amount": zod.number(),
+  "paymentMethod": zod.string().nullish(),
+  "note": zod.string().nullish(),
+  "date": zod.coerce.date()
+})),
   "totalSold": zod.number(),
   "saleCount": zod.number(),
   "itemCount": zod.number(),
