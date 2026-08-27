@@ -27,6 +27,8 @@ import type {
   CreditPayment,
   CreditPaymentInput,
   Dashboard,
+  DeleteSupplier200,
+  DeleteSupplierInput,
   DeudaMoisesInput,
   Error,
   GetInventoryReportParams,
@@ -52,8 +54,9 @@ import type {
   Sale,
   SaleInput,
   SalesReport,
-  Supplier,
-  SupplierInput
+  SupplierInput,
+  SupplierSummary,
+  UpdateSupplierInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -246,11 +249,11 @@ export const getListSuppliersUrl = () => {
 }
 
 /**
- * @summary List suppliers for the company
+ * @summary List suppliers for the company (from table and products)
  */
-export const listSuppliers = async ( options?: Parameters<typeof customFetch>[1]): Promise<Supplier[]> => {
+export const listSuppliers = async ( options?: Parameters<typeof customFetch>[1]): Promise<SupplierSummary[]> => {
 
-  return customFetch<Supplier[]>(getListSuppliersUrl(),
+  return customFetch<SupplierSummary[]>(getListSuppliersUrl(),
   {
     ...options,
     method: 'GET'
@@ -293,7 +296,7 @@ export type ListSuppliersQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List suppliers for the company
+ * @summary List suppliers for the company (from table and products)
  */
 
 export function useListSuppliers<TData = Awaited<ReturnType<typeof listSuppliers>>, TError = ErrorType<unknown>>(
@@ -325,9 +328,9 @@ export const getCreateSupplierUrl = () => {
 /**
  * @summary Create a supplier
  */
-export const createSupplier = async (supplierInput: SupplierInput, options?: Parameters<typeof customFetch>[1]): Promise<Supplier> => {
+export const createSupplier = async (supplierInput: SupplierInput, options?: Parameters<typeof customFetch>[1]): Promise<SupplierSummary> => {
 
-  return customFetch<Supplier>(getCreateSupplierUrl(),
+  return customFetch<SupplierSummary>(getCreateSupplierUrl(),
   {
     ...options,
     method: 'POST',
@@ -385,26 +388,25 @@ export const useCreateSupplier = <TError = ErrorType<BadRequestResponse>,
       return useMutation(getCreateSupplierMutationOptions(options));
     }
 
-export const getUpdateSupplierUrl = (id: number,) => {
+export const getUpdateSupplierUrl = () => {
 
 
 
 
-  return `/api/suppliers/${id}`
+  return `/api/suppliers`
 }
 
 /**
- * @summary Rename a supplier
+ * @summary Rename a supplier across all its products
  */
-export const updateSupplier = async (id: number,
-    supplierInput: SupplierInput, options?: Parameters<typeof customFetch>[1]): Promise<Supplier> => {
+export const updateSupplier = async (updateSupplierInput: UpdateSupplierInput, options?: Parameters<typeof customFetch>[1]): Promise<SupplierSummary> => {
 
-  return customFetch<Supplier>(getUpdateSupplierUrl(id),
+  return customFetch<SupplierSummary>(getUpdateSupplierUrl(),
   {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(supplierInput)
+    body: JSON.stringify(updateSupplierInput)
   }
 );}
 
@@ -413,8 +415,8 @@ export const updateSupplier = async (id: number,
 
 
 export const getUpdateSupplierMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupplier>>, TError,{id: number;data: BodyType<SupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateSupplier>>, TError,{id: number;data: BodyType<SupplierInput>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupplier>>, TError,{data: BodyType<UpdateSupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSupplier>>, TError,{data: BodyType<UpdateSupplierInput>}, TContext> => {
 
 const mutationKey = ['updateSupplier'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -426,10 +428,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSupplier>>, {id: number;data: BodyType<SupplierInput>}> = (props) => {
-          const {id,data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSupplier>>, {data: BodyType<UpdateSupplierInput>}> = (props) => {
+          const {data} = props ?? {};
 
-          return  updateSupplier(id,data,requestOptions)
+          return  updateSupplier(data,requestOptions)
         }
 
 
@@ -440,42 +442,42 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateSupplierMutationResult = NonNullable<Awaited<ReturnType<typeof updateSupplier>>>
-    export type UpdateSupplierMutationBody = BodyType<SupplierInput>
+    export type UpdateSupplierMutationBody = BodyType<UpdateSupplierInput>
     export type UpdateSupplierMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
 
     /**
- * @summary Rename a supplier
+ * @summary Rename a supplier across all its products
  */
 export const useUpdateSupplier = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupplier>>, TError,{id: number;data: BodyType<SupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupplier>>, TError,{data: BodyType<UpdateSupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateSupplier>>,
         TError,
-        {id: number;data: BodyType<SupplierInput>},
+        {data: BodyType<UpdateSupplierInput>},
         TContext
       > => {
       return useMutation(getUpdateSupplierMutationOptions(options));
     }
 
-export const getDeleteSupplierUrl = (id: number,) => {
+export const getDeleteSupplierUrl = () => {
 
 
 
 
-  return `/api/suppliers/${id}`
+  return `/api/suppliers`
 }
 
 /**
- * @summary Delete a supplier
+ * @summary Delete a supplier and clear it from its products
  */
-export const deleteSupplier = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+export const deleteSupplier = async (deleteSupplierInput: DeleteSupplierInput, options?: Parameters<typeof customFetch>[1]): Promise<DeleteSupplier200> => {
 
-  return customFetch<void>(getDeleteSupplierUrl(id),
+  return customFetch<DeleteSupplier200>(getDeleteSupplierUrl(),
   {
     ...options,
-    method: 'DELETE'
-
-
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(deleteSupplierInput)
   }
 );}
 
@@ -484,8 +486,8 @@ export const deleteSupplier = async (id: number, options?: Parameters<typeof cus
 
 
 export const getDeleteSupplierMutationOptions = <TError = ErrorType<NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSupplier>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteSupplier>>, TError,{id: number}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSupplier>>, TError,{data: BodyType<DeleteSupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSupplier>>, TError,{data: BodyType<DeleteSupplierInput>}, TContext> => {
 
 const mutationKey = ['deleteSupplier'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -497,10 +499,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSupplier>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSupplier>>, {data: BodyType<DeleteSupplierInput>}> = (props) => {
+          const {data} = props ?? {};
 
-          return  deleteSupplier(id,requestOptions)
+          return  deleteSupplier(data,requestOptions)
         }
 
 
@@ -511,18 +513,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type DeleteSupplierMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSupplier>>>
-
+    export type DeleteSupplierMutationBody = BodyType<DeleteSupplierInput>
     export type DeleteSupplierMutationError = ErrorType<NotFoundResponse>
 
     /**
- * @summary Delete a supplier
+ * @summary Delete a supplier and clear it from its products
  */
 export const useDeleteSupplier = <TError = ErrorType<NotFoundResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSupplier>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSupplier>>, TError,{data: BodyType<DeleteSupplierInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteSupplier>>,
         TError,
-        {id: number},
+        {data: BodyType<DeleteSupplierInput>},
         TContext
       > => {
       return useMutation(getDeleteSupplierMutationOptions(options));

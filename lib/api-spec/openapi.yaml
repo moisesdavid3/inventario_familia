@@ -53,7 +53,7 @@ paths:
     get:
       operationId: listSuppliers
       tags: [suppliers]
-      summary: List suppliers for the company
+      summary: List suppliers for the company (from table and products)
       responses:
         "200":
           description: Suppliers
@@ -62,7 +62,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Supplier"
+                  $ref: "#/components/schemas/SupplierSummary"
     post:
       operationId: createSupplier
       tags: [suppliers]
@@ -79,34 +79,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Supplier"
+                $ref: "#/components/schemas/SupplierSummary"
         "400":
           $ref: "#/components/responses/BadRequest"
-  /suppliers/{id}:
     patch:
       operationId: updateSupplier
       tags: [suppliers]
-      summary: Rename a supplier
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: number
-            minimum: 1
+      summary: Rename a supplier across all its products
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SupplierInput"
+              $ref: "#/components/schemas/UpdateSupplierInput"
       responses:
         "200":
           description: Supplier updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Supplier"
+                $ref: "#/components/schemas/SupplierSummary"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -114,17 +106,23 @@ paths:
     delete:
       operationId: deleteSupplier
       tags: [suppliers]
-      summary: Delete a supplier
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: number
-            minimum: 1
+      summary: Delete a supplier and clear it from its products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteSupplierInput"
       responses:
-        "204":
+        "200":
           description: Supplier deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updatedProducts:
+                    type: number
         "404":
           $ref: "#/components/responses/NotFound"
   /clients:
@@ -887,21 +885,33 @@ components:
           type: boolean
           description: Permite registrar ventas incluso sin inventario suficiente
       required: [id, name, slug, allowNegativeStock]
-    Supplier:
+    SupplierSummary:
       type: object
       properties:
         id:
           type: number
+          nullable: true
         name:
           type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-      required: [id, name, createdAt, updatedAt]
+      required: [id, name]
     SupplierInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+      required: [name]
+    UpdateSupplierInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        newName:
+          type: string
+          minLength: 1
+      required: [name, newName]
+    DeleteSupplierInput:
       type: object
       properties:
         name:

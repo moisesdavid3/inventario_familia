@@ -32,13 +32,11 @@ export const ListCompaniesResponse = zod.array(ListCompaniesResponseItem)
 
 
 /**
- * @summary List suppliers for the company
+ * @summary List suppliers for the company (from table and products)
  */
 export const ListSuppliersResponseItem = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "id": zod.number().nullable(),
+  "name": zod.string()
 })
 export const ListSuppliersResponse = zod.array(ListSuppliersResponseItem)
 
@@ -54,49 +52,42 @@ export const CreateSupplierBody = zod.object({
 })
 
 export const CreateSupplierResponse = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "id": zod.number().nullable(),
+  "name": zod.string()
 })
 
 
 /**
- * @summary Rename a supplier
+ * @summary Rename a supplier across all its products
  */
-
-
-
-export const UpdateSupplierParams = zod.object({
-  "id": zod.coerce.number().min(1)
-})
 
 
 
 
 export const UpdateSupplierBody = zod.object({
-  "name": zod.string().min(1)
+  "name": zod.string().min(1),
+  "newName": zod.string().min(1)
 })
 
 export const UpdateSupplierResponse = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "id": zod.number().nullable(),
+  "name": zod.string()
 })
 
 
 /**
- * @summary Delete a supplier
+ * @summary Delete a supplier and clear it from its products
  */
 
 
 
-export const DeleteSupplierParams = zod.object({
-  "id": zod.coerce.number().min(1)
+export const DeleteSupplierBody = zod.object({
+  "name": zod.string().min(1)
 })
 
-export const DeleteSupplierResponse = zod.void()
+export const DeleteSupplierResponse = zod.object({
+  "updatedProducts": zod.number().optional()
+})
 
 
 /**

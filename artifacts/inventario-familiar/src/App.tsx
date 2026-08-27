@@ -15,7 +15,7 @@ import {
   useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCompanies, useListCreditPayments, useListManualCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
   useUpdateClient, useUpdateDeudaMoises, useUpdateProduct, useUpdateSupplier, useDeleteSupplier
 } from '@workspace/api-client-react';
-import type { Client, CreditPayment, ManualCredit, PaymentActivity, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale, Supplier } from '@workspace/api-client-react';
+import type { Client, CreditPayment, ManualCredit, PaymentActivity, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale, SupplierSummary } from '@workspace/api-client-react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -71,9 +71,9 @@ function ManageSuppliersModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingName, setEditingName] = useState('');
-  const [confirming, setConfirming] = useState<Supplier | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [confirming, setConfirming] = useState<SupplierSummary | null>(null);
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: getListSuppliersQueryKey() });
     qc.invalidateQueries({ queryKey: getListProductsQueryKey() });
@@ -89,13 +89,13 @@ function ManageSuppliersModal({ onClose }: { onClose: () => void }) {
       onError: (err: any) => setError(err?.response?.data?.error || 'No se pudo crear el proveedor.'),
     });
   };
-  const submitEdit = (e: React.FormEvent, id: number) => {
+  const submitEdit = (e: React.FormEvent, currentName: string) => {
     e.preventDefault();
-    const n = editingName.trim();
+    const n = editValue.trim();
     if (!n) { setError('Escribe el nombre del proveedor.'); return; }
     setError('');
-    update.mutate({ id, data: { name: n } }, {
-      onSuccess: () => { invalidate(); setEditingId(null); setEditingName(''); },
+    update.mutate({ data: { name: currentName, newName: n } }, {
+      onSuccess: () => { invalidate(); setEditing(null); setEditValue(''); },
       onError: (err: any) => setError(err?.response?.data?.error || 'No se pudo actualizar el proveedor.'),
     });
   };
@@ -103,11 +103,11 @@ function ManageSuppliersModal({ onClose }: { onClose: () => void }) {
     {!creating ? <button type="button" onClick={() => setCreating(true)} className="mt-5 w-full rounded-xl border border-dashed px-3 py-3 text-sm font-bold text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]" data-testid="button-create-supplier"><Plus size={16} className="mr-1 inline" /> Nuevo proveedor</button> : <form onSubmit={submitCreate} className="mt-5 grid gap-2"><Field label="Nombre del proveedor" value={name} onChange={(e) => setName(e.target.value)} placeholder="Por ejemplo: Bioessens" autoFocus data-testid="input-new-supplier-name" /><div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => { setCreating(false); setError(''); }} data-testid="button-cancel-create-supplier">Cancelar</Button><Button type="submit" disabled={create.isPending} data-testid="button-save-new-supplier">{create.isPending ? 'Guardando…' : 'Guardar'}</Button></div></form>}
     {error && <p className="mt-3 text-sm text-[hsl(var(--destructive))]" data-testid="status-new-supplier-error">{error}</p>}
     <div className="mt-3 flex-1 overflow-auto">
-      {suppliers.isLoading ? <div className="grid gap-2">{[1, 2, 3].map((n) => <div key={n} className="h-11 animate-pulse rounded-xl bg-[hsl(var(--muted))]" />)}</div> : suppliers.isError ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">No pudimos cargar los proveedores.</p> : !suppliers.data?.length ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">Aún no hay proveedores. Crea el primero.</p> : <ul className="divide-y divide-[hsl(var(--muted))]">{suppliers.data.map((s) => <li key={s.id} className="flex items-center gap-2 py-2.5">{editingId === s.id ? <form onSubmit={(e) => submitEdit(e, s.id)} className="flex flex-1 items-center gap-2"><input value={editingName} onChange={(e) => setEditingName(e.target.value)} autoFocus placeholder="Nombre del proveedor" className="h-10 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-edit-supplier-${s.id}`} /><Button type="submit" disabled={update.isPending} className="h-10 px-3 text-sm" data-testid={`button-save-edit-supplier-${s.id}`}>{update.isPending ? '…' : 'Guardar'}</Button><button type="button" onClick={() => { setEditingId(null); setEditingName(''); }} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid={`button-cancel-edit-supplier-${s.id}`}><X size={16} /></button></form> : <><span className="flex-1 truncate text-sm font-semibold">{s.name}</span><button type="button" onClick={() => { setEditingId(s.id); setEditingName(s.name); }} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" title="Editar" data-testid={`button-edit-supplier-${s.id}`}><Pencil size={15} /></button><button type="button" onClick={() => setConfirming(s)} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar" data-testid={`button-delete-supplier-${s.id}`}><Trash2 size={15} /></button></>}</li>)}</ul>}
+      {suppliers.isLoading ? <div className="grid gap-2">{[1, 2, 3].map((n) => <div key={n} className="h-11 animate-pulse rounded-xl bg-[hsl(var(--muted))]" />)}</div> : suppliers.isError ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">No pudimos cargar los proveedores.</p> : !suppliers.data?.length ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">Aún no hay proveedores. Crea el primero.</p> : <ul className="divide-y divide-[hsl(var(--muted))]">{suppliers.data.map((s, i) => <li key={s.id ?? `s-${i}`} className="flex items-center gap-2 py-2.5">{editing === s.name ? <form onSubmit={(e) => submitEdit(e, s.name)} className="flex flex-1 items-center gap-2"><input value={editValue} onChange={(e) => setEditValue(e.target.value)} autoFocus placeholder="Nuevo nombre del proveedor" className="h-10 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-edit-supplier-${s.name}`} /><Button type="submit" disabled={update.isPending} className="h-10 px-3 text-sm" data-testid={`button-save-edit-supplier-${s.name}`}>{update.isPending ? '…' : 'Guardar'}</Button><button type="button" onClick={() => { setEditing(null); setEditValue(''); }} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid={`button-cancel-edit-supplier-${s.name}`}><X size={16} /></button></form> : <><span className="flex-1 truncate text-sm font-semibold">{s.name}</span><button type="button" onClick={() => { setEditing(s.name); setEditValue(s.name); }} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" title="Editar" data-testid={`button-edit-supplier-${s.name}`}><Pencil size={15} /></button><button type="button" onClick={() => setConfirming(s)} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar" data-testid={`button-delete-supplier-${s.name}`}><Trash2 size={15} /></button></>}</li>)}</ul>}
     </div>
     <div className="mt-5 flex justify-end"><Button type="button" variant="ghost" onClick={onClose} data-testid="button-cancel-new-supplier">Cerrar</Button></div>
   </div>
-  {confirming && <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true"><div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl"><h3 className="font-display text-2xl font-bold">¿Borrar proveedor?</h3><p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se eliminará <b>{confirming.name}</b>. Los productos y compras vinculados conservarán el nombre, pero quedarán sin edición aquí.</p><div className="mt-7 flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setConfirming(null)} data-testid="button-cancel-delete-supplier">Cancelar</Button><Button type="button" variant="danger" onClick={() => del.mutate({ id: confirming.id }, { onSuccess: () => { invalidate(); setConfirming(null); }, onError: () => setConfirming(null) })} disabled={del.isPending} data-testid="button-confirm-delete-supplier">{del.isPending ? 'Borrando…' : 'Borrar'}</Button></div></div></div>}
+  {confirming && <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true"><div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl"><h3 className="font-display text-2xl font-bold">¿Borrar proveedor?</h3><p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se eliminará <b>{confirming.name}</b> y todos sus productos quedarán sin proveedor. Esta acción no se puede deshacer.</p><div className="mt-7 flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setConfirming(null)} data-testid="button-cancel-delete-supplier">Cancelar</Button><Button type="button" variant="danger" onClick={() => del.mutate({ data: { name: confirming.name } }, { onSuccess: () => { invalidate(); setConfirming(null); }, onError: () => setConfirming(null) })} disabled={del.isPending} data-testid="button-confirm-delete-supplier">{del.isPending ? 'Borrando…' : 'Borrar'}</Button></div></div></div>}
   </div>;
 }
 

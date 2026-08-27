@@ -36,14 +36,24 @@ export interface Company {
   allowNegativeStock: boolean;
 }
 
-export interface Supplier {
-  id: number;
+export interface SupplierSummary {
+  id: number | null;
   name: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface SupplierInput {
+  /** @minLength 1 */
+  name: string;
+}
+
+export interface UpdateSupplierInput {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  newName: string;
+}
+
+export interface DeleteSupplierInput {
   /** @minLength 1 */
   name: string;
 }
@@ -400,6 +410,10 @@ export type BadRequestResponse = Error;
  * Not found
  */
 export type NotFoundResponse = Error;
+
+export type DeleteSupplier200 = {
+  updatedProducts?: number;
+};
 
 export type ListSalesParams = {
 period?: ListSalesPeriod;
