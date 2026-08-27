@@ -25,13 +25,8 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const money = (value: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
 const toLocalDateString = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const dateLabel = (date: string) => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(date));
-const PROVIDERS = [
-  'Naruna / El Panal', 'Alves', 'Vegeta', 'Sorbetto', 'Suvi Fit', 'Prema', 'Bioessens', 'Vitalsinu',
-  'Vitaliah', 'Agroinversiones Franes', 'Gano Excel', 'Cofarnat', 'Manavida', 'Montes de Maria',
-  'Bio Supplements', 'Mauka', 'MultiAloe', 'Productos Nicolay',
-];
-const supplierOptions = (activeCompanyId: number | undefined, apiSuppliers: (string | null | undefined)[], productSuppliers: (string | null | undefined)[] = []) =>
-  Array.from(new Set([...(activeCompanyId === 2 ? PROVIDERS : []), ...apiSuppliers.filter((s): s is string => !!s), ...productSuppliers.filter((s): s is string => !!s)])).sort((a, b) => a.localeCompare(b));
+const supplierOptions = (apiSuppliers: (string | null | undefined)[], productSuppliers: (string | null | undefined)[] = []) =>
+  Array.from(new Set([...(apiSuppliers ?? []).filter((s): s is string => !!s), ...(productSuppliers ?? []).filter((s): s is string => !!s)])).sort((a, b) => a.localeCompare(b));
 const PAYMENT_METHODS = ['Efectivo', 'Nequi', 'Transferencia', 'Datafono', 'QR / Llave', 'Crédito'];
 
 function SupplierField({ value, onChange, testid, allowNew = true }: { value: string; onChange: (v: string) => void; testid: string; allowNew?: boolean }) {
@@ -43,7 +38,7 @@ function SupplierField({ value, onChange, testid, allowNew = true }: { value: st
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const options = useMemo(() => supplierOptions(activeCompany?.id, (suppliers.data || []).map((s) => s.name), (products.data || []).map((p) => p.supplier)), [suppliers.data, products.data, activeCompany]);
+  const options = useMemo(() => supplierOptions((suppliers.data || []).map((s) => s.name), (products.data || []).map((p) => p.supplier)), [suppliers.data, products.data]);
   const saveNew = (e: React.FormEvent) => {
     e.preventDefault();
     const n = name.trim();
@@ -361,7 +356,7 @@ function InventoryModal({ product, onClose }: { product: Product; onClose: () =>
 
 function Products() {
   const products = useListProducts(); const supplierList = useListSuppliers(); const qc = useQueryClient(); const { activeCompany } = useCompany(); const isPrema = activeCompany?.id === 2; const isTere = activeCompany?.id === 1; const [search, setSearch] = useState(''); const [sort, setSort] = useState('name'); const [supplier, setSupplier] = useState('all'); const [category, setCategory] = useState('all'); const [status, setStatus] = useState('all'); const [modal, setModal] = useState<'new' | Product | null>(null); const [inventory, setInventory] = useState<Product | null>(null);
-  const suppliers = useMemo(() => supplierOptions(activeCompany?.id, (supplierList.data || []).map((s) => s.name), (products.data || []).map((p) => p.supplier)), [supplierList.data, products.data, activeCompany]);
+  const suppliers = useMemo(() => supplierOptions((supplierList.data || []).map((s) => s.name), (products.data || []).map((p) => p.supplier)), [supplierList.data, products.data]);
   const categories = useMemo(() => Array.from(new Set((products.data || []).map((p) => p.category).filter((c): c is string => !!c))).sort((a, b) => a.localeCompare(b)), [products.data]);
   const list = useMemo(() => [...(products.data || [])].filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) && (supplier === 'all' || (supplier === 'none' ? !p.supplier : p.supplier === supplier)) && (category === 'all' || p.category === category) && (status === 'all' || (status === 'low' ? p.stock <= p.minimumStock : p.stock > p.minimumStock))).sort((a, b) => sort === 'stock' ? a.stock - b.stock : sort === 'price' ? b.salePrice - a.salePrice : a.name.localeCompare(b.name)), [products.data, search, sort, supplier, category, status]);
   const downloadProductsXlsx = () => {
