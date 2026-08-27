@@ -676,7 +676,7 @@ function CarteraPage() {
   const createManualPayment = useCreateManualCreditPayment();
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'all' | 'pending' | 'paid'>('all');
+  const [status, setStatus] = useState<'all' | 'pending' | 'paid'>('pending');
   const [detailClient, setDetailClient] = useState<{ name: string; phone: string; sales: Sale[]; manualCredits: ManualCredit[]; payments: Map<number, number> } | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<{ type: 'sale'; sale: Sale } | { type: 'manual'; credit: ManualCredit } | null>(null);
   const [newCreditModal, setNewCreditModal] = useState(false);
