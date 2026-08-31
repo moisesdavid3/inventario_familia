@@ -1025,10 +1025,6 @@ function CarteraPage() {
               <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Pagado</p>
               <p className="mt-1 font-mono-app text-xl font-bold text-green-600">{money(totalPaid)}</p>
             </div>
-            <div className="rounded-2xl border bg-[hsl(var(--card))] p-3" data-testid="kpi-clientes">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Clientes</p>
-              <p className="mt-1 font-mono-app text-xl font-bold">{clientGroups.length}</p>
-            </div>
             <div className="rounded-2xl border bg-[hsl(var(--card))] p-3" data-testid="kpi-tere">
               <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Suplementos Tere</p>
               <p className="mt-1 font-mono-app text-xl font-bold">{money(tere.saldo)}</p>
