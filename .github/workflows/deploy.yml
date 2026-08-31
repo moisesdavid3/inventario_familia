@@ -36,9 +36,9 @@ jobs:
         run: PORT=23322 BASE_PATH=/ pnpm --filter @workspace/inventario-familiar run build
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          packageManager: npm
-          command: pages deploy artifacts/prema-erp/dist/public --project-name prema-erp
+        run: |
+          npm install -g wrangler
+          wrangler pages deploy artifacts/prema-erp/dist/public --project-name prema-erp
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
