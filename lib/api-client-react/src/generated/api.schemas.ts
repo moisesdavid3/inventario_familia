@@ -221,6 +221,14 @@ export interface CreditPayment {
   date: string;
 }
 
+export interface LastCreditPayment {
+  /** @nullable */
+  saleId?: number | null;
+  /** @nullable */
+  manualCreditId?: number | null;
+  date: string;
+}
+
 export interface ManualCredit {
   id: number;
   /** @nullable */

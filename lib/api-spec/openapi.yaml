@@ -745,6 +745,20 @@ paths:
                 $ref: "#/components/schemas/ManualCredit"
         "400":
           $ref: "#/components/responses/BadRequest"
+  /credit-payments/last:
+    get:
+      operationId: listLastCreditPayments
+      tags: [customers]
+      summary: List the most recent credit payment per credit sale and manual credit for the company
+      responses:
+        "200":
+          description: Last credit payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LastCreditPayment"
   /credit-payments/{id}:
     delete:
       operationId: deleteCreditPayment
@@ -1170,6 +1184,17 @@ components:
           type: string
           format: date-time
       required: [id, saleId, amount, date]
+    LastCreditPayment:
+      type: object
+      properties:
+        saleId:
+          type: ["number", "null"]
+        manualCreditId:
+          type: ["number", "null"]
+        date:
+          type: string
+          format: date-time
+      required: [date]
     ManualCredit:
       type: object
       properties:

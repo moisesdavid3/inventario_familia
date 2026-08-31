@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { creditPaymentsTable, getDb, manualCreditsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
@@ -137,6 +137,31 @@ router.delete("/credit-payments/:id", async (req, res): Promise<void> => {
   }
   await getDb().delete(creditPaymentsTable).where(eq(creditPaymentsTable.id, id));
   res.sendStatus(204);
+});
+
+router.get("/credit-payments/last", async (req, res): Promise<void> => {
+  const bySale = await getDb()
+    .selectDistinctOn([creditPaymentsTable.saleId], {
+      saleId: creditPaymentsTable.saleId,
+      date: creditPaymentsTable.createdAt,
+    })
+    .from(creditPaymentsTable)
+    .where(and(eq(creditPaymentsTable.companyId, req.companyId!), isNotNull(creditPaymentsTable.saleId)))
+    .orderBy(creditPaymentsTable.saleId, desc(creditPaymentsTable.createdAt));
+
+  const byManual = await getDb()
+    .selectDistinctOn([creditPaymentsTable.manualCreditId], {
+      manualCreditId: creditPaymentsTable.manualCreditId,
+      date: creditPaymentsTable.createdAt,
+    })
+    .from(creditPaymentsTable)
+    .where(and(eq(creditPaymentsTable.companyId, req.companyId!), isNotNull(creditPaymentsTable.manualCreditId)))
+    .orderBy(creditPaymentsTable.manualCreditId, desc(creditPaymentsTable.createdAt));
+
+  const rows: { saleId: number | null; manualCreditId: number | null; date: string }[] = [];
+  for (const p of bySale) rows.push({ saleId: p.saleId, manualCreditId: null, date: p.date.toISOString() });
+  for (const p of byManual) rows.push({ saleId: null, manualCreditId: p.manualCreditId, date: p.date.toISOString() });
+  res.json(rows);
 });
 
 router.get("/manual-credits/:id/credit-payments", async (req, res): Promise<void> => {

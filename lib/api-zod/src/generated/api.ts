@@ -891,6 +891,17 @@ export const CreateManualCreditResponse = zod.object({
 
 
 /**
+ * @summary List the most recent credit payment per credit sale and manual credit for the company
+ */
+export const ListLastCreditPaymentsResponseItem = zod.object({
+  "saleId": zod.number().nullish(),
+  "manualCreditId": zod.number().nullish(),
+  "date": zod.coerce.date()
+})
+export const ListLastCreditPaymentsResponse = zod.array(ListLastCreditPaymentsResponseItem)
+
+
+/**
  * @summary Delete a credit payment (abono)
  */
 

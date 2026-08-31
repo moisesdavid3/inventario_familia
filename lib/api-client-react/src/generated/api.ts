@@ -36,6 +36,7 @@ import type {
   HealthStatus,
   InventoryInput,
   InventoryReport,
+  LastCreditPayment,
   ListManualCreditsParams,
   ListPurchasesParams,
   ListSalesParams,
@@ -2623,6 +2624,83 @@ export const useCreateManualCredit = <TError = ErrorType<BadRequestResponse>,
       > => {
       return useMutation(getCreateManualCreditMutationOptions(options));
     }
+
+export const getListLastCreditPaymentsUrl = () => {
+
+
+
+
+  return `/api/credit-payments/last`
+}
+
+/**
+ * @summary List the most recent credit payment per credit sale and manual credit for the company
+ */
+export const listLastCreditPayments = async ( options?: Parameters<typeof customFetch>[1]): Promise<LastCreditPayment[]> => {
+
+  return customFetch<LastCreditPayment[]>(getListLastCreditPaymentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLastCreditPaymentsQueryKey = () => {
+    return [
+    `/api/credit-payments/last`
+    ] as const;
+    }
+
+
+export const getListLastCreditPaymentsQueryOptions = <TData = Awaited<ReturnType<typeof listLastCreditPayments>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLastCreditPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLastCreditPaymentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLastCreditPayments>>> = ({ signal }) => listLastCreditPayments({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLastCreditPayments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLastCreditPaymentsQueryResult = NonNullable<Awaited<ReturnType<typeof listLastCreditPayments>>>
+export type ListLastCreditPaymentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the most recent credit payment per credit sale and manual credit for the company
+ */
+
+export function useListLastCreditPayments<TData = Awaited<ReturnType<typeof listLastCreditPayments>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLastCreditPayments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLastCreditPaymentsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getDeleteCreditPaymentUrl = (id: number,) => {
 

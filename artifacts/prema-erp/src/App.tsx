@@ -12,7 +12,7 @@ import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, use
 import {
   getGetDashboardQueryKey, getGetSalesReportQueryKey, getListClientsQueryKey, getListCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey, listCreditPayments, listManualCreditPayments, patchSaleDetails, createManualCredit, createCreditPayment, createManualCreditPayment,
   useAddInventory,   useCreateClient, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteClient, useDeleteCreditPayment, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
-  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCompanies, useListCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
+  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCompanies, useListCreditPayments, useListLastCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
   useUpdateClient, useUpdateDeudaMoises, useUpdateProduct, useUpdateSupplier, useDeleteSupplier
 } from '@workspace/api-client-react';
 import type { Client, CreditPayment, ManualCredit, PaymentActivity, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale, SupplierSummary } from '@workspace/api-client-react';
@@ -99,7 +99,7 @@ function ManageSuppliersModal({ onClose }: { onClose: () => void }) {
     {!creating ? <button type="button" onClick={() => setCreating(true)} className="mt-5 w-full rounded-xl border border-dashed px-3 py-3 text-sm font-bold text-[hsl(var(--primary))] hover:bg-[hsl(var(--secondary))]" data-testid="button-create-supplier"><Plus size={16} className="mr-1 inline" /> Nuevo proveedor</button> : <form onSubmit={submitCreate} className="mt-5 grid gap-2"><Field label="Nombre del proveedor" value={name} onChange={(e) => setName(e.target.value)} placeholder="Por ejemplo: Bioessens" autoFocus data-testid="input-new-supplier-name" /><div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => { setCreating(false); setError(''); }} data-testid="button-cancel-create-supplier">Cancelar</Button><Button type="submit" disabled={create.isPending} data-testid="button-save-new-supplier">{create.isPending ? 'Guardando…' : 'Guardar'}</Button></div></form>}
     {error && <p className="mt-3 text-sm text-[hsl(var(--destructive))]" data-testid="status-new-supplier-error">{error}</p>}
     <div className="mt-3 flex-1 overflow-auto">
-      {suppliers.isLoading ? <div className="grid gap-2">{[1, 2, 3].map((n) => <div key={n} className="h-11 animate-pulse rounded-xl bg-[hsl(var(--muted))]" />)}</div> : suppliers.isError ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">No pudimos cargar los proveedores.</p> : !suppliers.data?.length ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">Aún no hay proveedores. Crea el primero.</p> : <ul className="divide-y divide-[hsl(var(--muted))]">{suppliers.data.map((s, i) => <li key={s.id ?? `s-${i}`} className="flex items-center gap-2 py-2.5">{editing === s.name ? <form onSubmit={(e) => submitEdit(e, s.name)} className="flex flex-1 items-center gap-2"><input value={editValue} onChange={(e) => setEditValue(e.target.value)} autoFocus placeholder="Nuevo nombre del proveedor" className="h-10 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-edit-supplier-${s.name}`} /><Button type="submit" disabled={update.isPending} className="h-10 px-3 text-sm" data-testid={`button-save-edit-supplier-${s.name}`}>{update.isPending ? '…' : 'Guardar'}</Button><button type="button" onClick={() => { setEditing(null); setEditValue(''); }} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid={`button-cancel-edit-supplier-${s.name}`}><X size={16} /></button></form> : <><span className="flex-1 truncate text-sm font-semibold">{s.name}</span><button type="button" onClick={() => { setEditing(s.name); setEditValue(s.name); }} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" title="Editar" data-testid={`button-edit-supplier-${s.name}`}><Pencil size={15} /></button><button type="button" onClick={() => setConfirming(s)} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar" data-testid={`button-delete-supplier-${s.name}`}><Trash2 size={15} /></button></>}</li>)}</ul>}
+      {suppliers.isLoading ? <div className="grid gap-2">{[1, 2, 3].map((n) => <div key={n} className="h-11 animate-pulse rounded-xl bg-[hsl(var(--muted))]" />)}</div> : suppliers.isError ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">No pudimos cargar los proveedores.</p> : !suppliers.data?.length ? <p className="py-6 text-center text-sm text-[hsl(var(--muted-foreground))]">Aún no hay proveedores. Crea el primero.</p> : <ul className="divide-y divide-[hsl(var(--muted))]">{suppliers.data.map((s, i) => <li key={s.id ?? `s-${i}`} className="flex items-center gap-2 py-2.5">{editing === s.name ? <form onSubmit={(e) => submitEdit(e, s.name)} className="flex flex-1 items-center gap-2"><input value={editValue} onChange={(e) => setEditValue(e.target.value)} autoFocus placeholder="Nuevo nombre del proveedor" className="h-10 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-edit-supplier-${s.name}`} /><Button type="submit" disabled={update.isPending} className="h-10 px-3 text-sm" data-testid={`button-save-edit-supplier-${s.name}`}>{update.isPending ? '…' : 'Guardar'}</Button><button type="button" onClick={() => { setEditing(null); setEditValue(''); }} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid={`button-cancel-edit-supplier-${s.name}`}><X size={16} /></button></form> : <><span className="flex-1 truncate text-sm font-semibold">{s.name}</span><Button type="button" variant="ghost" onClick={() => { setEditing(s.name); setEditValue(s.name); }} className="h-10 px-3 text-sm" data-testid={`button-edit-supplier-${s.name}`}><Pencil size={15} /> Editar</Button><Button type="button" variant="ghost" onClick={() => setConfirming(s)} className="h-10 px-3 text-sm text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" data-testid={`button-delete-supplier-${s.name}`}><Trash2 size={15} /> Borrar</Button></>}</li>)}</ul>}
     </div>
     <div className="mt-5 flex justify-end"><Button type="button" variant="ghost" onClick={onClose} data-testid="button-cancel-new-supplier">Cerrar</Button></div>
   </div>
@@ -773,25 +773,31 @@ function CarteraPage() {
   const creditSales = useMemo(() => (sales.data || []).filter((s) => s.paymentMethod === 'Crédito'), [sales.data]);
   const allManualCredits = manualCredits.data || [];
 
-  const salePaymentQueries = useQueries({ queries: creditSales.map((s) => ({ queryKey: getListCreditPaymentsQueryKey(s.id), queryFn: () => listCreditPayments(s.id, { headers: { 'x-company-id': String(s.companyId ?? 0) } }) })) });
-  const manualPaymentQueries = useQueries({ queries: allManualCredits.map((mc) => ({ queryKey: ['/api/manual-credits', mc.id, 'credit-payments'], queryFn: () => listManualCreditPayments(mc.id, { headers: { 'x-company-id': String(mc.companyId ?? 0) } }) })) });
+  const lastPayments = useListLastCreditPayments();
 
   const lastPaymentByKey = useMemo(() => {
+    const bySale = new Map<number, string>();
+    const byManual = new Map<number, string>();
+    for (const p of lastPayments.data || []) {
+      if (p.saleId != null && (!bySale.has(p.saleId) || new Date(p.date).getTime() > new Date(bySale.get(p.saleId)!).getTime())) bySale.set(p.saleId, p.date);
+      if (p.manualCreditId != null && (!byManual.has(p.manualCreditId) || new Date(p.date).getTime() > new Date(byManual.get(p.manualCreditId)!).getTime())) byManual.set(p.manualCreditId, p.date);
+    }
     const m = new Map<string, string>();
-    const consider = (key: string, iso: string) => {
+    const consider = (key: string, iso: string | undefined) => {
+      if (!iso) return;
       const cur = m.get(key);
       if (!cur || new Date(iso).getTime() > new Date(cur).getTime()) m.set(key, iso);
     };
-    creditSales.forEach((s, i) => {
+    creditSales.forEach((s) => {
       const key = s.clientId ? `c:${s.clientId}` : `n:${(s.clientName || '').toLowerCase()}`;
-      for (const p of salePaymentQueries[i]?.data || []) consider(key, p.date);
+      consider(key, bySale.get(s.id));
     });
-    allManualCredits.forEach((mc, i) => {
+    allManualCredits.forEach((mc) => {
       const key = mc.clientId ? `c:${mc.clientId}` : `n:${(mc.clientName || '').toLowerCase()}`;
-      for (const p of manualPaymentQueries[i]?.data || []) consider(key, p.date);
+      consider(key, byManual.get(mc.id));
     });
     return m;
-  }, [creditSales, allManualCredits, salePaymentQueries, manualPaymentQueries]);
+  }, [creditSales, allManualCredits, lastPayments.data]);
 
   const clientGroups = useMemo(() => {
     const map = new Map<string, { key: string; name: string; phone: string; clientId: number | null; sales: Sale[]; manualCredits: ManualCredit[]; paidMap: Map<number, number> }>();

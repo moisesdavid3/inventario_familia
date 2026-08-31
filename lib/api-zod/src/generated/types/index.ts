@@ -25,6 +25,7 @@ export * from './getSalesReportPeriod';
 export * from './healthStatus';
 export * from './inventoryInput';
 export * from './inventoryReport';
+export * from './lastCreditPayment';
 export * from './listManualCreditsParams';
 export * from './listManualCreditsScope';
 export * from './listPurchasesParams';
