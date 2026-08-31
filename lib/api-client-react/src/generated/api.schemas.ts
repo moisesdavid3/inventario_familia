@@ -148,6 +148,8 @@ export interface SaleInput {
   isDelivery?: boolean;
   /** Costo del domicilio (se suma al total) */
   deliveryCost?: number;
+  /** Indica si ya se pagó al mensajero del domicilio */
+  deliveryPaid?: boolean;
 }
 
 export interface SaleItem {
@@ -194,6 +196,8 @@ export interface Sale {
   isDelivery?: boolean;
   /** Costo del domicilio */
   deliveryCost?: number;
+  /** Indica si ya se pagó al mensajero */
+  deliveryPaid?: boolean;
   items: SaleItem[];
 }
 
@@ -385,6 +389,9 @@ export interface PaymentActivity {
   /** @nullable */
   note?: string | null;
   date: string;
+  /** Nombre del cliente que realizó el abono */
+  /** @nullable */
+  clientName?: string | null;
 }
 
 export interface SalesReport {
@@ -447,12 +454,14 @@ export const ListSalesScope = {
 export type PatchSaleDetailsBody = {
   paymentMethod?: string | null;
   notes?: string | null;
+  deliveryPaid?: boolean;
 };
 
 export type PatchSaleDetails200 = {
   id?: number;
   paymentMethod?: string | null;
   notes?: string | null;
+  deliveryPaid?: boolean;
 };
 
 export type ListPurchasesParams = {

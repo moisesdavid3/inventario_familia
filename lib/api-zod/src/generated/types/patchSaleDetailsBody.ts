@@ -9,4 +9,5 @@
 export type PatchSaleDetailsBody = {
   paymentMethod?: string | null;
   notes?: string | null;
+  deliveryPaid?: boolean;
 };

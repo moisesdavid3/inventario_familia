@@ -132,6 +132,7 @@ router.post("/sales", async (req, res): Promise<void> => {
       clientId: parsed.data.clientId ?? null,
       isDelivery,
       deliveryCost,
+      deliveryPaid: isDelivery ? (parsed.data.deliveryPaid === true) : false,
     }).returning();
     await tx.insert(saleItemsTable).values(items.map((item) => ({ saleId: sale.id, ...item })));
     for (const { product, quantity } of products) {
@@ -187,6 +188,9 @@ router.patch("/sales/:id", async (req, res): Promise<void> => {
   if ("notes" in body) {
     updates.notes = typeof body.notes === "string" ? body.notes.trim() || null : body.notes === null ? null : undefined;
   }
+  if ("deliveryPaid" in body) {
+    if (typeof body.deliveryPaid === "boolean") updates.deliveryPaid = body.deliveryPaid;
+  }
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "Nada que actualizar." });
     return;
@@ -198,7 +202,7 @@ router.patch("/sales/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "No encontramos esa venta." });
     return;
   }
-  res.json({ id: updated.id, paymentMethod: updated.paymentMethod, notes: updated.notes });
+  res.json({ id: updated.id, paymentMethod: updated.paymentMethod, notes: updated.notes, isDelivery: updated.isDelivery, deliveryCost: updated.deliveryCost, deliveryPaid: updated.deliveryPaid });
 });
 
 router.delete("/sales/:id", async (req, res): Promise<void> => {

@@ -26,4 +26,6 @@ export interface SaleInput {
   isDelivery?: boolean;
   /** Costo del domicilio (se suma al total) */
   deliveryCost?: number;
+  /** Indica si ya se pagó al mensajero del domicilio */
+  deliveryPaid?: boolean;
 }

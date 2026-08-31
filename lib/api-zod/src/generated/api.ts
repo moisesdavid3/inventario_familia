@@ -401,6 +401,7 @@ export const ListSalesResponseItem = zod.object({
   "companyId": zod.number().optional().describe('ID de la empresa'),
   "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
   "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
+  "deliveryPaid": zod.boolean().optional().describe('Indica si ya se pagó al mensajero'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -436,7 +437,8 @@ export const CreateSaleBody = zod.object({
   "clientPhone": zod.string().optional().describe('Teléfono del cliente'),
   "clientId": zod.number().optional().describe('ID del cliente existente'),
   "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
-  "deliveryCost": zod.number().optional().describe('Costo del domicilio (se suma al total)')
+  "deliveryCost": zod.number().optional().describe('Costo del domicilio (se suma al total)'),
+  "deliveryPaid": zod.boolean().optional().describe('Indica si ya se pagó al mensajero del domicilio')
 })
 
 export const CreateSaleResponse = zod.object({
@@ -455,6 +457,7 @@ export const CreateSaleResponse = zod.object({
   "companyId": zod.number().optional().describe('ID de la empresa'),
   "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
   "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
+  "deliveryPaid": zod.boolean().optional().describe('Indica si ya se pagó al mensajero'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -492,6 +495,7 @@ export const GetSaleResponse = zod.object({
   "companyId": zod.number().optional().describe('ID de la empresa'),
   "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
   "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
+  "deliveryPaid": zod.boolean().optional().describe('Indica si ya se pagó al mensajero'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -515,13 +519,15 @@ export const PatchSaleDetailsParams = zod.object({
 
 export const PatchSaleDetailsBody = zod.object({
   "paymentMethod": zod.string().nullish(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "deliveryPaid": zod.boolean().optional().describe('Marca si el mensajero ya recibió el pago del domicilio')
 })
 
 export const PatchSaleDetailsResponse = zod.object({
   "id": zod.number().optional(),
   "paymentMethod": zod.string().nullish(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "deliveryPaid": zod.boolean().nullish()
 })
 
 
@@ -798,6 +804,7 @@ export const GetSalesReportResponse = zod.object({
   "companyId": zod.number().optional().describe('ID de la empresa'),
   "isDelivery": zod.boolean().optional().describe('Venta para envío a domicilio'),
   "deliveryCost": zod.number().optional().describe('Costo del domicilio'),
+  "deliveryPaid": zod.boolean().optional().describe('Indica si ya se pagó al mensajero'),
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
@@ -814,7 +821,8 @@ export const GetSalesReportResponse = zod.object({
   "amount": zod.number(),
   "paymentMethod": zod.string().nullish(),
   "note": zod.string().nullish(),
-  "date": zod.coerce.date()
+  "date": zod.coerce.date(),
+  "clientName": zod.string().nullish().describe('Nombre del cliente que realizó el abono')
 })),
   "totalSold": zod.number(),
   "saleCount": zod.number(),

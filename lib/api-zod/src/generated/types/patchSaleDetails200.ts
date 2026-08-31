@@ -10,4 +10,5 @@ export type PatchSaleDetails200 = {
   id?: number;
   paymentMethod?: string | null;
   notes?: string | null;
+  deliveryPaid?: boolean;
 };

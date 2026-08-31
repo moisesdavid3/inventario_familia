@@ -30,6 +30,7 @@ export const salesTable = pgTable("inventory_sales", {
   clientId: integer("client_id"),
   isDelivery: boolean("is_delivery").notNull().default(false),
   deliveryCost: integer("delivery_cost").notNull().default(0),
+  deliveryPaid: boolean("delivery_paid").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("inventory_sales_company_created_idx").on(t.companyId, t.createdAt),

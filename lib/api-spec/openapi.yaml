@@ -446,6 +446,9 @@ paths:
                 notes:
                   type: string
                   nullable: true
+                deliveryPaid:
+                  type: boolean
+                  description: Marca si el mensajero ya recibió el pago del domicilio
       responses:
         "200":
           description: Updated sale
@@ -462,6 +465,8 @@ paths:
                   notes:
                     type: string
                     nullable: true
+                  deliveryPaid:
+                    type: boolean
         "404":
           $ref: "#/components/responses/NotFound"
     delete:
@@ -1061,6 +1066,9 @@ components:
         deliveryCost:
           type: number
           description: Costo del domicilio (se suma al total)
+        deliveryPaid:
+          type: boolean
+          description: Indica si ya se pagó al mensajero del domicilio
       required: [items]
     SaleItem:
       type: object
@@ -1122,6 +1130,9 @@ components:
         deliveryCost:
           type: number
           description: Costo del domicilio
+        deliveryPaid:
+          type: boolean
+          description: Indica si ya se pagó al mensajero
         items:
           type: array
           items:
@@ -1456,4 +1467,7 @@ components:
         date:
           type: string
           format: date-time
+        clientName:
+          type: ["string", "null"]
+          description: Nombre del cliente que realizó el abono
       required: [id, saleId, manualCreditId, amount, date]

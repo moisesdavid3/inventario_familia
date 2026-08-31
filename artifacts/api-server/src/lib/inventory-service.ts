@@ -5,6 +5,7 @@ import {
   getDb,
   inventoryMovementsTable,
   inventoryUserSettingsTable,
+  manualCreditsTable,
   productsTable,
   purchaseItemsTable,
   purchasesTable,
@@ -236,6 +237,7 @@ export function toSaleResponse(sale: typeof salesTable.$inferSelect, items: type
     companyId: sale.companyId,
     isDelivery: sale.isDelivery,
     deliveryCost: sale.deliveryCost,
+    deliveryPaid: sale.deliveryPaid,
     items: items.map((item) => ({
       productId: item.productId,
       productName: item.productName,
@@ -279,7 +281,7 @@ export async function dashboardData(userId: string, companyId: number, userEmail
     inventorySaleValue: products.reduce((sum, product) => sum + product.salePrice * product.stock, 0),
     potentialProfit: products.reduce((sum, product) => sum + (product.salePrice - product.cost) * product.stock, 0),
     todaySalesCount: todaySales.length,
-    todaySalesTotal: todaySales.reduce((sum, sale) => sum + sale.total, 0),
+    todaySalesTotal: todaySales.reduce((sum, sale) => sum + sale.total - (sale.isDelivery ? sale.deliveryCost : 0), 0),
     deudaMoisesDavid: await getDeudaMoises(companyId),
     canEditDeudaMoises: userEmail === DEBT_OWNER_EMAIL,
     lowStockProducts: products
@@ -317,6 +319,16 @@ export async function salesReportData(userId: string, companyId: number, userEma
   const paymentRows = await getDb().select().from(creditPaymentsTable)
     .where(paymentWhere(companyId, range))
     .orderBy(sql`${creditPaymentsTable.createdAt} desc`);
+  const paymentSaleIds = [...new Set(paymentRows.map((p) => p.saleId).filter((v): v is number => v != null))];
+  const paymentManualCreditIds = [...new Set(paymentRows.map((p) => p.manualCreditId).filter((v): v is number => v != null))];
+  const paymentSaleRows = paymentSaleIds.length
+    ? await getDb().select({ id: salesTable.id, clientName: salesTable.clientName }).from(salesTable).where(inArray(salesTable.id, paymentSaleIds))
+    : [];
+  const paymentCreditRows = paymentManualCreditIds.length
+    ? await getDb().select({ id: manualCreditsTable.id, clientName: manualCreditsTable.clientName }).from(manualCreditsTable).where(inArray(manualCreditsTable.id, paymentManualCreditIds))
+    : [];
+  const clientNameBySale = new Map(paymentSaleRows.map((r) => [r.id, r.clientName]));
+  const clientNameByManualCredit = new Map(paymentCreditRows.map((r) => [r.id, r.clientName]));
   const payments = paymentRows.map((p) => ({
     id: p.id,
     saleId: p.saleId,
@@ -325,6 +337,7 @@ export async function salesReportData(userId: string, companyId: number, userEma
     paymentMethod: p.paymentMethod,
     note: p.note,
     date: p.createdAt,
+    clientName: p.saleId != null ? (clientNameBySale.get(p.saleId) ?? null) : p.manualCreditId != null ? (clientNameByManualCredit.get(p.manualCreditId) ?? null) : null,
   }));
   const counts = new Map<string, number>();
   completeSales.forEach((sale) => sale.items.forEach((item) => counts.set(item.productName, (counts.get(item.productName) ?? 0) + item.quantity)));
@@ -333,7 +346,7 @@ export async function salesReportData(userId: string, companyId: number, userEma
   return {
     sales: completeSales,
     payments,
-    totalSold: completeSales.reduce((sum, sale) => sum + sale.total, 0),
+    totalSold: completeSales.reduce((sum, sale) => sum + sale.total - (sale.isDelivery ? sale.deliveryCost : 0), 0),
     saleCount: completeSales.length,
     itemCount: completeSales.reduce((sum, sale) => sum + sale.totalItems, 0),
     estimatedProfit: completeSales.reduce((sum, sale) => sum + sale.estimatedProfit, 0),

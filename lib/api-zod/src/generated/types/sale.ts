@@ -42,5 +42,7 @@ export interface Sale {
   isDelivery?: boolean;
   /** Costo del domicilio */
   deliveryCost?: number;
+  /** Indica si ya se pagó al mensajero */
+  deliveryPaid?: boolean;
   items: SaleItem[];
 }

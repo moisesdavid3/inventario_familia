@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider, useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowRight, BarChart3, Box, Check, ChevronDown, CircleDollarSign, ClipboardList,
+  ArrowRight, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Box, Check, ChevronDown, CircleDollarSign, ClipboardList,
   CreditCard, Download, History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Printer, Search, ShoppingBasket,
-  ShoppingCart, Sparkles, Trash2, TriangleAlert, TrendingUp, Upload, Users, Wallet, X
+  ShoppingCart, Sparkles, Trash2, Truck, TriangleAlert, TrendingUp, Upload, Users, Wallet, X
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -10,14 +10,15 @@ import { supabase } from '@/lib/supabase';
 import { CompanyProvider, useCompany } from '@/lib/company';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useRoute } from 'wouter';
 import {
-  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListClientsQueryKey, getListCreditPaymentsQueryKey, getListManualCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey, listCreditPayments, patchSaleDetails,
-  useAddInventory,   useCreateClient, useCreateCreditPayment, useCreateManualCredit, useCreateManualCreditPayment, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteClient, useDeleteCreditPayment, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
-  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCompanies, useListCreditPayments, useListManualCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
+  getGetDashboardQueryKey, getGetSalesReportQueryKey, getListClientsQueryKey, getListCreditPaymentsQueryKey, getListManualCreditsQueryKey, getListProductsQueryKey, getListPurchasesQueryKey, getListSalesQueryKey, getListSuppliersQueryKey, listCreditPayments, listManualCreditPayments, patchSaleDetails, createManualCredit, createCreditPayment, createManualCreditPayment,
+  useAddInventory,   useCreateClient, useCreateProduct, useCreatePurchase, useCreateSale, useCreateSupplier, useDeleteClient, useDeleteCreditPayment, useDeleteManualCredit, useDeleteProduct, useDeletePurchase, useDeleteSale,
+  useGetDashboard, useGetInventoryReport, useGetSalesReport, useImportPurchases, useListClients, useListCompanies, useListCreditPayments, useListManualCredits, useListProducts, useListPurchases, useListSales, useListSuppliers,
   useUpdateClient, useUpdateDeudaMoises, useUpdateProduct, useUpdateSupplier, useDeleteSupplier
 } from '@workspace/api-client-react';
 import type { Client, CreditPayment, ManualCredit, PaymentActivity, Product, Purchase, PurchaseImportResult, PurchaseInput, Sale, SupplierSummary } from '@workspace/api-client-react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
@@ -416,9 +417,9 @@ function printInvoice(sale: Sale, company: { name: string; nit?: string | null; 
   const date = new Date(sale.date);
   const dateStr = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
   const items = sale.items.map((item) => `<tr><td style="text-align:left">${item.quantity} × ${item.productName}</td><td style="text-align:right">${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(item.subtotal)}</td></tr>`).join('');
-  const companyLines = ['Tienda Natural Prema', company.nit ? `NIT. ${company.nit}` : '', company.address, company.phone ? `Tel: ${company.phone}` : ''].filter(Boolean).join('<br>');
-  const deliveryLine = sale.isDelivery && sale.deliveryCost ? `<div style="text-align:right;font-size:8px;margin:2px 0">Domicilio: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(sale.deliveryCost)}</div>` : '';
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Factura Venta #${sale.saleNumber}</title><style>@page{size:80mm auto;margin:2mm 6mm}body{font-family:'Courier New',monospace;font-size:8px;margin:0;padding:0 4px;color:#000}table{width:100%;border-collapse:collapse}td{padding:1.5px 0}h2{text-align:center;margin:3px 0;font-size:10px}.line{border-top:1px dashed #000;margin:4px 0}.total{font-size:11px;font-weight:bold;text-align:center;margin:5px 0}.footer{text-align:center;margin-top:6px;font-size:7px;color:#555}</style></head><body><div style="text-align:center"><b style="font-size:10px">${companyLines}</b><div class="line"></div><b>FACTURA DE VENTA</b><div>Venta #${sale.saleNumber}</div><div>${dateStr}</div>${sale.isDelivery ? '<div><b>DOMICILIO</b></div>' : ''}</div><div class="line"></div><table>${items}</table><div class="line"></div>${deliveryLine}<div class="total">TOTAL: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(sale.total)}</div><div style="text-align:center;font-size:8px;margin:2px 0">Pago: ${sale.paymentMethod || 'No indicado'}</div>${sale.clientName ? `<div style="text-align:center;font-size:8px">Cliente: ${sale.clientName}${sale.clientPhone ? ` (${sale.clientPhone})` : ''}</div>` : ''}<div class="line"></div><div class="footer">Gracias por su compra</div></body></html>`;
+  const companyLines = ['Tienda Natural Prema', company.nit ? `NIT. ${company.nit}` : '', 'Regimen Simplificado', 'Cel: 3007552612', 'Calle 63 # 8-28'].filter(Boolean).join('<br>');
+  const deliveryLine = sale.isDelivery && sale.deliveryCost ? `<div style="text-align:right;font-size:7px;margin:1px 0">Domicilio: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(sale.deliveryCost)}</div>` : '';
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Factura Venta #${sale.saleNumber}</title><style>@page{size:80mm auto;margin:1mm 5mm}body{font-family:'Courier New',monospace;font-size:7px;margin:0;padding:0 2px;color:#000}table{width:100%;border-collapse:collapse}td{padding:1px 0}h2{text-align:center;margin:2px 0;font-size:9px}.line{border-top:1px dashed #000;margin:3px 0}.total{font-size:10px;font-weight:bold;text-align:center;margin:4px 0}.footer{text-align:center;margin-top:5px;font-size:6.5px;color:#555}</style></head><body><div style="text-align:center"><b style="font-size:9px">${companyLines}</b><div class="line"></div><b>FACTURA DE VENTA</b><div>Venta #${sale.saleNumber}</div><div>${dateStr}</div>${sale.isDelivery ? '<div><b>DOMICILIO</b></div>' : ''}</div><div class="line"></div><table>${items}</table><div class="line"></div>${deliveryLine}<div class="total">TOTAL: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(sale.total)}</div><div style="text-align:center;font-size:7px;margin:1px 0">Pago: ${sale.paymentMethod || 'No indicado'}</div>${sale.clientName ? `<div style="text-align:center;font-size:7px">Cliente: ${sale.clientName}${sale.clientPhone ? ` (${sale.clientPhone})` : ''}</div>` : ''}<div class="line"></div><div class="footer">Gracias por su compra</div></body></html>`;
   const w = window.open('', '_blank');
   if (w) { w.document.write(html); w.document.close(); w.print(); }
 }
@@ -432,7 +433,7 @@ function SalePage() {
   const setLine = (productId: number, patch: Partial<{ quantity: number; unitPrice: number }>) => setItems((prev) => prev.map((i) => i.productId === productId ? { ...i, ...patch } : i));
   const submit = () => { if (!items.length) { setError('Agrega al menos un producto para registrar la venta.'); return; } sale.mutate({ data: { items, date: (() => { const now = new Date(); const [y, m, d] = saleDate.split('-').map(Number); const local = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()); return local.toISOString(); })(), paymentMethod, notes: notes.trim() || undefined, clientName: clientName.trim() || undefined, clientPhone: clientPhone.trim() || undefined, clientId: clientName.trim() ? (clients.data?.find((c) => c.name === clientName.trim())?.id || undefined) : undefined, isDelivery: isDelivery || undefined, deliveryCost: isDelivery && deliveryCost ? Number(deliveryCost) : undefined } }, { onSuccess: (created) => { setResult(created); setItems([]); setNotes(''); setClientName(''); setClientPhone(''); setIsDelivery(false); setDeliveryCost(''); setSaleDate(toLocalDateString(new Date())); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: ['/api/reports/sales'] }); }, onError: () => setError('No se pudo registrar la venta. Revisa las existencias.') }); };
   if (result) return <Shell><div className="mx-auto max-w-xl py-10 text-center"><span className="mx-auto grid h-20 w-20 place-items-center rounded-3xl bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"><Check size={38} /></span><p className="mt-7 font-mono-app text-[11px] font-bold uppercase tracking-[.18em] text-[hsl(var(--primary))]">Venta registrada · Venta #{result.saleNumber}</p><h1 className="mt-2 font-display text-5xl font-bold">Listo, quedó anotada.</h1><p className="mt-4 text-[hsl(var(--muted-foreground))]">Se actualizaron las existencias de tus productos.</p><div className="mt-8 rounded-2xl border bg-[hsl(var(--card))] p-5 text-left"><div className="flex justify-between border-b pb-4 text-sm"><span className="text-[hsl(var(--muted-foreground))]">Total de la venta</span><strong className="font-mono-app text-xl">{money(result.total)}</strong></div><div className="mt-4 grid gap-2">{result.items.map((item) => <div key={item.productId} className="flex justify-between text-sm"><span>{item.quantity} × {item.productName}</span><span className="font-mono-app">{money(item.subtotal)}</span></div>)}</div><div className="mt-4 grid gap-2 border-t pt-4 text-sm"><div className="flex justify-between"><span className="text-[hsl(var(--muted-foreground))]">Método de pago</span><strong>{result.paymentMethod || 'No indicado'}</strong></div>{result.notes && <div className="rounded-lg bg-[hsl(var(--muted)/.5)] p-3 text-sm"><span className="block text-xs font-semibold text-[hsl(var(--muted-foreground))]">Notas</span>{result.notes}</div>}</div></div><div className="mt-7 flex justify-center gap-3"><Button onClick={() => printInvoice(result, activeCompany!)} data-testid="button-print-invoice"><Printer size={16} /> Imprimir factura</Button><Button variant="secondary" onClick={() => setResult(null)} data-testid="button-new-sale">Registrar otra</Button><Link href="/app" className="inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold text-[hsl(var(--primary))]" data-testid="link-sale-dashboard">Volver al inicio <ArrowRight size={16} /></Link></div></div></Shell>;
-  return <Shell><PageHeading eyebrow="Caja" title="Registrar venta" description="Agrega lo que se llevó tu cliente y confirma al final." /><div className="grid gap-6 lg:grid-cols-[1fr_370px]"><section className="rounded-2xl border bg-[hsl(var(--card))] p-5 sm:p-7"><div className="grid gap-4 sm:grid-cols-[1fr_150px_auto] sm:items-end"><label className="grid gap-1.5 text-sm font-semibold">Producto<div className="relative"><input value={query} onChange={(e) => { setQuery(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} placeholder="Buscar un producto..." className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-search" /><ChevronDown size={16} className={`pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))] transition-transform ${open ? 'rotate-180' : ''}`} />{open && <ul className="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-xl border bg-[hsl(var(--card))] p-1 shadow-xl">{matches.slice(0, 20).map((p) => <li key={p.id}><button type="button" onClick={() => { setSelected(String(p.id)); setQuery(p.name); setOpen(false); }} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[hsl(var(--muted))]" data-testid={`option-sale-product-${p.id}`}>{isPrema ? `${p.name}${p.content ? ` · ${p.content}` : ''}` : `${p.name} · ${p.stock > 0 ? `${p.stock} disponibles` : allowNegative ? 'sin existencias' : `${p.stock} disponibles`}`}</button></li>)}{!matches.length && <li className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No encontramos productos con ese nombre.</li>}</ul>}</div></label><Field label="Cantidad" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} data-testid="input-sale-quantity" /><Button type="button" onClick={addItem} className="sm:mb-0" data-testid="button-add-sale-item"><Plus size={18} /> Agregar</Button></div>{error && <p className="mt-4 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]" data-testid="status-sale-error">{error}</p>}<div className="mt-8 grid gap-4 border-t pt-5 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-semibold">Método de pago<div className="relative"><select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-sale-payment-method">{PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))]" /></div></label>{paymentMethod === 'Crédito' && <><label className="grid gap-1.5 text-sm font-semibold">Cliente<div className="relative"><select value={clientName} onChange={(e) => { const v = e.target.value; if (v === '__new__') { setNewClientModal(true); } else { setClientName(v); const c = clients.data?.find((cl) => cl.name === v); setClientPhone(c?.phone || ''); } }} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-sale-client"><option value="">Sin cliente</option>{(clients.data || []).map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}<option value="__new__">+ Crear nuevo cliente</option></select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))]" /></div></label>{!clientName && <><label className="grid gap-1.5 text-sm font-semibold">Nombre Cliente<div className="relative"><input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre del cliente (opcional)" className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-client-name" /></div></label><label className="grid gap-1.5 text-sm font-semibold">Teléfono<div className="relative"><input type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Teléfono del cliente (opcional)" className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-client-phone" /></div></label></>}</>}<label className="grid gap-1.5 text-sm font-semibold">Notas<div className="relative"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Observaciones de la venta (opcional)" className="h-12 w-full resize-none rounded-xl border bg-[hsl(var(--background))] px-3 py-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-notes" /></div></label></div><div className="mt-8 border-t pt-5"><p className="mb-3 font-mono-app text-xs uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Productos de esta venta</p>{!items.length ? <div className="grid min-h-40 place-items-center rounded-xl border border-dashed p-5 text-center"><div><ShoppingBasket size={25} className="mx-auto text-[hsl(var(--muted-foreground))]" /><p className="mt-3 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay productos.<br />Elige uno arriba para comenzar.</p></div></div> : <div className="grid gap-3">{items.map((item) => { const p = products.data?.find((x) => x.id === item.productId); return <div key={item.productId} className="rounded-xl bg-[hsl(var(--muted)/.55)] p-3" data-testid={`row-sale-item-${item.productId}`}><div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate text-base font-bold sm:text-lg">{p?.name}{p?.content ? ` · ${p.content}` : ''}</span><button onClick={() => setItems(items.filter((x) => x.productId !== item.productId))} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--card))]" data-testid={`button-remove-sale-item-${item.productId}`}><X size={17} /></button></div><div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2"><label className="flex items-center gap-2 text-sm font-semibold">Cant.<input type="number" min="1" value={item.quantity} onChange={(e) => setLine(item.productId, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="h-11 w-20 rounded-xl border bg-[hsl(var(--card))] px-2 text-center text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-qty-${item.productId}`} /></label><label className="flex items-center gap-2 text-sm font-semibold">P. unit.<input type="number" min="0" step="1" value={item.unitPrice} onChange={(e) => setLine(item.productId, { unitPrice: Math.max(0, Math.round(Number(e.target.value) || 0)) })} className="h-11 w-28 rounded-xl border bg-[hsl(var(--card))] px-2 text-right text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-price-${item.productId}`} /></label><span className="ml-auto font-mono-app text-lg font-bold sm:text-xl">{money(item.unitPrice * item.quantity)}</span></div></div>})}</div>}</div></section><div className="grid gap-6"><aside className="h-fit rounded-2xl bg-[hsl(var(--sidebar))] p-6 text-[hsl(var(--sidebar-foreground))]"><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--sidebar-primary))]">Resumen</p><label className="mt-5 grid gap-1.5"><span className="text-xs font-semibold text-[hsl(var(--sidebar-foreground)/.7)]">Fecha de la venta</span><input type="date" value={saleDate} max={toLocalDateString(new Date())} onChange={(e) => setSaleDate(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold text-[hsl(var(--card-foreground))] outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-date" /></label><h2 className="mt-5 font-display text-2xl font-bold">Total a cobrar</h2><p className="mt-6 font-mono-app text-5xl font-bold text-[hsl(var(--sidebar-primary))]">{money(total + (isDelivery ? Number(deliveryCost || 0) : 0))}</p><div className="mt-4 flex items-center gap-3"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isDelivery} onChange={(e) => { setIsDelivery(e.target.checked); if (!e.target.checked) setDeliveryCost(''); }} className="h-4 w-4 rounded" /><span className="text-sm font-semibold">Domicilio</span></label></div>{isDelivery && <div className="mt-2"><Field label="Costo del domicilio" type="number" min="0" step="500" value={deliveryCost} onChange={(e) => setDeliveryCost(e.target.value)} placeholder="0" data-testid="input-sale-delivery-cost" /></div>}<p className="mt-2 text-sm text-[hsl(var(--sidebar-foreground)/.6)]">{items.reduce((sum, i) => sum + i.quantity, 0)} productos en total</p><Button className="mt-7 w-full bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))]" onClick={submit} disabled={sale.isPending || !items.length} data-testid="button-confirm-sale">{sale.isPending ? 'Registrando…' : 'Confirmar venta'} <ArrowRight size={17} /></Button><p className="mt-4 text-center text-xs text-[hsl(var(--sidebar-foreground)/.5)]">Al confirmar, se descuentan las existencias automáticamente.</p></aside><div className="rounded-2xl border bg-[hsl(var(--card))] p-5"><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Resumen del día</p>{todaySales.isLoading ? <div className="mt-3 h-20 animate-pulse rounded-xl bg-[hsl(var(--muted))]" /> : todaySales.isError ? <p className="mt-3 text-xs text-[hsl(var(--muted-foreground))]">No se pudo cargar el resumen del día.</p> : <div className="mt-3 grid gap-2 text-sm"><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Total de ventas del día</span><strong className="font-mono-app">{money(todaySales.data?.totalSold ?? 0)}</strong></div><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Número de ventas</span><strong className="font-mono-app">{todaySales.data?.saleCount ?? 0}</strong></div><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Productos vendidos</span><strong className="font-mono-app">{todaySales.data?.itemCount ?? 0}</strong></div><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Producto más vendido</span><strong className="font-mono-app text-right">{todaySales.data?.bestSellingProduct ? `${todaySales.data.bestSellingProduct} × ${todaySales.data.bestSellingProductCount ?? '—'}` : '—'}</strong></div></div>}</div></div></div>{newClientModal && <NewInlineClientModal onClose={(created) => { setNewClientModal(false); if (created) { setClientName(created.name); setClientPhone(created.phone || ''); } }} />}</Shell>;
+  return <Shell><PageHeading eyebrow="Caja" title="Registrar venta" description="Agrega lo que se llevó tu cliente y confirma al final." /><div className="grid gap-6 lg:grid-cols-[1fr_370px]"><section className="rounded-2xl border bg-[hsl(var(--card))] p-5 sm:p-7"><div className="grid gap-4 sm:grid-cols-[1fr_150px_auto] sm:items-end"><label className="grid gap-1.5 text-sm font-semibold">Producto<div className="relative"><input value={query} onChange={(e) => { setQuery(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} placeholder="Buscar un producto..." className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-search" /><ChevronDown size={16} className={`pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))] transition-transform ${open ? 'rotate-180' : ''}`} />{open && <ul className="absolute z-10 mt-2 max-h-64 w-full overflow-auto rounded-xl border bg-[hsl(var(--card))] p-1 shadow-xl">{matches.slice(0, 20).map((p) => <li key={p.id}><button type="button" onClick={() => { setSelected(String(p.id)); setQuery(p.name); setOpen(false); }} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[hsl(var(--muted))]" data-testid={`option-sale-product-${p.id}`}>{isPrema ? `${p.name}${p.content ? ` · ${p.content}` : ''}` : `${p.name} · ${p.stock > 0 ? `${p.stock} disponibles` : allowNegative ? 'sin existencias' : `${p.stock} disponibles`}`}</button></li>)}{!matches.length && <li className="px-3 py-2 text-sm text-[hsl(var(--muted-foreground))]">No encontramos productos con ese nombre.</li>}</ul>}</div></label><Field label="Cantidad" type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} data-testid="input-sale-quantity" /><Button type="button" onClick={addItem} className="sm:mb-0" data-testid="button-add-sale-item"><Plus size={18} /> Agregar</Button></div>{error && <p className="mt-4 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]" data-testid="status-sale-error">{error}</p>}<div className="mt-8 grid gap-4 border-t pt-5 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-semibold">Método de pago<div className="relative"><select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-sale-payment-method">{PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}</select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))]" /></div></label>{paymentMethod === 'Crédito' && <><label className="grid gap-1.5 text-sm font-semibold">Cliente<div className="relative"><select value={clientName} onChange={(e) => { const v = e.target.value; if (v === '__new__') { setNewClientModal(true); } else { setClientName(v); const c = clients.data?.find((cl) => cl.name === v); setClientPhone(c?.phone || ''); } }} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--background))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-sale-client"><option value="">Sin cliente</option>{[...(clients.data || [])].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })).map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}<option value="__new__">+ Crear nuevo cliente</option></select><ChevronDown size={16} className="pointer-events-none absolute right-3 top-4 text-[hsl(var(--muted-foreground))]" /></div></label>{!clientName && <><label className="grid gap-1.5 text-sm font-semibold">Nombre Cliente<div className="relative"><input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre del cliente (opcional)" className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-client-name" /></div></label><label className="grid gap-1.5 text-sm font-semibold">Teléfono<div className="relative"><input type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Teléfono del cliente (opcional)" className="h-12 w-full rounded-xl border bg-[hsl(var(--background))] px-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-client-phone" /></div></label></>}</>}<label className="grid gap-1.5 text-sm font-semibold">Notas<div className="relative"><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Observaciones de la venta (opcional)" className="h-12 w-full resize-none rounded-xl border bg-[hsl(var(--background))] px-3 py-3 text-sm outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-notes" /></div></label></div><div className="mt-8 border-t pt-5"><p className="mb-3 font-mono-app text-xs uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Productos de esta venta</p>{!items.length ? <div className="grid min-h-40 place-items-center rounded-xl border border-dashed p-5 text-center"><div><ShoppingBasket size={25} className="mx-auto text-[hsl(var(--muted-foreground))]" /><p className="mt-3 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay productos.<br />Elige uno arriba para comenzar.</p></div></div> : <div className="grid gap-3">{items.map((item) => { const p = products.data?.find((x) => x.id === item.productId); return <div key={item.productId} className="rounded-xl bg-[hsl(var(--muted)/.55)] p-3" data-testid={`row-sale-item-${item.productId}`}><div className="flex items-center gap-2"><span className="min-w-0 flex-1 truncate text-base font-bold sm:text-lg">{p?.name}{p?.content ? ` · ${p.content}` : ''}</span><button onClick={() => setItems(items.filter((x) => x.productId !== item.productId))} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--card))]" data-testid={`button-remove-sale-item-${item.productId}`}><X size={17} /></button></div><div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2"><label className="flex items-center gap-2 text-sm font-semibold">Cant.<input type="number" min="1" value={item.quantity} onChange={(e) => setLine(item.productId, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="h-11 w-20 rounded-xl border bg-[hsl(var(--card))] px-2 text-center text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-qty-${item.productId}`} /></label><label className="flex items-center gap-2 text-sm font-semibold">P. unit.<input type="number" min="0" step="1" value={item.unitPrice} onChange={(e) => setLine(item.productId, { unitPrice: Math.max(0, Math.round(Number(e.target.value) || 0)) })} className="h-11 w-28 rounded-xl border bg-[hsl(var(--card))] px-2 text-right text-base font-bold outline-none focus:border-[hsl(var(--primary))]" data-testid={`input-sale-line-price-${item.productId}`} /></label><span className="ml-auto font-mono-app text-lg font-bold sm:text-xl">{money(item.unitPrice * item.quantity)}</span></div></div>})}</div>}</div></section><div className="grid gap-6"><aside className="h-fit rounded-2xl bg-[hsl(var(--sidebar))] p-6 text-[hsl(var(--sidebar-foreground))]"><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--sidebar-primary))]">Resumen</p><label className="mt-5 grid gap-1.5"><span className="text-xs font-semibold text-[hsl(var(--sidebar-foreground)/.7)]">Fecha de la venta</span><input type="date" value={saleDate} max={toLocalDateString(new Date())} onChange={(e) => setSaleDate(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold text-[hsl(var(--card-foreground))] outline-none focus:border-[hsl(var(--primary))]" data-testid="input-sale-date" /></label><h2 className="mt-5 font-display text-2xl font-bold">Total a cobrar</h2><p className="mt-6 font-mono-app text-5xl font-bold text-[hsl(var(--sidebar-primary))]">{money(total + (isDelivery ? Number(deliveryCost || 0) : 0))}</p><div className="mt-4 flex items-center gap-3"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isDelivery} onChange={(e) => { setIsDelivery(e.target.checked); if (!e.target.checked) setDeliveryCost(''); }} className="h-4 w-4 rounded" /><span className="text-sm font-semibold">Domicilio</span></label></div>{isDelivery && <div className="mt-2"><Field label="Costo del domicilio" type="number" min="0" step="500" value={deliveryCost} onChange={(e) => setDeliveryCost(e.target.value)} placeholder="0" data-testid="input-sale-delivery-cost" /></div>}<p className="mt-2 text-sm text-[hsl(var(--sidebar-foreground)/.6)]">{items.reduce((sum, i) => sum + i.quantity, 0)} productos en total</p><Button className="mt-7 w-full bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))]" onClick={submit} disabled={sale.isPending || !items.length} data-testid="button-confirm-sale">{sale.isPending ? 'Registrando…' : 'Confirmar venta'} <ArrowRight size={17} /></Button><p className="mt-4 text-center text-xs text-[hsl(var(--sidebar-foreground)/.5)]">Al confirmar, se descuentan las existencias automáticamente.</p></aside><div className="rounded-2xl border bg-[hsl(var(--card))] p-5"><p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--muted-foreground))]">Resumen del día</p>{todaySales.isLoading ? <div className="mt-3 h-20 animate-pulse rounded-xl bg-[hsl(var(--muted))]" /> : todaySales.isError ? <p className="mt-3 text-xs text-[hsl(var(--muted-foreground))]">No se pudo cargar el resumen del día.</p> : <div className="mt-3 grid gap-2 text-sm"><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Total de ventas del día</span><strong className="font-mono-app">{money(todaySales.data?.totalSold ?? 0)}</strong></div><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Número de ventas</span><strong className="font-mono-app">{todaySales.data?.saleCount ?? 0}</strong></div><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Productos vendidos</span><strong className="font-mono-app">{todaySales.data?.itemCount ?? 0}</strong></div><div className="flex items-center justify-between"><span className="text-[hsl(var(--muted-foreground))]">Producto más vendido</span><strong className="font-mono-app text-right">{todaySales.data?.bestSellingProduct ? `${todaySales.data.bestSellingProduct} × ${todaySales.data.bestSellingProductCount ?? '—'}` : '—'}</strong></div></div>}</div></div></div>{newClientModal && <NewInlineClientModal onClose={(created) => { setNewClientModal(false); if (created) { setClientName(created.name); setClientPhone(created.phone || ''); } }} />}</Shell>;
 }
 
 function PurchaseModal({ onClose }: { onClose: () => void }) {
@@ -496,10 +497,11 @@ function Reports() {
   const salesParams = dateFrom && dateTo ? { from: new Date(dateFrom + 'T00:00:00-05:00').toISOString(), to: new Date(dateTo + 'T23:59:59.999-05:00').toISOString() } : month ? { from: new Date(month + '-01T00:00:00-05:00').toISOString(), to: new Date(new Date(month + '-01T00:00:00-05:00').setMonth(new Date(month + '-01T00:00:00-05:00').getMonth() + 1) - 1).toISOString() } : { period }; const inventory = useGetInventoryReport({ filter: 'all' }); const sales = useGetSalesReport(salesParams); const qc = useQueryClient(); const deleteSale = useDeleteSale(); const { activeCompany } = useCompany(); const isPrema = activeCompany?.id === 2; const [confirmSale, setConfirmSale] = useState<number | null>(null);
   const [editingSale, setEditingSale] = useState<{ id: number; field: 'paymentMethod' | 'notes'; value: string } | null>(null);
   const patchSale = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { paymentMethod?: string | null; notes?: string | null } }) => patchSaleDetails(id, data),
+    mutationFn: ({ id, data }: { id: number; data: { paymentMethod?: string | null; notes?: string | null; deliveryPaid?: boolean } }) => patchSaleDetails(id, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: getGetSalesReportQueryKey(salesParams) }); setEditingSale(null); },
   });
   const dayHeader = (iso: string) => new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00'));
+  const productTotal = (sale: Sale) => sale.total - (sale.isDelivery ? (sale.deliveryCost || 0) : 0);
   const byDay = useMemo(() => {
     const map = new Map<string, Sale[]>();
     for (const s of sales.data?.sales ?? []) {
@@ -524,25 +526,26 @@ function Reports() {
     const totals = new Map<string, number>();
     for (const s of sales.data?.sales ?? []) {
       const method = s.paymentMethod || 'No indicado';
-      totals.set(method, (totals.get(method) ?? 0) + s.total);
+      totals.set(method, (totals.get(method) ?? 0) + productTotal(s));
     }
     return [...totals.entries()].sort((a, b) => b[1] - a[1]);
   }, [sales.data]);
   const exportRows = () => {
     const rows: (string | number)[][] = [['Fecha', 'Venta', 'Método de pago', 'Producto', 'Cantidad', 'Precio unitario', 'Total producto', 'Total venta']];
     for (const [day, daySales] of byDay) {
-      const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0);
+      const dayTotal = daySales.reduce((sum, s) => sum + productTotal(s), 0);
       for (const s of daySales) {
         for (const item of s.items) rows.push([dayHeader(day), `Venta #${s.saleNumber}`, s.paymentMethod || '', item.productName, item.quantity, item.unitPrice, item.subtotal, '']);
-        rows.push([dayHeader(day), `TOTAL Venta #${s.saleNumber}`, '', '', '', '', '', s.total]);
+        rows.push([dayHeader(day), `TOTAL Venta #${s.saleNumber}`, '', '', '', '', '', productTotal(s)]);
+        if (s.isDelivery) rows.push([dayHeader(day), `Domicilio Venta #${s.saleNumber}`, '', '', '', '', '', s.deliveryCost || 0]);
       }
       const dayPayments = paymentsByDay.get(day) ?? [];
-      for (const p of dayPayments) rows.push([dayHeader(day), 'Abono', p.paymentMethod || '', p.note || '', '', '', '', p.amount]);
+      for (const p of dayPayments) rows.push([dayHeader(day), 'Abono', p.paymentMethod || '', [p.note, p.clientName].filter(Boolean).join(' · ') || '', '', '', '', p.amount]);
       if (dayPayments.length) rows.push([dayHeader(day), 'TOTAL ABONOS DÍA', '', '', '', '', '', dayPayments.reduce((sum, p) => sum + p.amount, 0)]);
       rows.push([dayHeader(day), 'TOTAL DÍA', '', '', '', '', '', dayTotal]);
     }
     const totals = new Map<string, number>();
-    for (const [, daySales] of byDay) for (const s of daySales) { const m = s.paymentMethod || 'No indicado'; totals.set(m, (totals.get(m) ?? 0) + s.total); }
+    for (const [, daySales] of byDay) for (const s of daySales) { const m = s.paymentMethod || 'No indicado'; totals.set(m, (totals.get(m) ?? 0) + productTotal(s)); }
     if (totals.size) {
       rows.push([]);
       rows.push(['Cuadre de caja por método de pago']);
@@ -556,7 +559,7 @@ function Reports() {
   };
   const downloadCsv = () => downloadBlob(new Blob([toCsv(exportRows())], { type: 'text/csv;charset=utf-8' }), `ventas-${dateFrom && dateTo ? `${dateFrom}_${dateTo}` : month || period}-${new Date().toISOString().slice(0, 10)}.csv`);
   const downloadXlsx = () => buildXlsxBlob(exportRows()).then((blob) => downloadBlob(blob, `ventas-${dateFrom && dateTo ? `${dateFrom}_${dateTo}` : month || period}-${new Date().toISOString().slice(0, 10)}.xlsx`));
-  return <Shell><PageHeading eyebrow="Panorama" title="Reportes" description="Una lectura sencilla de cómo se mueve tu negocio." /><div className="mb-6 flex flex-col gap-3 rounded-2xl border bg-[hsl(var(--card))] p-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap items-center gap-2"><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadCsv} data-testid="button-export-csv"><Download size={15} /> CSV</Button><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadXlsx} data-testid="button-export-xlsx"><Download size={15} /> XLSX</Button><label className="relative"><span className="text-[10px] font-bold text-[hsl(var(--muted-foreground))]">Desde</span><input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 text-sm font-bold outline-none sm:w-40" data-testid="input-report-date-from" /></label><label className="relative"><span className="text-[10px] font-bold text-[hsl(var(--muted-foreground))]">Hasta</span><input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 text-sm font-bold outline-none sm:w-40" data-testid="input-report-date-to" /></label>{(dateFrom || dateTo) && <button type="button" onClick={() => { setDateFrom(''); setDateTo(''); }} className="h-10 rounded-lg border px-2.5 text-xs font-bold text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-clear-report-dates">Quitar fechas</button>}<label className="relative"><span className="text-[10px] font-bold text-[hsl(var(--muted-foreground))]">Mes</span><select value={month} onChange={(e) => { setMonth(e.target.value); setDateFrom(''); setDateTo(''); }} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 pr-8 text-sm font-bold outline-none sm:w-48" data-testid="select-report-month"><option value="">Todos</option>{monthOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-3" /></label>{month && <button type="button" onClick={() => setMonth('')} className="h-10 rounded-lg border px-2.5 text-xs font-bold text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-clear-report-month">Quitar mes</button>}<label className="relative"><select value={period} onChange={(e) => { setPeriod(e.target.value as typeof period); setDateFrom(''); setDateTo(''); setMonth(''); }} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 pr-8 text-sm font-bold outline-none sm:w-48" data-testid="select-report-period"><option value="today">Hoy</option><option value="last7">Últimos 7 días</option><option value="thisMonth">Este mes</option><option value="previousMonth">Mes pasado</option><option value="all">Todo el tiempo</option></select><ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-3" /></label></div></div>{inventory.isLoading || sales.isLoading ? <div className="grid gap-4 sm:grid-cols-2">{[1, 2, 3, 4].map((n) => <div key={n} className="h-32 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div> : inventory.isError || sales.isError ? <StatusMessage text="No pudimos generar tus reportes." onRetry={() => { inventory.refetch(); sales.refetch(); }} /> : <><div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5"><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Total de Ventas</p><p className="mt-2 font-mono-app text-2xl font-bold">{money(sales.data?.totalSold || 0)}</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Producto más vendido</p><p className="mt-2 text-lg font-bold">{sales.data?.bestSellingProduct || 'Todavía no hay datos'}</p><p className="text-xs text-[hsl(var(--muted-foreground))]">{sales.data?.bestSellingProductCount || 0} unidades</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Número de Ventas</p><p className="mt-2 font-mono-app text-2xl font-bold">{sales.data?.saleCount || 0}</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Productos vendidos</p><p className="mt-2 font-mono-app text-2xl font-bold">{sales.data?.itemCount || 0}</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Productos sin existencia</p><p className="mt-2 font-mono-app text-2xl font-bold">{inventory.data?.products?.filter((p) => p.stock === 0).length || 0}</p></div></div><section className="mt-6 rounded-2xl border bg-[hsl(var(--card))] p-6" data-testid="section-sales-by-day"><div className="flex items-center gap-3"><History size={20} className="text-[hsl(var(--primary))]" /><h2 className="font-display text-2xl font-bold">Ventas por día</h2></div>{!sales.data?.sales.length ? <p className="py-8 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay ventas en este periodo.</p> : <div className="mt-4 divide-y">{byDay.map(([day, daySales]) => { const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0); const dayPayments = paymentsByDay.get(day) ?? []; const dayPaymentsTotal = dayPayments.reduce((sum, p) => sum + p.amount, 0); return <div key={day} className="py-4" data-testid={`report-day-${day}`}><div className="flex flex-wrap items-center gap-3"><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{dayHeader(day)}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{daySales.length} {daySales.length === 1 ? 'venta' : 'ventas'}</span><span className="flex-1" /><span className="font-mono-app font-bold">Total: {money(dayTotal)}</span>{dayPaymentsTotal > 0 && <span className="font-mono-app font-bold text-green-700">Abonos: {money(dayPaymentsTotal)}</span>}</div><div className="mt-3 divide-y rounded-xl bg-[hsl(var(--muted)/.4)] px-4">{daySales.map((s) => <div key={s.id} className="py-3" data-testid={`report-sale-${s.id}`}><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-semibold">Venta #{s.saleNumber}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(s.date))}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{s.totalItems} productos</span>
+  return <Shell><PageHeading eyebrow="Panorama" title="Reportes" description="Una lectura sencilla de cómo se mueve tu negocio." /><div className="mb-6 flex flex-col gap-3 rounded-2xl border bg-[hsl(var(--card))] p-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap items-center gap-2"><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadCsv} data-testid="button-export-csv"><Download size={15} /> CSV</Button><Button variant="secondary" className="min-h-[40px] px-3 text-sm" onClick={downloadXlsx} data-testid="button-export-xlsx"><Download size={15} /> XLSX</Button><label className="relative"><span className="text-[10px] font-bold text-[hsl(var(--muted-foreground))]">Desde</span><input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 text-sm font-bold outline-none sm:w-40" data-testid="input-report-date-from" /></label><label className="relative"><span className="text-[10px] font-bold text-[hsl(var(--muted-foreground))]">Hasta</span><input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 text-sm font-bold outline-none sm:w-40" data-testid="input-report-date-to" /></label>{(dateFrom || dateTo) && <button type="button" onClick={() => { setDateFrom(''); setDateTo(''); }} className="h-10 rounded-lg border px-2.5 text-xs font-bold text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-clear-report-dates">Quitar fechas</button>}<label className="relative"><span className="text-[10px] font-bold text-[hsl(var(--muted-foreground))]">Mes</span><select value={month} onChange={(e) => { setMonth(e.target.value); setDateFrom(''); setDateTo(''); }} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 pr-8 text-sm font-bold outline-none sm:w-48" data-testid="select-report-month"><option value="">Todos</option>{monthOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select><ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-3" /></label>{month && <button type="button" onClick={() => setMonth('')} className="h-10 rounded-lg border px-2.5 text-xs font-bold text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-clear-report-month">Quitar mes</button>}<label className="relative"><select value={period} onChange={(e) => { setPeriod(e.target.value as typeof period); setDateFrom(''); setDateTo(''); setMonth(''); }} className="h-10 w-full appearance-none rounded-lg border bg-[hsl(var(--background))] px-3 pr-8 text-sm font-bold outline-none sm:w-48" data-testid="select-report-period"><option value="today">Hoy</option><option value="last7">Últimos 7 días</option><option value="thisMonth">Este mes</option><option value="previousMonth">Mes pasado</option><option value="all">Todo el tiempo</option></select><ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-3" /></label></div></div>{inventory.isLoading || sales.isLoading ? <div className="grid gap-4 sm:grid-cols-2">{[1, 2, 3, 4].map((n) => <div key={n} className="h-32 animate-pulse rounded-2xl bg-[hsl(var(--muted))]" />)}</div> : inventory.isError || sales.isError ? <StatusMessage text="No pudimos generar tus reportes." onRetry={() => { inventory.refetch(); sales.refetch(); }} /> : <><div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6"><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Ingresos totales</p><p className="mt-2 font-mono-app text-2xl font-bold">{money((sales.data?.totalSold || 0) + (sales.data?.payments || []).reduce((sum, p) => sum + p.amount, 0))}</p><p className="text-xs text-[hsl(var(--muted-foreground))]">Ventas + abonos</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Total de Ventas</p><p className="mt-2 font-mono-app text-2xl font-bold">{money(sales.data?.totalSold || 0)}</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Producto más vendido</p><p className="mt-2 text-lg font-bold">{sales.data?.bestSellingProduct || 'Todavía no hay datos'}</p><p className="text-xs text-[hsl(var(--muted-foreground))]">{sales.data?.bestSellingProductCount || 0} unidades</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Número de Ventas</p><p className="mt-2 font-mono-app text-2xl font-bold">{sales.data?.saleCount || 0}</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Productos vendidos</p><p className="mt-2 font-mono-app text-2xl font-bold">{sales.data?.itemCount || 0}</p></div><div className="rounded-2xl border bg-[hsl(var(--card))] p-4"><p className="text-xs text-[hsl(var(--muted-foreground))]">Productos sin existencia</p><p className="mt-2 font-mono-app text-2xl font-bold">{inventory.data?.products?.filter((p) => p.stock === 0).length || 0}</p></div></div><section className="mt-6 rounded-2xl border bg-[hsl(var(--card))] p-6" data-testid="section-sales-by-day"><div className="flex items-center gap-3"><History size={20} className="text-[hsl(var(--primary))]" /><h2 className="font-display text-2xl font-bold">Ventas por día</h2></div>{!sales.data?.sales.length ? <p className="py-8 text-sm text-[hsl(var(--muted-foreground))]">Aún no hay ventas en este periodo.</p> : <div className="mt-4 divide-y">{byDay.map(([day, daySales]) => { const dayTotal = daySales.reduce((sum, s) => sum + productTotal(s), 0); const dayPayments = paymentsByDay.get(day) ?? []; const dayPaymentsTotal = dayPayments.reduce((sum, p) => sum + p.amount, 0); return <div key={day} className="py-4" data-testid={`report-day-${day}`}><div className="flex flex-wrap items-center gap-3"><span className="font-mono-app text-xs text-[hsl(var(--muted-foreground))]">{dayHeader(day)}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{daySales.length} {daySales.length === 1 ? 'venta' : 'ventas'}</span><span className="flex-1" /><span className="font-mono-app font-bold">Total: {money(dayTotal)}</span>{dayPaymentsTotal > 0 && <span className="font-mono-app font-bold text-green-700">Abonos: {money(dayPaymentsTotal)}</span>}</div><div className="mt-3 divide-y rounded-xl bg-[hsl(var(--muted)/.4)] px-4">{daySales.map((s) => <div key={s.id} className="py-3" data-testid={`report-sale-${s.id}`}><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-semibold">Venta #{s.saleNumber}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(s.date))}</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{s.totalItems} productos</span>{s.isDelivery && <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-800"><Truck size={13} />Domicilio{s.deliveryCost ? ` · ${money(s.deliveryCost)}` : ''}<label className="ml-0.5 flex cursor-pointer select-none items-center gap-1"><input type="checkbox" checked={!!s.deliveryPaid} onChange={(e) => patchSale.mutate({ id: s.id, data: { deliveryPaid: e.target.checked } })} className="h-3.5 w-3.5 cursor-pointer accent-amber-600" data-testid={`checkbox-delivery-paid-${s.id}`} />{s.deliveryPaid ? 'Pagado' : 'Pagar'}</label></span>}
                     {editingSale?.id === s.id && editingSale.field === 'paymentMethod' ? (
                       <select autoFocus value={editingSale.value} onChange={(e) => setEditingSale({ ...editingSale, value: e.target.value })} onBlur={() => patchSale.mutate({ id: s.id, data: { paymentMethod: editingSale.value || null } })} onKeyDown={(e) => { if (e.key === 'Enter') patchSale.mutate({ id: s.id, data: { paymentMethod: editingSale.value || null } }); if (e.key === 'Escape') setEditingSale(null); }} className="h-6 rounded-lg border bg-[hsl(var(--background))] px-1.5 text-xs font-bold outline-none" data-testid={`edit-payment-${s.id}`}>
                         {['Efectivo', 'Nequi', 'Transferencia', 'Datafono', 'QR / Llave', 'Crédito'].map((m) => <option key={m} value={m}>{m}</option>)}
@@ -575,17 +578,27 @@ function Reports() {
                         {s.notes ? <span className="text-xs font-semibold text-[hsl(var(--muted-foreground))]"><span className="font-bold">Nota:</span> {s.notes}</span> : <span className="text-xs text-[hsl(var(--muted-foreground))]">—</span>}
                         <button type="button" onClick={() => setEditingSale({ id: s.id, field: 'notes', value: s.notes || '' })} className="rounded p-0.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--primary))]" title="Editar nota" data-testid={`button-edit-notes-${s.id}`}><Pencil size={12} /></button>
                       </span>
-                    )}<span className="flex-1" /><span className="font-mono-app font-bold">{money(s.total)}</span><button type="button" onClick={() => printInvoice(s, activeCompany!)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--primary))]" title="Imprimir factura" data-testid={`button-print-sale-${s.id}`}><Printer size={15} /></button><button type="button" onClick={() => setConfirmSale(s.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar venta" data-testid={`button-delete-sale-${s.id}`}><Trash2 size={15} /></button></div><div className="mt-3 rounded-xl bg-[hsl(var(--muted)/.4)] p-3">{s.items.map((item) => <div key={item.productId} className="flex items-center justify-between gap-3 py-1 text-sm" data-testid={`report-sale-${s.id}-item-${item.productId}`}><span className="min-w-0 flex-1 truncate text-[hsl(var(--muted-foreground))]">{item.quantity} × {item.productName}</span><span className="shrink-0 font-mono-app font-semibold">{money(item.subtotal)}</span></div>)}</div></div>)}</div>{dayPayments.length > 0 && <div className="mt-3 divide-y rounded-xl border border-green-100 bg-green-50/40 px-4">{dayPayments.map((p) => <div key={`ap-${p.id}`} className="py-3" data-testid={`report-payment-${p.id}`}><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-semibold text-green-700">Abono</span><span className="text-xs text-[hsl(var(--muted-foreground))]">{new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(p.date))}</span>{p.paymentMethod && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">{p.paymentMethod}</span>}<span className="flex-1" /><span className="font-mono-app font-bold text-green-700">+{money(p.amount)}</span></div>{p.note && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{p.note}</p>}</div>)}</div>}</div>;})}</div>}</section><section className="mt-6 rounded-2xl border bg-[hsl(var(--card))] p-6" data-testid="section-payment-methods"><div className="flex items-center gap-3"><CreditCard size={20} className="text-[hsl(var(--primary))]" /><h2 className="font-display text-2xl font-bold">Métodos de pago</h2></div>{paymentTotals.length === 0 ? <p className="py-8 text-sm text-[hsl(var(--muted-foreground))]">Sin datos en este periodo.</p> : <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{paymentTotals.map(([method, total]) => <div key={method} className="flex items-center justify-between rounded-xl bg-[hsl(var(--muted)/.4)] px-4 py-3"><span className="text-sm font-semibold">{method}</span><span className="font-mono-app font-bold">{money(total)}</span></div>)}</div>}</section></>}{confirmSale && <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true" data-testid="modal-confirm-delete-sale"><div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl"><h3 className="font-display text-2xl font-bold">¿Borrar esta venta?</h3><p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se devolverá el inventario de sus productos y la venta desaparecerá de tus reportes.</p><div className="mt-7 flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setConfirmSale(null)} data-testid="button-cancel-delete-sale">Cancelar</Button><Button type="button" variant="danger" onClick={() => deleteSale.mutate({ id: confirmSale }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getGetSalesReportQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); setConfirmSale(null); }, onError: () => setConfirmSale(null) })} disabled={deleteSale.isPending} data-testid="button-confirm-delete-sale">{deleteSale.isPending ? 'Borrando…' : 'Borrar'}</Button></div></div></div>}</Shell>;
+                    )}<span className="flex-1" />{s.isDelivery ? <span className="text-right"><span className="block font-mono-app font-bold">{money(productTotal(s))}</span><span className="block text-[10px] text-[hsl(var(--muted-foreground))]">Domicilio {money(s.deliveryCost || 0)}</span></span> : <span className="font-mono-app font-bold">{money(s.total)}</span>}<button type="button" onClick={() => printInvoice(s, activeCompany!)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--primary))]" title="Imprimir factura" data-testid={`button-print-sale-${s.id}`}><Printer size={15} /></button><button type="button" onClick={() => setConfirmSale(s.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--destructive)/.1)] hover:text-[hsl(var(--destructive))]" title="Borrar venta" data-testid={`button-delete-sale-${s.id}`}><Trash2 size={15} /></button></div><div className="mt-3 rounded-xl bg-[hsl(var(--muted)/.4)] p-3">{s.items.map((item) => <div key={item.productId} className="flex items-center justify-between gap-3 py-1 text-sm" data-testid={`report-sale-${s.id}-item-${item.productId}`}><span className="min-w-0 flex-1 truncate text-[hsl(var(--muted-foreground))]">{item.quantity} × {item.productName}</span><span className="shrink-0 font-mono-app font-semibold">{money(item.subtotal)}</span></div>)}</div></div>)}</div>{dayPayments.length > 0 && <div className="mt-3 divide-y rounded-xl border border-green-100 bg-green-50/40 px-4">{dayPayments.map((p) => <div key={`ap-${p.id}`} className="py-3" data-testid={`report-payment-${p.id}`}><div className="flex flex-wrap items-center gap-3 text-sm"><span className="font-semibold text-green-700">Abono</span>{p.clientName && <span className="text-xs font-semibold text-[hsl(var(--muted-foreground))]">{p.clientName}</span>}<span className="text-xs text-[hsl(var(--muted-foreground))]">{new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(p.date))}</span>{p.paymentMethod && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">{p.paymentMethod}</span>}<span className="flex-1" /><span className="font-mono-app font-bold text-green-700">+{money(p.amount)}</span></div>{p.note && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{p.note}</p>}</div>)}</div>}</div>;})}</div>}</section><section className="mt-6 rounded-2xl border bg-[hsl(var(--card))] p-6" data-testid="section-payment-methods"><div className="flex items-center gap-3"><CreditCard size={20} className="text-[hsl(var(--primary))]" /><h2 className="font-display text-2xl font-bold">Métodos de pago</h2></div>{paymentTotals.length === 0 ? <p className="py-8 text-sm text-[hsl(var(--muted-foreground))]">Sin datos en este periodo.</p> : <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{paymentTotals.map(([method, total]) => <div key={method} className="flex items-center justify-between rounded-xl bg-[hsl(var(--muted)/.4)] px-4 py-3"><span className="text-sm font-semibold">{method}</span><span className="font-mono-app font-bold">{money(total)}</span></div>)}</div>}</section></>}{confirmSale && <div className="fixed inset-0 z-[60] grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true" data-testid="modal-confirm-delete-sale"><div className="w-full max-w-sm rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl"><h3 className="font-display text-2xl font-bold">¿Borrar esta venta?</h3><p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">Se devolverá el inventario de sus productos y la venta desaparecerá de tus reportes.</p><div className="mt-7 flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setConfirmSale(null)} data-testid="button-cancel-delete-sale">Cancelar</Button><Button type="button" variant="danger" onClick={() => deleteSale.mutate({ id: confirmSale }, { onSuccess: () => { qc.invalidateQueries({ queryKey: getGetSalesReportQueryKey() }); qc.invalidateQueries({ queryKey: getListSalesQueryKey() }); qc.invalidateQueries({ queryKey: getListProductsQueryKey() }); qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); setConfirmSale(null); }, onError: () => setConfirmSale(null) })} disabled={deleteSale.isPending} data-testid="button-confirm-delete-sale">{deleteSale.isPending ? 'Borrando…' : 'Borrar'}</Button></div></div></div>}</Shell>;
 }
 
-function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void }) {
+type PaymentTarget = {
+  clientName: string;
+  clientPhone: string;
+  companies: { companyId: number; name: string }[];
+  debts: { companyId: number; kind: 'sale' | 'manual'; id: number; label: string; remaining: number }[];
+};
+
+function AbonoModal({ target, onClose }: { target: PaymentTarget; onClose: () => void }) {
   const qc = useQueryClient();
-  const createPayment = useCreateCreditPayment();
+  const [companyId, setCompanyId] = useState<number>(() => target.companies[0]?.companyId ?? 0);
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [date, setDate] = useState(() => toLocalDateString(new Date()));
+  const [date, setDate] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const currentDebt = target.debts.find((d) => d.companyId === companyId && d.remaining > 0);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -594,18 +607,32 @@ function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void
       setError('Escribe un monto válido.');
       return;
     }
+    if (!date) {
+      setError('Selecciona la fecha del abono.');
+      return;
+    }
+    if (!paymentMethod) {
+      setError('Selecciona el método de pago.');
+      return;
+    }
+    if (!currentDebt) {
+      setError('No hay deuda pendiente en esa empresa.');
+      return;
+    }
     setError('');
-    createPayment.mutate(
-      { id: sale.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, date: (() => { if (!date) return undefined; const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), note: note.trim() || undefined } },
-      {
-        onSuccess: () => {
-          qc.invalidateQueries({ queryKey: getListSalesQueryKey() });
-          qc.invalidateQueries({ queryKey: getListCreditPaymentsQueryKey(sale.id) });
-          onClose();
-        },
-        onError: () => setError('No se pudo registrar el abono.'),
-      }
-    );
+    setCreating(true);
+    const payload = { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, date: (() => { const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), note: note.trim() || undefined };
+    const request = currentDebt.kind === 'sale'
+      ? createCreditPayment(currentDebt.id, payload, { headers: { 'x-company-id': String(companyId) } })
+      : createManualCreditPayment(currentDebt.id, payload, { headers: { 'x-company-id': String(companyId) } });
+    request
+      .then(() => {
+        qc.invalidateQueries({ queryKey: getListSalesQueryKey() });
+        qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() });
+        onClose();
+      })
+      .catch(() => setError('No se pudo registrar el abono.'))
+      .finally(() => setCreating(false));
   };
 
   return (
@@ -616,7 +643,7 @@ function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void
             <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Abono a crédito</p>
             <h2 className="mt-1 font-display text-3xl font-bold">Registrar abono</h2>
             <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">
-              Venta #{sale.saleNumber} · Total {money(sale.total)}
+              {target.clientName || 'Cliente sin nombre'}{target.clientPhone ? ` · ${target.clientPhone}` : ''}
             </p>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-credit-modal">
@@ -624,12 +651,26 @@ function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void
           </button>
         </div>
         <div className="mt-6 grid gap-4">
+          {target.companies.length > 1 ? (
+            <div className="grid gap-1.5 text-sm font-semibold">
+              <label>Empresa</label>
+              <select value={companyId} onChange={(e) => setCompanyId(Number(e.target.value))} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-payment-company">
+                {target.companies.map((c) => <option key={c.companyId} value={c.companyId}>{c.name}</option>)}
+              </select>
+            </div>
+          ) : (
+            <div className="grid gap-1.5 text-sm font-semibold">
+              <label>Empresa</label>
+              <p className="rounded-xl bg-[hsl(var(--muted)/.4)] px-3 py-2.5 text-sm font-semibold" data-testid="text-payment-company">{target.companies[0]?.name}</p>
+            </div>
+          )}
+          {currentDebt && <p className="text-xs text-[hsl(var(--muted-foreground))]">Abonando: {currentDebt.label} · Pendiente {money(currentDebt.remaining)}</p>}
           <Field label="Monto del abono" type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus data-testid="input-credit-amount" />
           <Field label="Fecha del abono" type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-credit-date" />
           <div className="grid gap-1.5 text-sm font-semibold">
             <label>Método de pago</label>
             <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-credit-method">
-              <option value="">Sin especificar</option>
+              <option value="">Selecciona un método</option>
               {PAYMENT_METHODS.filter((m) => m !== 'Crédito').map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
@@ -638,7 +679,7 @@ function CreditPaymentModal({ sale, onClose }: { sale: Sale; onClose: () => void
         {error && <p className="mt-4 text-sm text-[hsl(var(--destructive))]" data-testid="status-credit-error">{error}</p>}
         <div className="mt-7 flex justify-end gap-3">
           <Button type="button" variant="ghost" onClick={onClose} data-testid="button-cancel-credit">Cancelar</Button>
-          <Button type="submit" disabled={createPayment.isPending} data-testid="button-save-credit">{createPayment.isPending ? 'Guardando…' : 'Registrar abono'}</Button>
+          <Button type="submit" disabled={creating || !amount.trim() || !Number.isFinite(Number(amount)) || Number(amount) < 1 || !date || !paymentMethod} data-testid="button-save-credit">{creating ? 'Guardando…' : 'Registrar abono'}</Button>
         </div>
       </form>
     </div>
@@ -731,25 +772,46 @@ function CarteraPage() {
   const sales = useListSales({ period: 'all', scope: 'all' });
   const manualCredits = useListManualCredits({ scope: 'all' });
   const clientsList = useListClients();
-  const createManualCredit = useCreateManualCredit();
-  const createManualPayment = useCreateManualCreditPayment();
+  const { companies } = useCompany();
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | 'pending' | 'paid'>('pending');
   const [detailClient, setDetailClient] = useState<{ name: string; phone: string; sales: Sale[]; manualCredits: ManualCredit[]; payments: Map<number, number> } | null>(null);
-  const [paymentTarget, setPaymentTarget] = useState<{ type: 'sale'; sale: Sale } | { type: 'manual'; credit: ManualCredit } | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<PaymentTarget | null>(null);
   const [newCreditModal, setNewCreditModal] = useState(false);
   const [clientsModal, setClientsModal] = useState(false);
+  const [sortKey, setSortKey] = useState<'name' | 'total' | 'paid' | 'remaining' | 'lastActivity'>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const creditSales = useMemo(() => (sales.data || []).filter((s) => s.paymentMethod === 'Crédito'), [sales.data]);
   const allManualCredits = manualCredits.data || [];
 
+  const salePaymentQueries = useQueries({ queries: creditSales.map((s) => ({ queryKey: getListCreditPaymentsQueryKey(s.id), queryFn: () => listCreditPayments(s.id, { headers: { 'x-company-id': String(s.companyId ?? 0) } }) })) });
+  const manualPaymentQueries = useQueries({ queries: allManualCredits.map((mc) => ({ queryKey: ['/api/manual-credits', mc.id, 'credit-payments'], queryFn: () => listManualCreditPayments(mc.id, { headers: { 'x-company-id': String(mc.companyId ?? 0) } }) })) });
+
+  const lastPaymentByKey = useMemo(() => {
+    const m = new Map<string, string>();
+    const consider = (key: string, iso: string) => {
+      const cur = m.get(key);
+      if (!cur || new Date(iso).getTime() > new Date(cur).getTime()) m.set(key, iso);
+    };
+    creditSales.forEach((s, i) => {
+      const key = s.clientId ? `c:${s.clientId}` : `n:${(s.clientName || '').toLowerCase()}`;
+      for (const p of salePaymentQueries[i]?.data || []) consider(key, p.date);
+    });
+    allManualCredits.forEach((mc, i) => {
+      const key = mc.clientId ? `c:${mc.clientId}` : `n:${(mc.clientName || '').toLowerCase()}`;
+      for (const p of manualPaymentQueries[i]?.data || []) consider(key, p.date);
+    });
+    return m;
+  }, [creditSales, allManualCredits, salePaymentQueries, manualPaymentQueries]);
+
   const clientGroups = useMemo(() => {
-    const map = new Map<string, { name: string; phone: string; clientId: number | null; sales: Sale[]; manualCredits: ManualCredit[]; paidMap: Map<number, number> }>();
+    const map = new Map<string, { key: string; name: string; phone: string; clientId: number | null; sales: Sale[]; manualCredits: ManualCredit[]; paidMap: Map<number, number> }>();
 
     for (const s of creditSales) {
       const key = s.clientId ? `c:${s.clientId}` : `n:${(s.clientName || '').toLowerCase()}`;
-      if (!map.has(key)) map.set(key, { name: s.clientName || 'Cliente sin nombre', phone: s.clientPhone || '', clientId: s.clientId || null, sales: [], manualCredits: [], paidMap: new Map() });
+      if (!map.has(key)) map.set(key, { key, name: s.clientName || 'Cliente sin nombre', phone: s.clientPhone || '', clientId: s.clientId || null, sales: [], manualCredits: [], paidMap: new Map() });
       const g = map.get(key)!;
       g.sales.push(s);
       g.paidMap.set(s.id, s.creditPaid ?? 0);
@@ -757,7 +819,7 @@ function CarteraPage() {
 
     for (const mc of allManualCredits) {
       const key = mc.clientId ? `c:${mc.clientId}` : `n:${(mc.clientName || '').toLowerCase()}`;
-      if (!map.has(key)) map.set(key, { name: mc.clientName || 'Cliente sin nombre', phone: mc.clientPhone || '', clientId: mc.clientId || null, sales: [], manualCredits: [], paidMap: new Map() });
+      if (!map.has(key)) map.set(key, { key, name: mc.clientName || 'Cliente sin nombre', phone: mc.clientPhone || '', clientId: mc.clientId || null, sales: [], manualCredits: [], paidMap: new Map() });
       map.get(key)!.manualCredits.push(mc);
     }
 
@@ -771,17 +833,24 @@ function CarteraPage() {
       const remaining = total - paid;
       const allDates = [...g.sales.map((s) => s.date), ...g.manualCredits.map((mc) => mc.createdAt)];
       const lastActivity = allDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || '';
-      return { ...g, total, paid, remaining, lastActivity, isPaid: remaining <= 0 };
+      const lastPayment = lastPaymentByKey.get(g.key) || '';
+      return { ...g, total, paid, remaining, lastActivity, lastPayment, isPaid: remaining <= 0 };
     });
 
-    return groups
+    const filtered = groups
       .filter((g) => {
         const matchesSearch = !search || g.name.toLowerCase().includes(search.toLowerCase()) || g.phone.includes(search);
         const matchesStatus = status === 'all' || (status === 'paid' ? g.isPaid : !g.isPaid);
         return matchesSearch && matchesStatus;
-      })
-      .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
-  }, [creditSales, allManualCredits, search, status]);
+      });
+    return filtered.sort((a, b) => {
+      let cmp: number;
+      if (sortKey === 'name') cmp = a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
+      else if (sortKey === 'lastActivity') cmp = (new Date(a.lastActivity).getTime() || 0) - (new Date(b.lastActivity).getTime() || 0);
+      else cmp = (a[sortKey] as number) - (b[sortKey] as number);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [creditSales, allManualCredits, search, status, sortKey, sortDir, lastPaymentByKey]);
 
   const totalDebt = clientGroups.reduce((sum, g) => sum + g.remaining, 0);
   const totalPaid = clientGroups.reduce((sum, g) => sum + g.paid, 0);
@@ -796,11 +865,86 @@ function CarteraPage() {
   const downloadCsv = () => downloadBlob(new Blob([toCsv(exportRows())], { type: 'text/csv;charset=utf-8' }), `cartera-${new Date().toISOString().slice(0, 10)}.csv`);
   const downloadXlsx = () => buildXlsxBlob(exportRows()).then((blob) => downloadBlob(blob, `cartera-${new Date().toISOString().slice(0, 10)}.xlsx`));
 
+  const [exportingDetail, setExportingDetail] = useState(false);
+
+  const companyName = (id: number) => companies.find((c) => c.id === id)?.name || `Empresa ${id}`;
+
+  const exportSaldoCsv = () => {
+    const rows: (string | number)[][] = [['Cliente', 'Saldo actual']];
+    for (const g of clientGroups) rows.push([g.name, g.remaining]);
+    downloadBlob(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }), `saldos-clientes-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  const exportDetailXlsx = async () => {
+    if (exportingDetail) return;
+    setExportingDetail(true);
+    try {
+      const allSales = clientGroups.flatMap((g) => g.sales);
+      const allMCs = clientGroups.flatMap((g) => g.manualCredits);
+      const [salePayments, mcPayments] = await Promise.all([
+        Promise.all(allSales.map((s) => listCreditPayments(s.id, { headers: { 'x-company-id': String(s.companyId ?? 0) } }).catch(() => [] as CreditPayment[]))),
+        Promise.all(allMCs.map((mc) => listManualCreditPayments(mc.id, { headers: { 'x-company-id': String(mc.companyId ?? 0) } }).catch(() => [] as CreditPayment[]))),
+      ]);
+      const salePaymentsBySale = new Map<number, CreditPayment[]>();
+      allSales.forEach((s, i) => salePaymentsBySale.set(s.id, salePayments[i] || []));
+      const mcPaymentsByCredit = new Map<number, CreditPayment[]>();
+      allMCs.forEach((mc, i) => mcPaymentsByCredit.set(mc.id, mcPayments[i] || []));
+
+      const rows: (string | number)[][] = [['Cliente', 'Saldo actual', 'Fecha', 'Tipo', 'Empresa', 'Productos', 'Forma de pago', 'Nota', 'Monto', 'Abonado', 'Saldo del movimiento']];
+      for (const g of clientGroups) {
+        const clientRows: { iso: string; row: (string | number)[] }[] = [];
+        for (const s of g.sales) {
+          const paid = g.paidMap.get(s.id) ?? 0;
+          const items = (s.items || []).map((it) => `${it.quantity}× ${it.productName} — ${money(it.unitPrice)} c/u`).join(' | ');
+          clientRows.push({ iso: s.date, row: ['', '', dateLabel(s.date), `Venta #${s.saleNumber}`, companyName(s.companyId ?? 0), items, s.paymentMethod || '', s.notes || '', s.total, paid, s.total - paid] });
+          for (const p of salePaymentsBySale.get(s.id) || []) {
+            clientRows.push({ iso: p.date, row: ['', '', dateLabel(p.date), 'Abono', companyName(s.companyId ?? 0), '', p.paymentMethod || '', p.note || '', p.amount, p.amount, ''] });
+          }
+        }
+        for (const mc of g.manualCredits) {
+          clientRows.push({ iso: mc.createdAt, row: ['', '', dateLabel(mc.createdAt), 'Crédito manual', companyName(mc.companyId ?? 0), '', 'Crédito', mc.notes || '', mc.total, mc.paid, mc.total - mc.paid] });
+          for (const p of mcPaymentsByCredit.get(mc.id) || []) {
+            clientRows.push({ iso: p.date, row: ['', '', dateLabel(p.date), 'Abono', companyName(mc.companyId ?? 0), '', p.paymentMethod || '', p.note || '', p.amount, p.amount, ''] });
+          }
+        }
+        clientRows.sort((a, b) => new Date(a.iso).getTime() - new Date(b.iso).getTime());
+        rows.push([g.name, g.remaining]);
+        rows.push(...clientRows.map((c) => c.row));
+        rows.push([]);
+      }
+      await buildXlsxBlob(rows).then((blob) => downloadBlob(blob, `cartera-movimientos-${new Date().toISOString().slice(0, 10)}.xlsx`));
+    } finally {
+      setExportingDetail(false);
+    }
+  };
+
   const openDetail = (g: typeof clientGroups[0]) => {
     const allSalesPaid = new Map<number, number>();
     for (const s of g.sales) allSalesPaid.set(s.id, g.paidMap.get(s.id) ?? 0);
     setDetailClient({ name: g.name, phone: g.phone, sales: g.sales, manualCredits: g.manualCredits, payments: allSalesPaid });
   };
+
+  const openPayment = (g: (typeof clientGroups)[number]) => {
+    const debts: PaymentTarget['debts'] = [];
+    for (const s of g.sales) {
+      const remaining = s.total - (g.paidMap.get(s.id) ?? 0);
+      if (remaining > 0 && s.companyId) debts.push({ companyId: s.companyId, kind: 'sale', id: s.id, label: `Venta #${s.saleNumber}`, remaining });
+    }
+    for (const mc of g.manualCredits) {
+      const remaining = mc.total - mc.paid;
+      if (remaining > 0 && mc.companyId) debts.push({ companyId: mc.companyId, kind: 'manual', id: mc.id, label: 'Crédito manual', remaining });
+    }
+    const companyIds = [...new Set(debts.map((d) => d.companyId))].sort((a, b) => a - b);
+    const comps = companyIds.map((cid) => ({ companyId: cid, name: companies.find((c) => c.id === cid)?.name || `Empresa ${cid}` }));
+    if (!comps.length) return;
+    setPaymentTarget({ clientName: g.name, clientPhone: g.phone, companies: comps, debts });
+  };
+
+  const handleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(key); setSortDir(key === 'name' ? 'asc' : 'desc'); }
+  };
+  const sortArrow = (key: typeof sortKey) => (sortKey !== key ? <ArrowUpDown size={13} /> : sortDir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />);
 
   return (
     <Shell>
@@ -824,9 +968,34 @@ function CarteraPage() {
             <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-[hsl(var(--muted-foreground))]" />
           </label>
         </div>
+        <div className="grid gap-1.5 sm:hidden">
+          <span className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Ordenar</span>
+          <label className="relative">
+            <select value={sortKey} onChange={(e) => setSortKey(e.target.value as typeof sortKey)} className="h-11 w-full appearance-none rounded-xl border bg-[hsl(var(--card))] pl-4 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-sort-cartera">
+              <option value="name">Cliente</option>
+              <option value="total">Total</option>
+              <option value="paid">Abonado</option>
+              <option value="remaining">Saldo</option>
+              <option value="lastActivity">Último movimiento</option>
+            </select>
+            <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-[hsl(var(--muted-foreground))]" />
+          </label>
+        </div>
+        <button type="button" onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))} className="h-11 self-end rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-bold text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] sm:hidden" title={sortDir === 'asc' ? 'Ascendente' : 'Descendente'} data-testid="button-sort-dir-cartera">
+          {sortDir === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+        </button>
         <div className="flex items-end gap-2">
-          <Button variant="secondary" className="min-h-[44px] px-3 text-sm" onClick={downloadCsv} data-testid="button-export-cartera-csv"><Download size={15} /> CSV</Button>
-          <Button variant="secondary" className="min-h-[44px] px-3 text-sm" onClick={downloadXlsx} data-testid="button-export-cartera-xlsx"><Download size={15} /> XLSX</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" className="min-h-[44px] px-3 text-sm" data-testid="button-export-cartera-menu"><Download size={15} /> Cartera <ChevronDown size={14} /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" data-testid="menu-export-cartera">
+              <DropdownMenuItem onClick={downloadCsv} data-testid="dropdown-export-cartera-csv">CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={downloadXlsx} data-testid="dropdown-export-cartera-xlsx">XLSX</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="secondary" className="min-h-[44px] px-3 text-sm" onClick={exportSaldoCsv} data-testid="button-export-cartera-saldos"><Download size={15} /> Saldos</Button>
+          <Button variant="secondary" className="min-h-[44px] px-3 text-sm" onClick={() => exportDetailXlsx()} disabled={exportingDetail} data-testid="button-export-cartera-movimientos"><Download size={15} /> {exportingDetail ? 'Generando…' : 'Movimientos'}</Button>
         </div>
       </div>
 
@@ -848,13 +1017,21 @@ function CarteraPage() {
             <table className="w-full text-sm hidden sm:table" data-testid="table-cartera">
               <thead>
                 <tr className="border-b text-left text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
-                  <th className="px-4 py-3">Cliente</th>
+                  <th className="px-4 py-3">
+                    <button type="button" onClick={() => handleSort('name')} className={`inline-flex items-center gap-1 uppercase tracking-wider hover:text-[hsl(var(--foreground))] ${sortKey === 'name' ? 'text-[hsl(var(--primary))]' : ''}`} data-testid="sort-cartera-name">Cliente {sortArrow('name')}</button>
+                  </th>
                   <th className="px-4 py-3">Teléfono</th>
-                  <th className="px-4 py-3 text-right">Total</th>
-                  <th className="px-4 py-3 text-right">Abonado</th>
-                  <th className="px-4 py-3 text-right">Saldo</th>
+                  <th className="px-4 py-3 text-right">
+                    <button type="button" onClick={() => handleSort('paid')} className={`inline-flex items-center justify-end gap-1 uppercase tracking-wider hover:text-[hsl(var(--foreground))] ${sortKey === 'paid' ? 'text-[hsl(var(--primary))]' : ''}`} data-testid="sort-cartera-paid">Abonado {sortArrow('paid')}</button>
+                  </th>
+                  <th className="px-4 py-3 text-right">
+                    <button type="button" onClick={() => handleSort('remaining')} className={`inline-flex items-center justify-end gap-1 uppercase tracking-wider hover:text-[hsl(var(--foreground))] ${sortKey === 'remaining' ? 'text-[hsl(var(--primary))]' : ''}`} data-testid="sort-cartera-remaining">Saldo {sortArrow('remaining')}</button>
+                  </th>
                   <th className="px-4 py-3 text-center">Estado</th>
-                  <th className="px-4 py-3 hidden md:table-cell">Último movimiento</th>
+                  <th className="px-4 py-3 hidden md:table-cell">
+                    <button type="button" onClick={() => handleSort('lastActivity')} className={`inline-flex items-center gap-1 uppercase tracking-wider hover:text-[hsl(var(--foreground))] ${sortKey === 'lastActivity' ? 'text-[hsl(var(--primary))]' : ''}`} data-testid="sort-cartera-last-activity">Último movimiento {sortArrow('lastActivity')}</button>
+                  </th>
+                  <th className="px-4 py-3 hidden md:table-cell">Último abono</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -868,7 +1045,6 @@ function CarteraPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">{g.phone || '—'}</td>
-                    <td className="px-4 py-3 text-right font-mono-app font-bold">{money(g.total)}</td>
                     <td className="px-4 py-3 text-right font-mono-app text-green-600">{money(g.paid)}</td>
                     <td className="px-4 py-3 text-right font-mono-app font-bold">{money(g.remaining)}</td>
                     <td className="px-4 py-3 text-center">
@@ -877,14 +1053,11 @@ function CarteraPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden md:table-cell">{dateLabel(g.lastActivity)}</td>
+                    <td className="px-4 py-3 text-[hsl(var(--muted-foreground))] hidden md:table-cell">{g.lastPayment ? dateLabel(g.lastPayment) : '—'}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1.5">
                         <Button variant="secondary" className="min-h-[28px] px-2 text-xs" onClick={() => openDetail(g)} data-testid={`button-view-client-${i}`}>Ver</Button>
-                        {!g.isPaid && <Button className="min-h-[28px] px-2 text-xs" onClick={() => {
-                          if (g.sales.length === 1 && g.manualCredits.length === 0) setPaymentTarget({ type: 'sale', sale: g.sales[0] });
-                          else if (g.manualCredits.length === 1 && g.sales.length === 0) setPaymentTarget({ type: 'manual', credit: g.manualCredits[0] });
-                          else setPaymentTarget({ type: 'manual', credit: g.manualCredits[0] || g.sales[0] as any });
-                        }} data-testid={`button-abonar-client-${i}`}>Abonar</Button>}
+                        {!g.isPaid && <Button className="min-h-[28px] px-2 text-xs" onClick={() => openPayment(g)} data-testid={`button-abonar-client-${i}`}>Abonar</Button>}
                       </div>
                     </td>
                   </tr>
@@ -905,19 +1078,14 @@ function CarteraPage() {
                       {g.isPaid ? 'Pagado' : 'Pendiente'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-lg bg-[hsl(var(--muted)/.3)] py-1.5"><p className="text-[10px] text-[hsl(var(--muted-foreground))]">Total</p><p className="font-mono-app text-xs font-bold">{money(g.total)}</p></div>
+                  <div className="grid grid-cols-2 gap-2 text-center">
                     <div className="rounded-lg bg-green-50 py-1.5"><p className="text-[10px] text-[hsl(var(--muted-foreground))]">Pagado</p><p className="font-mono-app text-xs font-bold text-green-600">{money(g.paid)}</p></div>
                     <div className="rounded-lg bg-orange-50 py-1.5"><p className="text-[10px] text-[hsl(var(--muted-foreground))]">Saldo</p><p className="font-mono-app text-xs font-bold text-orange-600">{money(g.remaining)}</p></div>
                   </div>
-                  {g.phone && <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Último: {dateLabel(g.lastActivity)}</p>}
+                  <p className="text-[10px] text-[hsl(var(--muted-foreground))]">Movimiento: {dateLabel(g.lastActivity)} · Último abono: {g.lastPayment ? dateLabel(g.lastPayment) : '—'}</p>
                   <div className="flex gap-2">
                     <Button variant="secondary" className="flex-1 min-h-[40px] text-sm" onClick={() => openDetail(g)} data-testid={`button-view-client-${i}`}>Ver detalle</Button>
-                    {!g.isPaid && <Button className="flex-1 min-h-[40px] text-sm" onClick={() => {
-                      if (g.sales.length === 1 && g.manualCredits.length === 0) setPaymentTarget({ type: 'sale', sale: g.sales[0] });
-                      else if (g.manualCredits.length === 1 && g.sales.length === 0) setPaymentTarget({ type: 'manual', credit: g.manualCredits[0] });
-                      else setPaymentTarget({ type: 'manual', credit: g.manualCredits[0] || g.sales[0] as any });
-                    }} data-testid={`button-abonar-client-${i}`}>Abonar</Button>}
+                    {!g.isPaid && <Button className="flex-1 min-h-[40px] text-sm" onClick={() => openPayment(g)} data-testid={`button-abonar-client-${i}`}>Abonar</Button>}
                   </div>
                 </div>
               ))}
@@ -926,8 +1094,7 @@ function CarteraPage() {
         </>
       )}
 
-      {paymentTarget && paymentTarget.type === 'sale' && <CreditPaymentModal sale={paymentTarget.sale} onClose={() => setPaymentTarget(null)} />}
-      {paymentTarget && paymentTarget.type === 'manual' && 'total' in paymentTarget.credit && <ManualCreditPaymentModal credit={paymentTarget.credit as ManualCredit} onClose={() => setPaymentTarget(null)} />}
+      {paymentTarget && <AbonoModal target={paymentTarget} onClose={() => setPaymentTarget(null)} />}
       {detailClient && <ClientDetailModal detail={detailClient} onClose={() => setDetailClient(null)} />}
       {newCreditModal && <NewManualCreditModal onClose={() => setNewCreditModal(false)} />}
       {clientsModal && <ClientsManagerModal onClose={() => setClientsModal(false)} />}
@@ -990,9 +1157,17 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
     return [...map.entries()].sort((a, b) => b[1].remaining - a[1].remaining);
   }, [detail.sales, detail.manualCredits, salesPaid]);
 
+  const movements = useMemo(() => {
+    const list: { key: string; date: string; kind: 'sale' | 'manual' | 'payment'; sale?: Sale; mc?: ManualCredit; payment?: CreditPayment; paid?: number }[] = [];
+    for (const s of detail.sales) list.push({ key: `s-${s.id}`, date: s.date, kind: 'sale', sale: s, paid: salesPaid.get(s.id) ?? 0 });
+    for (const mc of detail.manualCredits) list.push({ key: `mc-${mc.id}`, date: mc.createdAt, kind: 'manual', mc });
+    for (const p of allPayments) list.push({ key: `p-${p.id}`, date: p.date, kind: 'payment', payment: p });
+    return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [detail.sales, detail.manualCredits, allPayments, salesPaid]);
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center bg-[hsl(var(--foreground)/.45)] sm:p-4" role="dialog" aria-modal="true">
-      <div className="w-full max-w-2xl rounded-t-2xl sm:rounded-2xl border bg-[hsl(var(--card))] shadow-2xl max-h-[92dvh] flex flex-col">
+      <div className="w-full max-w-5xl rounded-t-2xl sm:rounded-2xl border bg-[hsl(var(--card))] shadow-2xl max-h-[92dvh] flex flex-col">
         <div className="flex items-start justify-between p-5 pb-0 sm:p-6">
           <div className="min-w-0 flex-1">
             <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Detalle de cliente</p>
@@ -1039,87 +1214,106 @@ function ClientDetailModal({ detail, onClose }: { detail: { name: string; phone:
                 </tr>
               </thead>
               <tbody>
-                {detail.sales.map((s) => {
-                  const p = salesPaid.get(s.id) ?? 0;
-                  return <tr key={`s-${s.id}`} className="border-b last:border-0">
-                    <td className="px-3 py-2 text-xs">{dateLabel(s.date)}</td>
-                    <td className="px-3 py-2"><span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span><span className="ml-1 rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span></td>
-                    <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))] max-w-[200px]">{s.items?.length ? <div className="flex flex-col gap-0.5">{s.items.map((it, idx) => <span key={idx}>{it.quantity}× {it.productName}</span>)}</div> : '—'}</td>
-                    <td className="px-3 py-2 text-right font-mono-app font-bold">{money(s.total)}</td>
-                    <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p)}</td>
-                    <td className="px-3 py-2 text-right font-mono-app">{money(s.total - p)}</td>
-                  </tr>;
+                {movements.map((m) => {
+                  if (m.kind === 'sale' && m.sale) {
+                    const s = m.sale; const p = m.paid ?? 0;
+                    return <tr key={m.key} className="border-b last:border-0">
+                      <td className="px-3 py-2 text-xs">{dateLabel(s.date)}</td>
+                      <td className="px-3 py-2"><span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span><span className="ml-1 rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span></td>
+                      <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))] min-w-[240px]">{s.items?.length ? <div className="flex flex-col gap-1">{s.items.map((it, idx) => <span key={idx} className="whitespace-nowrap"><b className="font-mono-app text-[hsl(var(--foreground))]">{it.quantity}×</b> <span className="font-semibold text-[hsl(var(--foreground))]">{it.productName}</span></span>)}</div> : '—'}</td>
+                      <td className="px-3 py-2 text-right font-mono-app font-bold">{money(s.total)}</td>
+                      <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p)}</td>
+                      <td className="px-3 py-2 text-right font-mono-app">{money(s.total - p)}</td>
+                      <td className="px-3 py-2"></td>
+                    </tr>;
+                  }
+                  if (m.kind === 'manual' && m.mc) {
+                    const mc = m.mc;
+                    return <tr key={m.key} className="border-b last:border-0">
+                      <td className="px-3 py-2 text-xs">{dateLabel(mc.createdAt)}</td>
+                      <td className="px-3 py-2"><span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">Crédito manual</span></td>
+                      <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{mc.notes || '—'}</td>
+                      <td className="px-3 py-2 text-right font-mono-app font-bold">{money(mc.total)}</td>
+                      <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(mc.paid)}</td>
+                      <td className="px-3 py-2 text-right font-mono-app">{money(mc.total - mc.paid)}</td>
+                      <td className="px-3 py-2 text-right"><button type="button" onClick={() => removeCredit(mc.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-manual-credit-${mc.id}`} title="Borrar crédito"><Trash2 size={15} /></button></td>
+                    </tr>;
+                  }
+                  if (m.kind === 'payment' && m.payment) {
+                    const p = m.payment;
+                    return <tr key={m.key} className="border-b last:border-0 bg-green-50/50">
+                      <td className="px-3 py-2 text-xs">{dateLabel(p.date)}</td>
+                      <td className="px-3 py-2"><span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">Abono</span></td>
+                      <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod || '—'}{p.note ? ` · ${p.note}` : ''}</td>
+                      <td className="px-3 py-2 text-right font-mono-app font-bold text-green-600">-{money(p.amount)}</td>
+                      <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p.amount)}</td>
+                      <td className="px-3 py-2"></td>
+                      <td className="px-3 py-2 text-right"><button type="button" onClick={() => removePayment(p.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-payment-${p.id}`} title="Borrar abono"><Trash2 size={15} /></button></td>
+                    </tr>;
+                  }
+                  return null;
                 })}
-                {detail.manualCredits.map((mc) => <tr key={`mc-${mc.id}`} className="border-b last:border-0">
-                  <td className="px-3 py-2 text-xs">{dateLabel(mc.createdAt)}</td>
-                  <td className="px-3 py-2"><span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">Crédito manual</span></td>
-                  <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{mc.notes || '—'}</td>
-                  <td className="px-3 py-2 text-right font-mono-app font-bold">{money(mc.total)}</td>
-                  <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(mc.paid)}</td>
-                  <td className="px-3 py-2 text-right font-mono-app">{money(mc.total - mc.paid)}</td>
-                  <td className="px-3 py-2 text-right"><button type="button" onClick={() => removeCredit(mc.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-manual-credit-${mc.id}`} title="Borrar crédito"><Trash2 size={15} /></button></td>
-                </tr>)}
-                {allPayments.map((p) => <tr key={`p-${p.id}`} className="border-b last:border-0 bg-green-50/50">
-                  <td className="px-3 py-2 text-xs">{dateLabel(p.date)}</td>
-                  <td className="px-3 py-2"><span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">Abono</span></td>
-                  <td className="px-3 py-2 text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod || '—'}{p.note ? ` · ${p.note}` : ''}</td>
-                  <td className="px-3 py-2 text-right font-mono-app font-bold text-green-600">-{money(p.amount)}</td>
-                  <td className="px-3 py-2 text-right font-mono-app text-green-600">{money(p.amount)}</td>
-                  <td className="px-3 py-2"></td>
-                  <td className="px-3 py-2 text-right"><button type="button" onClick={() => removePayment(p.id)} className="rounded-lg p-1.5 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-payment-${p.id}`} title="Borrar abono"><Trash2 size={15} /></button></td>
-                </tr>)}
               </tbody>
             </table>
           </div>
 
           {/* Mobile: cards */}
           <div className="sm:hidden space-y-2">
-            {detail.sales.map((s) => {
-              const p = salesPaid.get(s.id) ?? 0;
-              return <div key={`s-${s.id}`} className="rounded-xl border bg-[hsl(var(--muted)/.2)] p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span>
-                    <span className="rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span>
+            {movements.map((m) => {
+              if (m.kind === 'sale' && m.sale) {
+                const s = m.sale; const p = m.paid ?? 0;
+                return <div key={m.key} className="rounded-xl border bg-[hsl(var(--muted)/.2)] p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="rounded-full bg-[hsl(var(--accent)/.6)] px-2 py-0.5 text-[10px] font-bold">Venta #{s.saleNumber}</span>
+                      <span className="rounded-full bg-[hsl(var(--muted))] px-1.5 py-0.5 text-[9px] font-bold text-[hsl(var(--muted-foreground))]">{companyName(s.companyId ?? 0)}</span>
+                    </div>
+                    <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(s.date)}</span>
                   </div>
-                  <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(s.date)}</span>
-                </div>
-                {s.items?.length > 0 && <p className="mt-1.5 text-xs text-[hsl(var(--muted-foreground))] line-clamp-2">{s.items.map((it) => `${it.quantity}×${it.productName}`).join(', ')}</p>}
-                <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="font-mono-app font-bold">{money(s.total)}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-green-600">Pagado: {money(p)}</span>
-                    <span className="font-bold text-orange-600">{money(s.total - p)}</span>
+                  {s.items?.length > 0 && <div className="mt-1.5 grid gap-1">{s.items.map((it, idx) => <p key={idx} className="text-xs text-[hsl(var(--muted-foreground))]"><b className="font-mono-app text-[hsl(var(--foreground))]">{it.quantity}×</b> <span className="font-semibold text-[hsl(var(--foreground))]">{it.productName}</span></p>)}</div>}
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="font-mono-app font-bold">{money(s.total)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-green-600">Pagado: {money(p)}</span>
+                      <span className="font-bold text-orange-600">{money(s.total - p)}</span>
+                    </div>
                   </div>
-                </div>
-              </div>;
+                </div>;
+              }
+              if (m.kind === 'manual' && m.mc) {
+                const mc = m.mc;
+                return <div key={m.key} className="rounded-xl border bg-purple-50/50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">Crédito manual</span>
+                    <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(mc.createdAt)}</span>
+                  </div>
+                  {mc.notes && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{mc.notes}</p>}
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="font-mono-app font-bold">{money(mc.total)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600">Pagado: {money(mc.paid)}</span>
+                      <span className="font-bold text-orange-600">{money(mc.total - mc.paid)}</span>
+                      <button type="button" onClick={() => removeCredit(mc.id)} className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-manual-credit-${mc.id}`} title="Borrar crédito"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                </div>;
+              }
+              if (m.kind === 'payment' && m.payment) {
+                const p = m.payment;
+                return <div key={m.key} className="rounded-xl border border-green-200 bg-green-50/50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">Abono</span>
+                    <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(p.date)}</span>
+                  </div>
+                  {p.paymentMethod && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod}{p.note ? ` · ${p.note}` : ''}</p>}
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-mono-app font-bold text-green-600">+{money(p.amount)}</p>
+                    <button type="button" onClick={() => removePayment(p.id)} className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-payment-${p.id}`} title="Borrar abono"><Trash2 size={14} /></button>
+                  </div>
+                </div>;
+              }
+              return null;
             })}
-            {detail.manualCredits.map((mc) => <div key={`mc-${mc.id}`} className="rounded-xl border bg-purple-50/50 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700">Crédito manual</span>
-                <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(mc.createdAt)}</span>
-              </div>
-              {mc.notes && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{mc.notes}</p>}
-              <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="font-mono-app font-bold">{money(mc.total)}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-600">Pagado: {money(mc.paid)}</span>
-                  <span className="font-bold text-orange-600">{money(mc.total - mc.paid)}</span>
-                  <button type="button" onClick={() => removeCredit(mc.id)} className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-manual-credit-${mc.id}`} title="Borrar crédito"><Trash2 size={14} /></button>
-                </div>
-              </div>
-            </div>)}
-            {allPayments.map((p) => <div key={`p-${p.id}`} className="rounded-xl border border-green-200 bg-green-50/50 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">Abono</span>
-                <span className="text-[10px] text-[hsl(var(--muted-foreground))]">{dateLabel(p.date)}</span>
-              </div>
-              {p.paymentMethod && <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{p.paymentMethod}{p.note ? ` · ${p.note}` : ''}</p>}
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <p className="text-xs font-mono-app font-bold text-green-600">+{money(p.amount)}</p>
-                <button type="button" onClick={() => removePayment(p.id)} className="rounded-lg p-1 text-[hsl(var(--muted-foreground))] hover:bg-red-100 hover:text-red-600" data-testid={`button-delete-payment-${p.id}`} title="Borrar abono"><Trash2 size={14} /></button>
-              </div>
-            </div>)}
           </div>
         </div>
 
@@ -1206,63 +1400,6 @@ function ClientsManagerModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function ManualCreditPaymentModal({ credit, onClose }: { credit: ManualCredit; onClose: () => void }) {
-  const qc = useQueryClient();
-  const createPayment = useCreateManualCreditPayment();
-  const [amount, setAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [date, setDate] = useState(() => toLocalDateString(new Date()));
-  const [note, setNote] = useState('');
-  const [error, setError] = useState('');
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const v = Number(amount);
-    if (!amount.trim() || !Number.isFinite(v) || v < 1) { setError('Escribe un monto válido.'); return; }
-    setError('');
-    createPayment.mutate({ id: credit.id, data: { amount: Math.round(v), paymentMethod: paymentMethod.trim() || undefined, date: (() => { if (!date) return undefined; const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), note: note.trim() || undefined } }, {
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() });
-        qc.invalidateQueries({ queryKey: getListManualCreditPaymentsQueryKey(credit.id) });
-        onClose();
-      },
-      onError: () => setError('No se pudo registrar el abono.'),
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-[hsl(var(--foreground)/.45)] p-4" role="dialog" aria-modal="true">
-      <form onSubmit={submit} className="w-full max-w-md rounded-2xl border bg-[hsl(var(--card))] p-6 shadow-2xl">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="font-mono-app text-[10px] uppercase tracking-[.16em] text-[hsl(var(--primary))]">Abono a crédito manual</p>
-            <h2 className="mt-1 font-display text-3xl font-bold">Registrar abono</h2>
-            <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))]">{credit.clientName || 'Cliente sin nombre'} · Total {money(credit.total)}</p>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]" data-testid="button-close-manual-payment"><X size={20} /></button>
-        </div>
-        <div className="mt-6 grid gap-4">
-          <Field label="Monto del abono" type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus data-testid="input-manual-payment-amount" />
-          <Field label="Fecha del abono" type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-manual-payment-date" />
-          <div className="grid gap-1.5 text-sm font-semibold">
-            <label>Método de pago</label>
-            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="h-11 w-full rounded-xl border bg-[hsl(var(--card))] px-3 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-manual-payment-method">
-              <option value="">Sin especificar</option>
-              {PAYMENT_METHODS.filter((m) => m !== 'Crédito').map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <Field label="Nota (opcional)" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Referencia del pago" data-testid="input-manual-payment-note" />
-        </div>
-        {error && <p className="mt-3 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</p>}
-        <div className="mt-6 flex justify-end gap-3">
-          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={createPayment.isPending} data-testid="button-submit-manual-payment">{createPayment.isPending ? 'Guardando…' : 'Registrar abono'}</Button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 function NewInlineClientModal({ onClose }: { onClose: (created: Client | null) => void }) {
   const qc = useQueryClient();
   const createClient = useCreateClient();
@@ -1308,12 +1445,14 @@ function NewInlineClientModal({ onClose }: { onClose: (created: Client | null) =
 
 function NewManualCreditModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
-  const create = useCreateManualCredit();
+  const { companies, activeCompany } = useCompany();
   const clients = useListClients();
+  const [companyId, setCompanyId] = useState<number>(() => activeCompany?.id ?? companies[0]?.id ?? 0);
+  const [creating, setCreating] = useState(false);
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [total, setTotal] = useState('');
-  const [date, setDate] = useState(() => toLocalDateString(new Date()));
+  const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [newClientModal, setNewClientModal] = useState(false);
@@ -1322,11 +1461,14 @@ function NewManualCreditModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     const v = Number(total);
     if (!Number.isFinite(v) || v < 1) { setError('Escribe un monto válido.'); return; }
+    if (!clientName.trim()) { setError('Selecciona un cliente para el crédito.'); return; }
+    if (!date) { setError('Selecciona la fecha del crédito.'); return; }
     setError('');
-    create.mutate({ data: { clientName: clientName.trim() || undefined, clientPhone: clientPhone.trim() || undefined, clientId: clientName.trim() ? (clients.data?.find((c) => c.name === clientName.trim())?.id || undefined) : undefined, total: Math.round(v), date: (() => { if (!date) return undefined; const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), notes: notes.trim() || undefined } }, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() }); onClose(); },
-      onError: () => setError('No se pudo crear el crédito.'),
-    });
+    setCreating(true);
+    createManualCredit({ clientName: clientName.trim() || undefined, clientPhone: clientPhone.trim() || undefined, clientId: clientName.trim() ? (clients.data?.find((c) => c.name === clientName.trim())?.id || undefined) : undefined, total: Math.round(v), date: (() => { if (!date) return undefined; const now = new Date(); const [y, m, d] = date.split('-').map(Number); return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString(); })(), notes: notes.trim() || undefined }, { headers: { 'x-company-id': String(companyId) } })
+      .then(() => { qc.invalidateQueries({ queryKey: getListManualCreditsQueryKey() }); onClose(); })
+      .catch(() => setError('No se pudo crear el crédito.'))
+      .finally(() => setCreating(false));
   };
 
   return (
@@ -1342,15 +1484,19 @@ function NewManualCreditModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="mt-6 grid gap-4">
           <div className="grid gap-1.5 text-sm font-semibold">
+            <label>Empresa</label>
+            <select value={companyId} onChange={(e) => setCompanyId(Number(e.target.value))} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--card))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-manual-credit-company">
+              {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-1.5 text-sm font-semibold">
             <label>Cliente</label>
             <select value={clientName} onChange={(e) => { const v = e.target.value; if (v === '__new__') { setNewClientModal(true); } else { setClientName(v); const c = clients.data?.find((cl) => cl.name === v); setClientPhone(c?.phone || ''); } }} className="h-12 w-full appearance-none rounded-xl border bg-[hsl(var(--card))] px-3 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-manual-credit-client">
-              <option value="">Sin cliente</option>
-              {(clients.data || []).map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+              <option value="" disabled>Selecciona un cliente</option>
+              {[...(clients.data || [])].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })).map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
               <option value="__new__">+ Crear nuevo cliente</option>
             </select>
           </div>
-          {!clientName && <><Field label="Nombre del cliente (manual)" value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Nombre o razón social" data-testid="input-manual-credit-name" />
-          <Field label="Teléfono (opcional)" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Número de contacto" data-testid="input-manual-credit-phone" /></>}
           <Field label="Monto total de la deuda" type="number" min="1" step="1" value={total} onChange={(e) => setTotal(e.target.value)} placeholder="0" autoFocus data-testid="input-manual-credit-total" />
           <Field label="Fecha del crédito" type="date" value={date} onChange={(e) => setDate(e.target.value)} data-testid="input-manual-credit-date" />
           <Field label="Notas (opcional)" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Referencia, productos, etc." data-testid="input-manual-credit-notes" />
@@ -1358,7 +1504,7 @@ function NewManualCreditModal({ onClose }: { onClose: () => void }) {
         {error && <p className="mt-3 rounded-xl bg-[hsl(var(--destructive)/.1)] p-3 text-sm text-[hsl(var(--destructive))]">{error}</p>}
         <div className="mt-6 flex justify-end gap-3">
           <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={create.isPending} data-testid="button-submit-manual-credit">{create.isPending ? 'Creando…' : 'Crear crédito'}</Button>
+          <Button type="submit" disabled={creating || !companyId || !clientName.trim() || !total.trim() || !Number.isFinite(Number(total)) || Number(total) < 1 || !date} data-testid="button-submit-manual-credit">{creating ? 'Creando…' : 'Crear crédito'}</Button>
         </div>
       </form>
       {newClientModal && <NewInlineClientModal onClose={(created) => { setNewClientModal(false); if (created) { setClientName(created.name); setClientPhone(created.phone || ''); } }} />}
@@ -1427,7 +1573,7 @@ function ClientsPage() {
               </tr>
             </thead>
             <tbody>
-              {(clientsList.data || []).map((c) => (
+              {[...(clientsList.data || [])].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })).map((c) => (
                 <tr key={c.id} className="border-b last:border-0 hover:bg-[hsl(var(--muted)/.3)]" data-testid={`client-row-${c.id}`}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">

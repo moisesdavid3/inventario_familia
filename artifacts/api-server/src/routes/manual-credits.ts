@@ -5,7 +5,7 @@ import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
 
 const router: IRouter = Router();
-router.use("/manual-credits", requireAuth, requireCompany);
+router.use(requireAuth, requireCompany);
 
 function manualCreditResponse(credit: typeof manualCreditsTable.$inferSelect, paid: number) {
   return {
