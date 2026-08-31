@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider, useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight, ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Box, Check, ChevronDown, CircleDollarSign, ClipboardList,
-  CreditCard, Download, History, Home as HomeIcon, LogOut, Menu, PackagePlus, Pencil, Plus, Printer, Search, ShoppingBasket,
+  CreditCard, Download, History, Home as HomeIcon, LayoutDashboard, LogOut, Menu, PackagePlus, Pencil, Plus, Printer, Search, ShoppingBasket,
   ShoppingCart, Sparkles, Trash2, Truck, TriangleAlert, TrendingUp, Upload, Users, Wallet, X
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -189,9 +189,9 @@ const toCsv = (rows: (string | number)[][]) => '\uFEFF' + rows.map((r) => r.map(
 function Brand({ compact = false }: { compact?: boolean }) {
   return <Link href="/" className="flex items-center gap-3" data-testid="link-brand">
     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[hsl(var(--sidebar-primary))] text-[hsl(var(--sidebar-primary-foreground))] shadow-sm">
-      <Box size={21} strokeWidth={2.5} />
+      <LayoutDashboard size={21} strokeWidth={2.5} />
     </span>
-    {!compact && <span className="font-display text-lg font-bold tracking-tight">Inventario<span className="text-[hsl(var(--sidebar-primary))]">Familiar</span></span>}
+    {!compact && <span className="font-display text-lg font-bold tracking-tight">Prema <span className="text-[hsl(var(--sidebar-primary))]">ERP</span></span>}
   </Link>;
 }
 
