@@ -33,7 +33,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend
-        run: pnpm --filter @workspace/inventario-familiar run build
+        run: PORT=23322 BASE_PATH=/ pnpm --filter @workspace/inventario-familiar run build
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
