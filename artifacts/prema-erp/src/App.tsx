@@ -848,6 +848,22 @@ function CarteraPage() {
   const totalDebt = clientGroups.reduce((sum, g) => sum + g.remaining, 0);
   const totalPaid = clientGroups.reduce((sum, g) => sum + g.paid, 0);
 
+  const perCompanyKpi = (cid: number) => {
+    const remainingByClient = new Map<string, number>();
+    for (const g of clientGroups) {
+      let rem = 0;
+      for (const s of g.sales) if ((s.companyId ?? 0) === cid) rem += s.total - (g.paidMap.get(s.id) ?? 0);
+      for (const mc of g.manualCredits) if ((mc.companyId ?? 0) === cid) rem += mc.total - mc.paid;
+      if (rem > 0) remainingByClient.set(g.key, rem);
+    }
+    return {
+      saldo: [...remainingByClient.values()].reduce((a, b) => a + b, 0),
+      clientes: remainingByClient.size,
+    };
+  };
+  const tere = perCompanyKpi(1);
+  const prema = perCompanyKpi(2);
+
   const exportRows = () => {
     const rows: (string | number)[][] = [['Cliente', 'Teléfono', 'Total', 'Abonado', 'Saldo', 'Estado', 'Último movimiento']];
     for (const g of clientGroups) rows.push([g.name, g.phone, g.total, g.paid, g.remaining, g.isPaid ? 'Pagado' : 'Pendiente', dateLabel(g.lastActivity)]);
@@ -1000,10 +1016,29 @@ function CarteraPage() {
         <StatusMessage type="empty" text={search || status !== 'all' ? 'No encontramos créditos con esos filtros.' : 'No hay créditos registrados.'} />
       ) : (
         <>
-          <div className="mb-3 flex gap-4 text-sm">
-            <span className="text-[hsl(var(--muted-foreground))]">Pendiente: <strong className="font-mono-app text-[hsl(var(--destructive))]">{money(totalDebt)}</strong></span>
-            <span className="text-[hsl(var(--muted-foreground))]">Pagado: <strong className="font-mono-app text-green-600">{money(totalPaid)}</strong></span>
-            <span className="text-[hsl(var(--muted-foreground))]">Clientes: <strong>{clientGroups.length}</strong></span>
+          <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" data-testid="kpi-grid-cartera">
+            <div className="rounded-2xl border bg-[hsl(var(--card))] p-3" data-testid="kpi-pendiente">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Saldo Pendiente</p>
+              <p className="mt-1 font-mono-app text-xl font-bold text-[hsl(var(--destructive))]">{money(totalDebt)}</p>
+            </div>
+            <div className="rounded-2xl border bg-[hsl(var(--card))] p-3" data-testid="kpi-pagado">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Pagado</p>
+              <p className="mt-1 font-mono-app text-xl font-bold text-green-600">{money(totalPaid)}</p>
+            </div>
+            <div className="rounded-2xl border bg-[hsl(var(--card))] p-3" data-testid="kpi-clientes">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Clientes</p>
+              <p className="mt-1 font-mono-app text-xl font-bold">{clientGroups.length}</p>
+            </div>
+            <div className="rounded-2xl border bg-[hsl(var(--card))] p-3" data-testid="kpi-tere">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Suplementos Tere</p>
+              <p className="mt-1 font-mono-app text-xl font-bold">{money(tere.saldo)}</p>
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{tere.clientes} {tere.clientes === 1 ? 'cliente' : 'clientes'} con saldo</p>
+            </div>
+            <div className="rounded-2xl border bg-[hsl(var(--card))] p-3" data-testid="kpi-prema">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Tienda Natural Prema</p>
+              <p className="mt-1 font-mono-app text-xl font-bold">{money(prema.saldo)}</p>
+              <p className="text-[11px] text-[hsl(var(--muted-foreground))]">{prema.clientes} {prema.clientes === 1 ? 'cliente' : 'clientes'} con saldo</p>
+            </div>
           </div>
           <div className="overflow-x-auto rounded-2xl border bg-[hsl(var(--card))]">
             {/* Desktop table */}
