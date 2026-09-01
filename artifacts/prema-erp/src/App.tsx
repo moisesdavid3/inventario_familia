@@ -378,9 +378,9 @@ function Products() {
         const badgeClass = low ? 'bg-[hsl(var(--secondary))] text-[hsl(var(--primary))]' : 'bg-[hsl(var(--accent)/.7)] text-[hsl(var(--accent-foreground))]';
         return <div key={p.id} className={`border-b p-5 last:border-0 md:grid md:items-center md:gap-4 md:px-5 md:py-4 ${isPrema ? 'md:grid-cols-[1fr_110px_110px_150px]' : 'md:grid-cols-[1fr_110px_110px_130px_150px]'}`} data-testid={`row-product-${p.id}`}>
           <div className="flex items-center gap-3">
-            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl font-mono-app text-xs font-bold ${avatarClass}`}>{p.name.slice(0, 2).toUpperCase()}</span>
+            <span className={`grid h-10 shrink-0 place-items-center rounded-xl px-2 font-mono-app text-xs font-bold ${avatarClass}`}>{p.code || p.name.slice(0, 2).toUpperCase()}</span>
             <div className="min-w-0 flex-1">
-              <p className="whitespace-normal break-words font-bold md:truncate">{p.code ? <span className="mr-1 font-mono-app text-sm font-bold text-[hsl(var(--primary))]">{p.code}</span> : null}{[p.name, p.content].filter(Boolean).join(' x ')}</p>
+              <p className="whitespace-normal break-words font-bold md:truncate">{[p.name, p.content].filter(Boolean).join(' x ')}</p>
               {p.supplier && <p className="whitespace-normal break-words text-sm font-semibold text-[hsl(var(--primary))] md:truncate">{supplierLabel(p.supplierId, p.supplier)}</p>}
               {p.category && <p className="whitespace-normal break-words text-xs font-semibold text-[hsl(var(--muted-foreground))] md:truncate">{p.category}</p>}
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Costo {money(p.cost)}</p>
@@ -1084,7 +1084,7 @@ function CarteraPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-xs font-bold text-[hsl(var(--primary))]">{g.name.charAt(0).toUpperCase()}</span>
-                        <span className="font-semibold">{g.code ? <span className="mr-1 font-mono-app text-xs font-bold text-[hsl(var(--primary))]">{g.code}</span> : null}{g.name}</span>
+                        <span className="font-semibold">{g.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[hsl(var(--muted-foreground))]">{g.phone || '—'}</td>
@@ -1114,7 +1114,7 @@ function CarteraPage() {
                   <div className="flex items-center gap-3">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-sm font-bold text-[hsl(var(--primary))]">{g.name.charAt(0).toUpperCase()}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate">{g.code ? <span className="mr-1 font-mono-app text-xs font-bold text-[hsl(var(--primary))]">{g.code}</span> : null}{g.name}</p>
+                      <p className="font-semibold truncate">{g.name}</p>
                       {g.phone && <p className="text-xs text-[hsl(var(--muted-foreground))]">{g.phone}</p>}
                     </div>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${g.isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
@@ -1622,7 +1622,7 @@ function ClientsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-xs font-bold text-[hsl(var(--primary))]">{c.name.charAt(0).toUpperCase()}</span>
-                      <span className="font-semibold">{c.code ? <span className="mr-1 font-mono-app text-xs font-bold text-[hsl(var(--primary))]">{c.code}</span> : null}{c.name}</span>
+                      <span className="font-semibold">{c.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 font-mono-app text-[hsl(var(--primary))] hidden sm:table-cell">{c.code || '—'}</td>
