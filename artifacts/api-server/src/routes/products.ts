@@ -20,6 +20,7 @@ import {
   deleteProduct,
   isOwner,
   listAllProducts,
+  nextProductCode,
   productResponse,
   resolveSupplier,
   resolveUserIdByEmail,
@@ -47,11 +48,13 @@ router.post("/products", async (req, res): Promise<void> => {
     : req.userId!;
   const supplierName = parsed.data.supplier?.trim() || null;
   const supplierId = await resolveSupplier(req.companyId!, supplierName);
+  const code = await nextProductCode(req.companyId!);
   const [product] = await getDb().transaction(async (tx) => {
     const [created] = await tx.insert(productsTable).values({
       companyId: req.companyId!,
       userId,
       name: parsed.data.name.trim(),
+      code,
       supplier: supplierName,
       supplierId,
       category: parsed.data.category?.trim() || null,

@@ -101,6 +101,7 @@ router.post("/sales", async (req, res): Promise<void> => {
       return {
         productId: product.id,
         productName: product.name,
+        productCode: product.code,
         quantity,
         unitPrice: price,
         unitCost: product.cost,

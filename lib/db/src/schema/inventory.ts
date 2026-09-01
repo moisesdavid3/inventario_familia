@@ -1,25 +1,30 @@
 import { createInsertSchema } from "drizzle-zod";
-import { boolean, integer, pgTable, primaryKey, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, primaryKey, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
-export const productsTable = pgTable("inventory_products", {
-  id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().default(1),
-  userId: text("user_id").notNull(),
-  name: text("name").notNull(),
-  supplier: text("supplier"),
-  supplierId: integer("supplier_id"),
-  category: text("category"),
-  content: text("content"),
-  description: text("description"),
-  cost: integer("cost").notNull(),
-  salePrice: integer("sale_price").notNull(),
-  stock: integer("stock").notNull().default(0),
-  minimumStock: integer("minimum_stock").notNull().default(5),
-  isDemo: boolean("is_demo").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-}).enableRLS();
+export const productsTable = pgTable(
+  "inventory_products",
+  {
+    id: serial("id").primaryKey(),
+    companyId: integer("company_id").notNull().default(1),
+    userId: text("user_id").notNull(),
+    name: text("name").notNull(),
+    code: text("code").notNull().default(""),
+    supplier: text("supplier"),
+    supplierId: integer("supplier_id"),
+    category: text("category"),
+    content: text("content"),
+    description: text("description"),
+    cost: integer("cost").notNull(),
+    salePrice: integer("sale_price").notNull(),
+    stock: integer("stock").notNull().default(0),
+    minimumStock: integer("minimum_stock").notNull().default(5),
+    isDemo: boolean("is_demo").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex("inventory_products_company_code_idx").on(t.companyId, t.code)],
+).enableRLS();
 
 export const inventoryMovementsTable = pgTable("inventory_movements", {
   id: serial("id").primaryKey(),

@@ -61,6 +61,23 @@ export async function nextSupplierCode(companyId: number): Promise<string> {
   return `PRV-${String(max + 1).padStart(3, "0")}`;
 }
 
+export async function maxProductCodeNumber(companyId: number): Promise<number> {
+  const rows = await getDb()
+    .select({ code: productsTable.code })
+    .from(productsTable)
+    .where(eq(productsTable.companyId, companyId));
+  let max = 0;
+  for (const { code } of rows) {
+    const match = /^P-(\d+)$/.exec(code);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return max;
+}
+
+export async function nextProductCode(companyId: number): Promise<string> {
+  return `P-${String((await maxProductCodeNumber(companyId)) + 1).padStart(3, "0")}`;
+}
+
 export async function resolveSupplier(companyId: number, name?: string | null): Promise<number | null> {
   const trimmed = name?.trim();
   if (!trimmed) return null;
@@ -105,6 +122,7 @@ export function productResponse(product: typeof productsTable.$inferSelect) {
   return {
     id: product.id,
     name: product.name,
+    code: product.code || undefined,
     supplier: product.supplier ?? undefined,
     supplierId: product.supplierId ?? null,
     category: product.category ?? undefined,
@@ -237,6 +255,7 @@ export async function purchaseResponse(purchase: typeof purchasesTable.$inferSel
     items: items.map((item) => ({
       productId: item.productId,
       productName: item.productName,
+      productCode: item.productCode ?? null,
       quantity: item.quantity,
       unitCost: item.unitCost,
       subtotal: item.subtotal,
@@ -273,6 +292,7 @@ export function toSaleResponse(sale: typeof salesTable.$inferSelect, items: type
     items: items.map((item) => ({
       productId: item.productId,
       productName: item.productName,
+      productCode: item.productCode ?? null,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       unitCost: item.unitCost,

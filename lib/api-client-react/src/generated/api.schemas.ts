@@ -63,6 +63,8 @@ export interface DeleteSupplierInput {
 export interface Product {
   id: number;
   name: string;
+  /** Código visible del producto (ej. P-001) */
+  code?: string | null;
   supplier?: string;
   /** ID del proveedor normalizado */
   supplierId?: number | null;
@@ -159,6 +161,8 @@ export interface SaleInput {
 export interface SaleItem {
   productId: number;
   productName: string;
+  /** Código del producto al momento de la venta */
+  productCode?: string | null;
   quantity: number;
   unitPrice: number;
   unitCost: number;
@@ -305,6 +309,8 @@ export interface PurchaseInput {
 export interface PurchaseItem {
   productId: number;
   productName: string;
+  /** Código del producto al momento de la compra */
+  productCode?: string | null;
   quantity: number;
   unitCost: number;
   subtotal: number;

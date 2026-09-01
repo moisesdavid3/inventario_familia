@@ -12,7 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
-import { dateRangeForPeriod, purchaseResponse, purchaseWhere, resolveSupplier } from "../lib/inventory-service";
+import { dateRangeForPeriod, maxProductCodeNumber, purchaseResponse, purchaseWhere, resolveSupplier } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/purchases", requireAuth, requireCompany);
@@ -54,6 +54,7 @@ router.post("/purchases", async (req, res): Promise<void> => {
     const items = products.map(({ product, quantity, unitCost }) => ({
       productId: product.id,
       productName: product.name,
+      productCode: product.code,
       quantity,
       unitCost,
       subtotal: unitCost * quantity,
@@ -111,6 +112,7 @@ router.post("/purchases/import", async (req, res): Promise<void> => {
   const existing = await getDb().select().from(productsTable).where(eq(productsTable.companyId, companyId));
   const byName = new Map<string, typeof productsTable.$inferSelect>();
   for (const product of existing) byName.set(product.name.trim().toLowerCase(), product);
+  let maxCodeNumber = await maxProductCodeNumber(companyId);
 
   const result = await getDb().transaction(async (tx) => {
     const items: { product: typeof productsTable.$inferSelect; quantity: number; unitCost: number }[] = [];
@@ -124,10 +126,12 @@ router.post("/purchases/import", async (req, res): Promise<void> => {
       }
       let product = byName.get(name.toLowerCase());
       if (!product) {
+        maxCodeNumber += 1;
         const [inserted] = await tx.insert(productsTable).values({
           companyId,
           userId,
           name,
+          code: `P-${String(maxCodeNumber).padStart(3, "0")}`,
           cost: row.unitCost,
           salePrice: 0,
           stock: 0,
@@ -145,6 +149,7 @@ router.post("/purchases/import", async (req, res): Promise<void> => {
     const purchaseItems = items.map(({ product, quantity, unitCost }) => ({
       productId: product.id,
       productName: product.name,
+      productCode: product.code,
       quantity,
       unitCost,
       subtotal: unitCost * quantity,

@@ -177,6 +177,7 @@ export const DeleteClientResponse = zod.void()
 export const ListProductsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "code": zod.string().nullish().describe('Código visible del producto (ej. P-001)'),
   "supplier": zod.string().optional(),
   "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
@@ -222,6 +223,7 @@ export const CreateProductBody = zod.object({
 export const CreateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "code": zod.string().nullish().describe('Código visible del producto (ej. P-001)'),
   "supplier": zod.string().optional(),
   "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
@@ -273,6 +275,7 @@ export const UpdateProductBody = zod.object({
 export const UpdateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "code": zod.string().nullish().describe('Código visible del producto (ej. P-001)'),
   "supplier": zod.string().optional(),
   "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
@@ -322,6 +325,7 @@ export const AddInventoryBody = zod.object({
 export const AddInventoryResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "code": zod.string().nullish().describe('Código visible del producto (ej. P-001)'),
   "supplier": zod.string().optional(),
   "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
@@ -412,6 +416,7 @@ export const ListSalesResponseItem = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la venta'),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
   "unitCost": zod.number(),
@@ -468,6 +473,7 @@ export const CreateSaleResponse = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la venta'),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
   "unitCost": zod.number(),
@@ -506,6 +512,7 @@ export const GetSaleResponse = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la venta'),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
   "unitCost": zod.number(),
@@ -624,6 +631,7 @@ export const ListPurchasesResponseItem = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la compra'),
   "quantity": zod.number(),
   "unitCost": zod.number(),
   "subtotal": zod.number()
@@ -664,6 +672,7 @@ export const CreatePurchaseResponse = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la compra'),
   "quantity": zod.number(),
   "unitCost": zod.number(),
   "subtotal": zod.number()
@@ -707,6 +716,7 @@ export const ImportPurchasesResponse = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la compra'),
   "quantity": zod.number(),
   "unitCost": zod.number(),
   "subtotal": zod.number()
@@ -736,6 +746,7 @@ export const GetPurchaseResponse = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la compra'),
   "quantity": zod.number(),
   "unitCost": zod.number(),
   "subtotal": zod.number()
@@ -769,6 +780,7 @@ export const GetInventoryReportResponse = zod.object({
   "products": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
+  "code": zod.string().nullish().describe('Código visible del producto (ej. P-001)'),
   "supplier": zod.string().optional(),
   "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
@@ -820,6 +832,7 @@ export const GetSalesReportResponse = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la venta'),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
   "unitCost": zod.number(),

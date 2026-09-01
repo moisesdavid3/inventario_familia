@@ -948,6 +948,10 @@ components:
           type: number
         name:
           type: string
+        code:
+          type: string
+          nullable: true
+          description: Código visible del producto (ej. P-001)
         supplier:
           type: string
         supplierId:
@@ -1099,6 +1103,10 @@ components:
           type: number
         productName:
           type: string
+        productCode:
+          type: string
+          nullable: true
+          description: Código del producto al momento de la venta
         quantity:
           type: number
         unitPrice:
@@ -1311,6 +1319,10 @@ components:
           type: number
         productName:
           type: string
+        productCode:
+          type: string
+          nullable: true
+          description: Código del producto al momento de la compra
         quantity:
           type: number
         unitCost:

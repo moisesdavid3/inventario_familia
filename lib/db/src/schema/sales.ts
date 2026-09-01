@@ -70,6 +70,7 @@ export const saleItemsTable = pgTable("inventory_sale_items", {
   saleId: integer("sale_id").notNull(),
   productId: integer("product_id").notNull(),
   productName: text("product_name").notNull(),
+  productCode: text("product_code"),
   quantity: integer("quantity").notNull(),
   unitPrice: integer("unit_price").notNull(),
   unitCost: integer("unit_cost").notNull(),

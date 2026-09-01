@@ -20,6 +20,7 @@ export const purchaseItemsTable = pgTable("inventory_purchase_items", {
   purchaseId: integer("purchase_id").notNull(),
   productId: integer("product_id").notNull(),
   productName: text("product_name").notNull(),
+  productCode: text("product_code"),
   quantity: integer("quantity").notNull(),
   unitCost: integer("unit_cost").notNull(),
   subtotal: integer("subtotal").notNull(),

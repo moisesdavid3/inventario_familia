@@ -9,6 +9,8 @@
 export interface PurchaseItem {
   productId: number;
   productName: string;
+  /** Código del producto al momento de la compra */
+  productCode?: string | null;
   quantity: number;
   unitCost: number;
   subtotal: number;

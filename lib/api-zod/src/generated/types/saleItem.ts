@@ -9,6 +9,8 @@
 export interface SaleItem {
   productId: number;
   productName: string;
+  /** Código del producto al momento de la venta */
+  productCode?: string | null;
   quantity: number;
   unitPrice: number;
   unitCost: number;

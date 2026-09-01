@@ -9,6 +9,8 @@
 export interface Product {
   id: number;
   name: string;
+  /** Código visible del producto (ej. P-001) */
+  code?: string | null;
   supplier?: string;
   /** ID del proveedor normalizado */
   supplierId?: number | null;
