@@ -1108,7 +1108,7 @@ function CarteraPage() {
                   <tr key={i} className="border-b last:border-0 hover:bg-[hsl(var(--muted)/.3)]" data-testid={`cartera-client-${i}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-xs font-bold text-[hsl(var(--primary))]">{g.name.charAt(0).toUpperCase()}</span>
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] px-2 font-mono-app text-xs font-bold text-[hsl(var(--primary))]">{g.code || g.name.charAt(0).toUpperCase()}</span>
                         <span className="font-semibold">{g.name}</span>
                       </div>
                     </td>
@@ -1137,9 +1137,9 @@ function CarteraPage() {
               {clientGroups.map((g, i) => (
                 <div key={i} className="p-4 space-y-2.5" data-testid={`cartera-client-${i}`}>
                   <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-sm font-bold text-[hsl(var(--primary))]">{g.name.charAt(0).toUpperCase()}</span>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] px-2.5 font-mono-app text-xs font-bold text-[hsl(var(--primary))]">{g.code || g.name.charAt(0).toUpperCase()}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate">{g.code ? <span className="mr-1 font-mono-app text-xs font-bold text-[hsl(var(--primary))]">{g.code}</span> : null}{g.name}</p>
+                      <p className="font-semibold truncate">{g.name}</p>
                       {g.phone && <p className="text-xs text-[hsl(var(--muted-foreground))]">{g.phone}</p>}
                     </div>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${g.isPaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
@@ -1646,8 +1646,8 @@ function ClientsPage() {
                 <tr key={c.id} className="border-b last:border-0 hover:bg-[hsl(var(--muted)/.3)]" data-testid={`client-row-${c.id}`}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] text-xs font-bold text-[hsl(var(--primary))]">{c.name.charAt(0).toUpperCase()}</span>
-                      <span className="font-semibold">{c.code ? <span className="mr-1 font-mono-app text-xs font-bold text-[hsl(var(--primary))] sm:hidden">{c.code}</span> : null}{c.name}</span>
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--secondary))] px-2 font-mono-app text-xs font-bold text-[hsl(var(--primary))]">{c.code || c.name.charAt(0).toUpperCase()}</span>
+                      <span className="font-semibold">{c.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 font-mono-app text-[hsl(var(--primary))] hidden sm:table-cell">{c.code || '—'}</td>
