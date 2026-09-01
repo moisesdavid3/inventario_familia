@@ -8,5 +8,7 @@
 
 export interface SupplierSummary {
   id: number | null;
+  /** Código visible del proveedor (ej. PRV-001) */
+  code: string | null;
   name: string;
 }

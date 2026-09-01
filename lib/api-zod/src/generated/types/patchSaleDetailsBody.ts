@@ -9,5 +9,6 @@
 export type PatchSaleDetailsBody = {
   paymentMethod?: string | null;
   notes?: string | null;
+  /** Marca si el mensajero ya recibió el pago del domicilio */
   deliveryPaid?: boolean;
 };

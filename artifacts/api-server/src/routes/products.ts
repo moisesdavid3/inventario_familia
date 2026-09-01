@@ -21,6 +21,7 @@ import {
   isOwner,
   listAllProducts,
   productResponse,
+  resolveSupplier,
   resolveUserIdByEmail,
   TERE_EMAIL,
 } from "../lib/inventory-service";
@@ -44,12 +45,15 @@ router.post("/products", async (req, res): Promise<void> => {
   const userId = isOwner(req.userEmail)
     ? ((await resolveUserIdByEmail(TERE_EMAIL)) ?? req.userId!)
     : req.userId!;
+  const supplierName = parsed.data.supplier?.trim() || null;
+  const supplierId = await resolveSupplier(req.companyId!, supplierName);
   const [product] = await getDb().transaction(async (tx) => {
     const [created] = await tx.insert(productsTable).values({
       companyId: req.companyId!,
       userId,
       name: parsed.data.name.trim(),
-      supplier: parsed.data.supplier?.trim() || null,
+      supplier: supplierName,
+      supplierId,
       category: parsed.data.category?.trim() || null,
       content: parsed.data.content?.trim() || null,
       description: parsed.data.description?.trim() || null,
@@ -81,31 +85,41 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     return;
   }
   const { stock: nextStock, ...rest } = parsed.data;
+  const [current] = await getDb().select().from(productsTable)
+    .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)));
+  if (!current) {
+    res.status(404).json({ error: "No encontramos ese producto." });
+    return;
+  }
+  const supplierName = rest.supplier !== undefined
+    ? rest.supplier?.trim() || null
+    : current.supplier ?? null;
+  const supplierId = rest.supplier !== undefined
+    ? await resolveSupplier(req.companyId!, supplierName)
+    : current.supplierId;
   const updated = await getDb().transaction(async (tx) => {
-    const [product] = await tx.select().from(productsTable)
-      .where(and(eq(productsTable.id, params.data.id), eq(productsTable.companyId, req.companyId!)));
-    if (!product) return null;
     const [row] = await tx.update(productsTable)
       .set({
         ...rest,
         ...(nextStock !== undefined ? { stock: nextStock } : {}),
         name: rest.name?.trim(),
-        supplier: rest.supplier?.trim() || null,
+        supplier: supplierName,
+        supplierId,
         category: rest.category?.trim() || null,
         content: rest.content?.trim() || null,
         description: rest.description?.trim() || null,
         updatedAt: new Date(),
       })
-      .where(eq(productsTable.id, product.id))
+      .where(and(eq(productsTable.id, current.id), eq(productsTable.companyId, req.companyId!)))
       .returning();
-    if (nextStock !== undefined && nextStock !== product.stock) {
+    if (nextStock !== undefined && nextStock !== current.stock) {
       await tx.insert(inventoryMovementsTable).values({
         companyId: req.companyId!,
-        userId: product.userId,
-        productId: product.id,
+        userId: current.userId,
+        productId: current.id,
         type: "ajuste",
-        quantity: nextStock - product.stock,
-        stockBefore: product.stock,
+        quantity: nextStock - current.stock,
+        stockBefore: current.stock,
         stockAfter: nextStock,
         note: "Ajuste manual de existencia",
       });

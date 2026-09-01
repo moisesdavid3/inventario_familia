@@ -910,9 +910,13 @@ components:
         id:
           type: number
           nullable: true
+        code:
+          type: string
+          nullable: true
+          description: Código visible del proveedor (ej. PRV-001)
         name:
           type: string
-      required: [id, name]
+      required: [id, code, name]
     SupplierInput:
       type: object
       properties:
@@ -946,6 +950,10 @@ components:
           type: string
         supplier:
           type: string
+        supplierId:
+          type: number
+          nullable: true
+          description: ID del proveedor normalizado
         category:
           type: string
         content:
@@ -1320,6 +1328,10 @@ components:
           format: date-time
         supplier:
           type: ["string", "null"]
+        supplierId:
+          type: number
+          nullable: true
+          description: ID del proveedor normalizado
         invoiceNumber:
           type: ["string", "null"]
         total:

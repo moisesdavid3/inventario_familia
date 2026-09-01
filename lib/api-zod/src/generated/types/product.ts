@@ -10,6 +10,8 @@ export interface Product {
   id: number;
   name: string;
   supplier?: string;
+  /** ID del proveedor normalizado */
+  supplierId?: number | null;
   category?: string;
   content?: string;
   description?: string;

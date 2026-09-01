@@ -38,6 +38,8 @@ export interface Company {
 
 export interface SupplierSummary {
   id: number | null;
+  /** Código visible del proveedor (ej. PRV-001) */
+  code: string | null;
   name: string;
 }
 
@@ -62,6 +64,8 @@ export interface Product {
   id: number;
   name: string;
   supplier?: string;
+  /** ID del proveedor normalizado */
+  supplierId?: number | null;
   category?: string;
   content?: string;
   description?: string;
@@ -311,6 +315,8 @@ export interface Purchase {
   date: string;
   /** @nullable */
   supplier?: string | null;
+  /** ID del proveedor normalizado */
+  supplierId?: number | null;
   /** @nullable */
   invoiceNumber?: string | null;
   total: number;
@@ -397,8 +403,10 @@ export interface PaymentActivity {
   /** @nullable */
   note?: string | null;
   date: string;
-  /** Nombre del cliente que realizó el abono */
-  /** @nullable */
+  /**
+     * Nombre del cliente que realizó el abono
+     * @nullable
+     */
   clientName?: string | null;
 }
 
@@ -462,6 +470,7 @@ export const ListSalesScope = {
 export type PatchSaleDetailsBody = {
   paymentMethod?: string | null;
   notes?: string | null;
+  /** Marca si el mensajero ya recibió el pago del domicilio */
   deliveryPaid?: boolean;
 };
 

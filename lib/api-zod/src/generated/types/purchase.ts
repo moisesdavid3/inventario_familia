@@ -12,6 +12,8 @@ export interface Purchase {
   date: Date;
   /** @nullable */
   supplier?: string | null;
+  /** ID del proveedor normalizado */
+  supplierId?: number | null;
   /** @nullable */
   invoiceNumber?: string | null;
   total: number;

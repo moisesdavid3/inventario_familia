@@ -18,7 +18,9 @@ export interface PaymentActivity {
   /** @nullable */
   note?: string | null;
   date: Date;
-  /** Nombre del cliente que realizó el abono */
-  /** @nullable */
+  /**
+     * Nombre del cliente que realizó el abono
+     * @nullable
+     */
   clientName?: string | null;
 }

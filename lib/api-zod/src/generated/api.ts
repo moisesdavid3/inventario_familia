@@ -36,6 +36,7 @@ export const ListCompaniesResponse = zod.array(ListCompaniesResponseItem)
  */
 export const ListSuppliersResponseItem = zod.object({
   "id": zod.number().nullable(),
+  "code": zod.string().nullable().describe('Código visible del proveedor (ej. PRV-001)'),
   "name": zod.string()
 })
 export const ListSuppliersResponse = zod.array(ListSuppliersResponseItem)
@@ -53,6 +54,7 @@ export const CreateSupplierBody = zod.object({
 
 export const CreateSupplierResponse = zod.object({
   "id": zod.number().nullable(),
+  "code": zod.string().nullable().describe('Código visible del proveedor (ej. PRV-001)'),
   "name": zod.string()
 })
 
@@ -71,6 +73,7 @@ export const UpdateSupplierBody = zod.object({
 
 export const UpdateSupplierResponse = zod.object({
   "id": zod.number().nullable(),
+  "code": zod.string().nullable().describe('Código visible del proveedor (ej. PRV-001)'),
   "name": zod.string()
 })
 
@@ -175,6 +178,7 @@ export const ListProductsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "supplier": zod.string().optional(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -219,6 +223,7 @@ export const CreateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "supplier": zod.string().optional(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -269,6 +274,7 @@ export const UpdateProductResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "supplier": zod.string().optional(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -317,6 +323,7 @@ export const AddInventoryResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "supplier": zod.string().optional(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),
@@ -527,7 +534,7 @@ export const PatchSaleDetailsResponse = zod.object({
   "id": zod.number().optional(),
   "paymentMethod": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "deliveryPaid": zod.boolean().nullish()
+  "deliveryPaid": zod.boolean().optional()
 })
 
 
@@ -610,6 +617,7 @@ export const ListPurchasesResponseItem = zod.object({
   "id": zod.number(),
   "date": zod.coerce.date(),
   "supplier": zod.string().nullish(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "invoiceNumber": zod.string().nullish(),
   "total": zod.number(),
   "totalItems": zod.number(),
@@ -649,6 +657,7 @@ export const CreatePurchaseResponse = zod.object({
   "id": zod.number(),
   "date": zod.coerce.date(),
   "supplier": zod.string().nullish(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "invoiceNumber": zod.string().nullish(),
   "total": zod.number(),
   "totalItems": zod.number(),
@@ -691,6 +700,7 @@ export const ImportPurchasesResponse = zod.object({
   "id": zod.number(),
   "date": zod.coerce.date(),
   "supplier": zod.string().nullish(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "invoiceNumber": zod.string().nullish(),
   "total": zod.number(),
   "totalItems": zod.number(),
@@ -719,6 +729,7 @@ export const GetPurchaseResponse = zod.object({
   "id": zod.number(),
   "date": zod.coerce.date(),
   "supplier": zod.string().nullish(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "invoiceNumber": zod.string().nullish(),
   "total": zod.number(),
   "totalItems": zod.number(),
@@ -759,6 +770,7 @@ export const GetInventoryReportResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "supplier": zod.string().optional(),
+  "supplierId": zod.number().nullish().describe('ID del proveedor normalizado'),
   "category": zod.string().optional(),
   "content": zod.string().optional(),
   "description": zod.string().optional(),

@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
+import { nextSupplierCode } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/suppliers", requireAuth, requireCompany);
@@ -25,7 +26,7 @@ router.get("/suppliers", async (req, res): Promise<void> => {
   const db = getDb();
   const [tableRows, productRows] = await Promise.all([
     db
-      .select({ id: suppliersTable.id, name: suppliersTable.name })
+      .select({ id: suppliersTable.id, code: suppliersTable.code, name: suppliersTable.name })
       .from(suppliersTable)
       .where(eq(suppliersTable.companyId, companyId))
       .orderBy(asc(suppliersTable.name)),
@@ -34,17 +35,17 @@ router.get("/suppliers", async (req, res): Promise<void> => {
       .from(productsTable)
       .where(and(eq(productsTable.companyId, companyId), ne(productsTable.supplier, ""))),
   ]);
-  const productMap = new Map<string, number | null>();
+  const productMap = new Map<string, { id: number | null; code: string | null }>();
   for (const r of productRows) {
     const name = r.name ? normalize(r.name) : "";
-    if (name) productMap.set(name, null);
+    if (name) productMap.set(name, { id: null, code: null });
   }
   for (const r of tableRows) {
     const name = normalize(r.name);
-    if (name) productMap.set(name, r.id);
+    if (name) productMap.set(name, { id: r.id, code: r.code });
   }
   const result = [...productMap.entries()]
-    .map(([name, id]) => ({ id, name }))
+    .map(([name, v]) => ({ id: v.id, code: v.code, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
   res.json(ListSuppliersResponse.parse(result));
 });
@@ -65,11 +66,12 @@ router.post("/suppliers", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Ese proveedor ya existe." });
     return;
   }
+  const code = await nextSupplierCode(req.companyId!);
   const [created] = await db
     .insert(suppliersTable)
-    .values({ companyId: req.companyId!, name })
+    .values({ companyId: req.companyId!, name, code })
     .returning();
-  res.status(201).json(CreateSupplierResponse.parse({ id: created.id, name: created.name }));
+  res.status(201).json(CreateSupplierResponse.parse({ id: created.id, code: created.code, name: created.name }));
 });
 
 router.patch("/suppliers", async (req, res): Promise<void> => {
@@ -96,23 +98,31 @@ router.patch("/suppliers", async (req, res): Promise<void> => {
     .select({ id: suppliersTable.id })
     .from(suppliersTable)
     .where(and(eq(suppliersTable.companyId, companyId), eq(suppliersTable.name, oldName)));
-  if (sourceSup) {
-    await db
-      .update(suppliersTable)
-      .set({ name: newName })
-      .where(and(eq(suppliersTable.id, sourceSup.id), eq(suppliersTable.companyId, companyId)));
-  }
+  const [destSup] = sourceSup
+    ? []
+    : await db
+        .select({ id: suppliersTable.id })
+        .from(suppliersTable)
+        .where(and(eq(suppliersTable.companyId, companyId), eq(suppliersTable.name, newName)));
+  const targetId = sourceSup?.id ?? destSup?.id ?? null;
 
   await db
     .update(productsTable)
-    .set({ supplier: newName })
+    .set({ supplier: newName, supplierId: targetId })
     .where(and(eq(productsTable.companyId, companyId), eq(productsTable.supplier, oldName)));
 
+  if (targetId) {
+    await db
+      .update(suppliersTable)
+      .set({ name: newName })
+      .where(and(eq(suppliersTable.id, targetId), eq(suppliersTable.companyId, companyId)));
+  }
+
   const [row] = await db
-    .select({ id: suppliersTable.id })
+    .select({ id: suppliersTable.id, code: suppliersTable.code })
     .from(suppliersTable)
     .where(and(eq(suppliersTable.companyId, companyId), eq(suppliersTable.name, newName)));
-  res.json(UpdateSupplierResponse.parse({ id: row?.id ?? null, name: newName }));
+  res.json(UpdateSupplierResponse.parse({ id: row?.id ?? null, code: row?.code ?? null, name: newName }));
 });
 
 router.delete("/suppliers", async (req, res): Promise<void> => {
@@ -137,7 +147,7 @@ router.delete("/suppliers", async (req, res): Promise<void> => {
 
   const updated = await db
     .update(productsTable)
-    .set({ supplier: "" })
+    .set({ supplier: "", supplierId: null })
     .where(and(eq(productsTable.companyId, companyId), eq(productsTable.supplier, name)))
     .returning({ id: productsTable.id });
 

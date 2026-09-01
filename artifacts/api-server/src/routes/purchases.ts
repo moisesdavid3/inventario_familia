@@ -12,7 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
-import { dateRangeForPeriod, purchaseResponse, purchaseWhere } from "../lib/inventory-service";
+import { dateRangeForPeriod, purchaseResponse, purchaseWhere, resolveSupplier } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/purchases", requireAuth, requireCompany);
@@ -40,6 +40,8 @@ router.post("/purchases", async (req, res): Promise<void> => {
     return;
   }
   const userId = req.userId!;
+  const supplierName = parsed.data.supplier?.trim() || null;
+  const supplierId = await resolveSupplier(req.companyId!, supplierName);
   const result = await getDb().transaction(async (tx) => {
     const products = [];
     for (const item of parsed.data.items) {
@@ -61,7 +63,8 @@ router.post("/purchases", async (req, res): Promise<void> => {
     const [purchase] = await tx.insert(purchasesTable).values({
       companyId: req.companyId!,
       userId,
-      supplier: parsed.data.supplier?.trim() || null,
+      supplier: supplierName,
+      supplierId,
       invoiceNumber: parsed.data.invoiceNumber?.trim() || null,
       purchaseDate: parsed.data.purchaseDate ? new Date(parsed.data.purchaseDate) : new Date(),
       total,
@@ -102,6 +105,8 @@ router.post("/purchases/import", async (req, res): Promise<void> => {
   }
   const userId = req.userId!;
   const companyId = req.companyId!;
+  const supplierName = parsed.data.supplier?.trim() || null;
+  const supplierId = await resolveSupplier(companyId, supplierName);
 
   const existing = await getDb().select().from(productsTable).where(eq(productsTable.companyId, companyId));
   const byName = new Map<string, typeof productsTable.$inferSelect>();
@@ -149,7 +154,8 @@ router.post("/purchases/import", async (req, res): Promise<void> => {
     const [purchase] = await tx.insert(purchasesTable).values({
       companyId,
       userId,
-      supplier: parsed.data.supplier?.trim() || null,
+      supplier: supplierName,
+      supplierId,
       invoiceNumber: parsed.data.invoiceNumber?.trim() || null,
       purchaseDate: parsed.data.purchaseDate ? new Date(parsed.data.purchaseDate) : new Date(),
       total,

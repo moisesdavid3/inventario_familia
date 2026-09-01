@@ -11,6 +11,7 @@ import {
   purchasesTable,
   saleItemsTable,
   salesTable,
+  suppliersTable,
 } from "@workspace/db";
 
 export type DateRange = { from?: Date; to?: Date };
@@ -47,6 +48,35 @@ export async function resolveUserIdByEmail(email: string): Promise<string | unde
   }
 }
 
+export async function nextSupplierCode(companyId: number): Promise<string> {
+  const rows = await getDb()
+    .select({ code: suppliersTable.code })
+    .from(suppliersTable)
+    .where(eq(suppliersTable.companyId, companyId));
+  let max = 0;
+  for (const { code } of rows) {
+    const match = /^PRV-(\d+)$/.exec(code);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `PRV-${String(max + 1).padStart(3, "0")}`;
+}
+
+export async function resolveSupplier(companyId: number, name?: string | null): Promise<number | null> {
+  const trimmed = name?.trim();
+  if (!trimmed) return null;
+  const [existing] = await getDb()
+    .select({ id: suppliersTable.id })
+    .from(suppliersTable)
+    .where(and(eq(suppliersTable.companyId, companyId), eq(suppliersTable.name, trimmed)));
+  if (existing) return existing.id;
+  const code = await nextSupplierCode(companyId);
+  const [created] = await getDb()
+    .insert(suppliersTable)
+    .values({ companyId, name: trimmed, code })
+    .returning({ id: suppliersTable.id });
+  return created?.id ?? null;
+}
+
 export async function listAllProducts(companyId: number) {
   return getDb().select().from(productsTable)
     .where(eq(productsTable.companyId, companyId));
@@ -76,6 +106,7 @@ export function productResponse(product: typeof productsTable.$inferSelect) {
     id: product.id,
     name: product.name,
     supplier: product.supplier ?? undefined,
+    supplierId: product.supplierId ?? null,
     category: product.category ?? undefined,
     content: product.content ?? undefined,
     description: product.description ?? undefined,
@@ -199,6 +230,7 @@ export async function purchaseResponse(purchase: typeof purchasesTable.$inferSel
     id: purchase.id,
     date: purchase.purchaseDate,
     supplier: purchase.supplier ?? null,
+    supplierId: purchase.supplierId ?? null,
     invoiceNumber: purchase.invoiceNumber ?? null,
     total: purchase.total,
     totalItems: purchase.totalItems,

@@ -7,6 +7,7 @@ export const purchasesTable = pgTable("inventory_purchases", {
   companyId: integer("company_id").notNull().default(1),
   userId: text("user_id").notNull(),
   supplier: text("supplier"),
+  supplierId: integer("supplier_id"),
   invoiceNumber: text("invoice_number"),
   purchaseDate: timestamp("purchase_date", { withTimezone: true }).notNull().defaultNow(),
   total: integer("total").notNull(),
