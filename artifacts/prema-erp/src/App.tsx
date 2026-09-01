@@ -785,9 +785,24 @@ function CarteraPage() {
   const [clientsModal, setClientsModal] = useState(false);
   const [sortKey, setSortKey] = useState<'name' | 'total' | 'paid' | 'remaining' | 'lastActivity'>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [monthFilter, setMonthFilter] = useState('');
 
-  const creditSales = useMemo(() => (sales.data || []).filter((s) => s.paymentMethod === 'Crédito'), [sales.data]);
-  const allManualCredits = manualCredits.data || [];
+  const monthOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('es-CO', { year: 'numeric', month: 'long' });
+      opts.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+    }
+    return opts;
+  }, []);
+
+  const inMonth = (iso: string, yyyyMM: string) => iso.slice(0, 7) === yyyyMM;
+
+  const creditSales = useMemo(() => (sales.data || []).filter((s) => s.paymentMethod === 'Crédito' && (!monthFilter || inMonth(s.date, monthFilter))), [sales.data, monthFilter]);
+  const allManualCredits = useMemo(() => (manualCredits.data || []).filter((mc) => !monthFilter || inMonth(mc.createdAt, monthFilter)), [manualCredits.data, monthFilter]);
 
   const lastPayments = useListLastCreditPayments();
 
@@ -986,6 +1001,16 @@ function CarteraPage() {
           </span>
         </label>
         <div className="grid gap-1.5 sm:w-44">
+          <span className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Mes</span>
+          <label className="relative">
+            <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} aria-label="Filtrar por mes" className="h-11 w-full appearance-none rounded-xl border bg-[hsl(var(--card))] pl-4 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-month-cartera">
+              <option value="">Todos</option>
+              {monthOptions.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+            <ChevronDown size={16} className="pointer-events-none absolute right-3 top-3.5 text-[hsl(var(--muted-foreground))]" />
+          </label>
+        </div>
+        <div className="grid gap-1.5 sm:w-44">
           <span className="text-xs font-bold uppercase tracking-wider text-[hsl(var(--muted-foreground))]">Estado</span>
           <label className="relative">
             <select value={status} onChange={(e) => setStatus(e.target.value as 'all' | 'pending' | 'paid')} className="h-11 w-full appearance-none rounded-xl border bg-[hsl(var(--card))] pl-4 pr-10 text-sm font-semibold outline-none focus:border-[hsl(var(--primary))]" data-testid="select-status-credit">
@@ -1032,7 +1057,7 @@ function CarteraPage() {
       ) : (sales.isError || manualCredits.isError) ? (
         <StatusMessage text="No pudimos cargar la cartera." onRetry={() => { sales.refetch(); manualCredits.refetch(); }} />
       ) : clientGroups.length === 0 ? (
-        <StatusMessage type="empty" text={search || status !== 'all' ? 'No encontramos créditos con esos filtros.' : 'No hay créditos registrados.'} />
+        <StatusMessage type="empty" text={search || status !== 'all' || monthFilter ? 'No encontramos créditos con esos filtros.' : 'No hay créditos registrados.'} />
       ) : (
         <>
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" data-testid="kpi-grid-cartera">
