@@ -1,6 +1,7 @@
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import {
   appSettingsTable,
+  clientsTable,
   creditPaymentsTable,
   getDb,
   inventoryMovementsTable,
@@ -48,11 +49,10 @@ export async function resolveUserIdByEmail(email: string): Promise<string | unde
   }
 }
 
-export async function nextSupplierCode(companyId: number): Promise<string> {
+export async function nextSupplierCode(): Promise<string> {
   const rows = await getDb()
     .select({ code: suppliersTable.code })
-    .from(suppliersTable)
-    .where(eq(suppliersTable.companyId, companyId));
+    .from(suppliersTable);
   let max = 0;
   for (const { code } of rows) {
     const match = /^PRV-(\d+)$/.exec(code);
@@ -61,21 +61,55 @@ export async function nextSupplierCode(companyId: number): Promise<string> {
   return `PRV-${String(max + 1).padStart(3, "0")}`;
 }
 
+export function productCodePrefix(companyId: number): string {
+  return companyId === 1 ? 'T' : 'P';
+}
+
 export async function maxProductCodeNumber(companyId: number): Promise<number> {
+  const prefix = productCodePrefix(companyId);
   const rows = await getDb()
     .select({ code: productsTable.code })
     .from(productsTable)
     .where(eq(productsTable.companyId, companyId));
   let max = 0;
   for (const { code } of rows) {
-    const match = /^P-(\d+)$/.exec(code);
+    const match = new RegExp(`^${prefix}-(\\d+)$`).exec(code);
     if (match) max = Math.max(max, Number(match[1]));
   }
   return max;
 }
 
 export async function nextProductCode(companyId: number): Promise<string> {
-  return `P-${String((await maxProductCodeNumber(companyId)) + 1).padStart(3, "0")}`;
+  const prefix = productCodePrefix(companyId);
+  return `${prefix}-${String((await maxProductCodeNumber(companyId)) + 1).padStart(3, "0")}`;
+}
+
+export async function nextClientCode(): Promise<string> {
+  const rows = await getDb()
+    .select({ code: clientsTable.code })
+    .from(clientsTable);
+  let max = 0;
+  for (const { code } of rows) {
+    const match = /^CL-(\d+)$/.exec(code);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `CL-${String(max + 1).padStart(3, "0")}`;
+}
+
+export async function resolveClient(companyId: number, name: string, userId: string, phone?: string | null): Promise<typeof clientsTable.$inferSelect | null> {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  const [existing] = await getDb()
+    .select()
+    .from(clientsTable)
+    .where(and(eq(clientsTable.companyId, companyId), eq(clientsTable.name, trimmed)));
+  if (existing) return existing;
+  const code = await nextClientCode();
+  const [created] = await getDb()
+    .insert(clientsTable)
+    .values({ companyId, userId, name: trimmed, code, phone: phone?.trim() || null })
+    .returning();
+  return created ?? null;
 }
 
 export async function resolveSupplier(companyId: number, name?: string | null): Promise<number | null> {
@@ -86,7 +120,7 @@ export async function resolveSupplier(companyId: number, name?: string | null): 
     .from(suppliersTable)
     .where(and(eq(suppliersTable.companyId, companyId), eq(suppliersTable.name, trimmed)));
   if (existing) return existing.id;
-  const code = await nextSupplierCode(companyId);
+  const code = await nextSupplierCode();
   const [created] = await getDb()
     .insert(suppliersTable)
     .values({ companyId, name: trimmed, code })
@@ -284,6 +318,7 @@ export function toSaleResponse(sale: typeof salesTable.$inferSelect, items: type
     clientName: sale.clientName,
     clientPhone: sale.clientPhone,
     clientId: sale.clientId ?? null,
+    clientCode: sale.clientCode ?? null,
     creditPaid,
     companyId: sale.companyId,
     isDelivery: sale.isDelivery,

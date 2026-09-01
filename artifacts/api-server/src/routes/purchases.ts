@@ -12,7 +12,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
-import { dateRangeForPeriod, maxProductCodeNumber, purchaseResponse, purchaseWhere, resolveSupplier } from "../lib/inventory-service";
+import { dateRangeForPeriod, maxProductCodeNumber, productCodePrefix, purchaseResponse, purchaseWhere, resolveSupplier } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/purchases", requireAuth, requireCompany);
@@ -131,7 +131,7 @@ router.post("/purchases/import", async (req, res): Promise<void> => {
           companyId,
           userId,
           name,
-          code: `P-${String(maxCodeNumber).padStart(3, "0")}`,
+          code: `${productCodePrefix(companyId)}-${String(maxCodeNumber).padStart(3, "0")}`,
           cost: row.unitCost,
           salePrice: 0,
           stock: 0,

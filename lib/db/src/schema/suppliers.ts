@@ -11,7 +11,7 @@ export const suppliersTable = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   },
   (t) => [
-    uniqueIndex("inventory_suppliers_company_code_idx").on(t.companyId, t.code),
+    uniqueIndex("inventory_suppliers_code_idx").on(t.code),
     uniqueIndex("inventory_suppliers_company_name_idx").on(t.companyId, t.name),
   ],
 ).enableRLS();

@@ -1148,6 +1148,9 @@ components:
         clientId:
           type: ["number", "null"]
           description: ID del cliente asociado
+        clientCode:
+          type: ["string", "null"]
+          description: Código del cliente al momento de la venta
         creditPaid:
           type: number
           description: Total abonado hasta ahora (solo aplica a ventas a crédito)
@@ -1222,6 +1225,9 @@ components:
           type: ["string", "null"]
         clientId:
           type: ["number", "null"]
+        clientCode:
+          type: ["string", "null"]
+          description: Código del cliente al momento del crédito
         total:
           type: number
         paid:
@@ -1261,6 +1267,10 @@ components:
           type: number
         name:
           type: string
+        code:
+          type: string
+          nullable: true
+          description: Código visible del cliente (ej. CL-001)
         phone:
           type: ["string", "null"]
         address:

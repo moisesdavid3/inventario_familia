@@ -66,7 +66,7 @@ router.post("/suppliers", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Ese proveedor ya existe." });
     return;
   }
-  const code = await nextSupplierCode(req.companyId!);
+  const code = await nextSupplierCode();
   const [created] = await db
     .insert(suppliersTable)
     .values({ companyId: req.companyId!, name, code })

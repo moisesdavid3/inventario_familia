@@ -1,5 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
-import { boolean, index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 
 export const clientsTable = pgTable("inventory_clients", {
@@ -7,12 +7,14 @@ export const clientsTable = pgTable("inventory_clients", {
   companyId: integer("company_id").notNull().default(1),
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
+  code: text("code").notNull().default(""),
   phone: text("phone"),
   address: text("address"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index("inventory_clients_company_idx").on(t.companyId),
+  uniqueIndex("inventory_clients_code_idx").on(t.code),
 ]).enableRLS();
 
 export const salesTable = pgTable("inventory_sales", {
@@ -28,6 +30,7 @@ export const salesTable = pgTable("inventory_sales", {
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
   clientId: integer("client_id"),
+  clientCode: text("client_code"),
   isDelivery: boolean("is_delivery").notNull().default(false),
   deliveryCost: integer("delivery_cost").notNull().default(0),
   deliveryPaid: boolean("delivery_paid").notNull().default(false),
@@ -58,6 +61,7 @@ export const manualCreditsTable = pgTable("inventory_manual_credits", {
   clientName: text("client_name"),
   clientPhone: text("client_phone"),
   clientId: integer("client_id"),
+  clientCode: text("client_code"),
   total: integer("total").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

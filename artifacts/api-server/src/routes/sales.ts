@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
-import { companiesTable, creditPaymentsTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
+import { clientsTable, companiesTable, creditPaymentsTable, getDb, inventoryMovementsTable, productsTable, saleItemsTable, salesTable } from "@workspace/db";
 import {
   CreateCreditPaymentBody,
   CreateCreditPaymentParams,
@@ -16,7 +16,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
-import { dateRangeForPeriod, ensureSeeded, endOfDayBogota, saleResponse, saleWhere, startOfDayBogota, toSaleResponse } from "../lib/inventory-service";
+import { dateRangeForPeriod, ensureSeeded, endOfDayBogota, resolveClient, saleResponse, saleWhere, startOfDayBogota, toSaleResponse } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/sales", requireAuth, requireCompany);
@@ -84,6 +84,18 @@ router.post("/sales", async (req, res): Promise<void> => {
   const [company] = await getDb().select().from(companiesTable).where(eq(companiesTable.id, req.companyId!));
   const allowNegative = !!company?.allowNegativeStock;
 
+  const clientName = parsed.data.clientName?.trim() || null;
+  const clientPhone = parsed.data.clientPhone?.trim() || null;
+  let clientId = parsed.data.clientId ?? null;
+  let clientCode: string | null = null;
+  if (clientName) {
+    const client = clientId
+      ? (await getDb().select().from(clientsTable).where(eq(clientsTable.id, clientId)))[0] ?? null
+      : await resolveClient(req.companyId!, clientName, userId, clientPhone);
+    clientId = client?.id ?? clientId;
+    clientCode = client?.code ?? null;
+  }
+
   const result = await getDb().transaction(async (tx) => {
     const products = [];
     for (const [productId, lineReq] of requested.entries()) {
@@ -128,9 +140,10 @@ router.post("/sales", async (req, res): Promise<void> => {
       estimatedProfit,
       paymentMethod: parsed.data.paymentMethod?.trim() || null,
       notes: parsed.data.notes?.trim() || null,
-      clientName: parsed.data.clientName?.trim() || null,
-      clientPhone: parsed.data.clientPhone?.trim() || null,
-      clientId: parsed.data.clientId ?? null,
+      clientName,
+      clientPhone,
+      clientId,
+      clientCode,
       isDelivery,
       deliveryCost,
       deliveryPaid: isDelivery ? (parsed.data.deliveryPaid === true) : false,

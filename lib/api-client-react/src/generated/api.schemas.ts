@@ -196,6 +196,11 @@ export interface Sale {
      * @nullable
      */
   clientId?: number | null;
+  /**
+     * Código del cliente al momento de la venta
+     * @nullable
+     */
+  clientCode?: string | null;
   /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
   creditPaid: number;
   /** ID de la empresa */
@@ -245,6 +250,11 @@ export interface ManualCredit {
   clientPhone?: string | null;
   /** @nullable */
   clientId?: number | null;
+  /**
+     * Código del cliente al momento del crédito
+     * @nullable
+     */
+  clientCode?: string | null;
   total: number;
   paid: number;
   /** @nullable */
@@ -272,6 +282,8 @@ export interface ManualCreditInput {
 export interface Client {
   id: number;
   name: string;
+  /** Código visible del cliente (ej. CL-001) */
+  code?: string | null;
   /** @nullable */
   phone?: string | null;
   /** @nullable */

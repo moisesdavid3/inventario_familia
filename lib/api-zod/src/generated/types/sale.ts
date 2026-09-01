@@ -34,6 +34,11 @@ export interface Sale {
      * @nullable
      */
   clientId?: number | null;
+  /**
+     * Código del cliente al momento de la venta
+     * @nullable
+     */
+  clientCode?: string | null;
   /** Total abonado hasta ahora (solo aplica a ventas a crédito) */
   creditPaid: number;
   /** ID de la empresa */

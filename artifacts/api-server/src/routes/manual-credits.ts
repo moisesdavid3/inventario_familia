@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
-import { creditPaymentsTable, getDb, manualCreditsTable } from "@workspace/db";
+import { creditPaymentsTable, clientsTable, getDb, manualCreditsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
+import { resolveClient } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use(requireAuth, requireCompany);
@@ -13,6 +14,7 @@ function manualCreditResponse(credit: typeof manualCreditsTable.$inferSelect, pa
     clientName: credit.clientName,
     clientPhone: credit.clientPhone,
     clientId: credit.clientId ?? null,
+    clientCode: credit.clientCode ?? null,
     total: credit.total,
     paid,
     notes: credit.notes,
@@ -63,12 +65,24 @@ router.post("/manual-credits", async (req, res): Promise<void> => {
     res.status(400).json({ error: "El monto total debe ser mayor a 0." });
     return;
   }
+  const clientName = typeof body.clientName === "string" && body.clientName.trim() ? body.clientName.trim() : null;
+  const clientPhone = typeof body.clientPhone === "string" && body.clientPhone.trim() ? body.clientPhone.trim() : null;
+  let clientId = typeof body.clientId === "number" ? body.clientId : null;
+  let clientCode: string | null = null;
+  if (clientName) {
+    const client = clientId
+      ? (await getDb().select().from(clientsTable).where(eq(clientsTable.id, clientId)))[0] ?? null
+      : await resolveClient(req.companyId!, clientName, req.userId!, clientPhone);
+    clientId = client?.id ?? clientId;
+    clientCode = client?.code ?? null;
+  }
   const [credit] = await getDb().insert(manualCreditsTable).values({
     companyId: req.companyId!,
     userId: req.userId!,
-    clientName: typeof body.clientName === "string" && body.clientName.trim() ? body.clientName.trim() : null,
-    clientPhone: typeof body.clientPhone === "string" && body.clientPhone.trim() ? body.clientPhone.trim() : null,
-    clientId: typeof body.clientId === "number" ? body.clientId : null,
+    clientName,
+    clientPhone,
+    clientId,
+    clientCode,
     total: Math.round(total),
     notes: typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null,
     createdAt: typeof body.date === "string" && body.date ? new Date(body.date) : undefined,

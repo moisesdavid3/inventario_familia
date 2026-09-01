@@ -9,6 +9,8 @@
 export interface Client {
   id: number;
   name: string;
+  /** Código visible del cliente (ej. CL-001) */
+  code?: string | null;
   /** @nullable */
   phone?: string | null;
   /** @nullable */

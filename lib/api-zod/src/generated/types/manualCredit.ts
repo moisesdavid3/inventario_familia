@@ -14,6 +14,11 @@ export interface ManualCredit {
   clientPhone?: string | null;
   /** @nullable */
   clientId?: number | null;
+  /**
+     * Código del cliente al momento del crédito
+     * @nullable
+     */
+  clientCode?: string | null;
   total: number;
   paid: number;
   /** @nullable */

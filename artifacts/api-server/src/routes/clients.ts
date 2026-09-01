@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { clientsTable, getDb, manualCreditsTable, salesTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireCompany } from "../middlewares/requireCompany";
+import { nextClientCode } from "../lib/inventory-service";
 
 const router: IRouter = Router();
 router.use("/clients", requireAuth, requireCompany);
@@ -11,6 +12,7 @@ function clientResponse(client: typeof clientsTable.$inferSelect) {
   return {
     id: client.id,
     name: client.name,
+    code: client.code || undefined,
     phone: client.phone,
     address: client.address,
     createdAt: client.createdAt,
@@ -31,10 +33,12 @@ router.post("/clients", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Escribe el nombre del cliente." });
     return;
   }
+  const code = await nextClientCode();
   const [client] = await getDb().insert(clientsTable).values({
     companyId: req.companyId!,
     userId: req.userId!,
     name,
+    code,
     phone: typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null,
     address: typeof body.address === "string" && body.address.trim() ? body.address.trim() : null,
   }).returning();
