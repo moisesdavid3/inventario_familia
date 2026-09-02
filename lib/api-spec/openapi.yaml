@@ -703,6 +703,117 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SalesReport"
+  /stockouts:
+    get:
+      operationId: listStockouts
+      tags: [reports]
+      summary: List stockouts (bajas de inventario) for a month
+      parameters:
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Filtro por mes (YYYY-MM); si no se envía, retorna todos
+      responses:
+        "200":
+          description: Stockouts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Stockout"
+    post:
+      operationId: createStockout
+      tags: [reports]
+      summary: Register a stockout session (several products) and deduct stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockoutInput"
+      responses:
+        "201":
+          description: Stockout registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stockout"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /stockouts/{id}:
+    delete:
+      operationId: deleteStockout
+      tags: [reports]
+      summary: Anular una baja completa y devolver el stock
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Stockout deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /stockouts/{id}/items/{itemId}:
+    patch:
+      operationId: updateStockoutItem
+      tags: [reports]
+      summary: Editar un item de una baja (cantidad, costo, motivo, nota)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockoutItemInput"
+      responses:
+        "200":
+          description: Stockout item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockoutItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteStockoutItem
+      tags: [reports]
+      summary: Eliminar un item de una baja y devolver su stock
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Stockout item deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
   /manual-credits:
     get:
       operationId: listManualCredits
@@ -1530,3 +1641,71 @@ components:
           type: ["string", "null"]
           description: Nombre del cliente que realizó el abono
       required: [id, saleId, manualCreditId, amount, date]
+    StockoutItemInput:
+      type: object
+      properties:
+        productId:
+          type: number
+          minimum: 1
+        quantity:
+          type: number
+          minimum: 1
+        unitCost:
+          type: number
+          minimum: 0
+        reason:
+          type: string
+        note:
+          type: string
+      required: [productId, quantity]
+    StockoutInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+          description: Fecha de la baja (editable); por defecto hoy
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StockoutItemInput"
+      required: [items]
+    StockoutItem:
+      type: object
+      properties:
+        id:
+          type: number
+        productId:
+          type: number
+        productName:
+          type: string
+        productCode:
+          type: ["string", "null"]
+          description: Código del producto al momento de la baja
+        quantity:
+          type: number
+        unitCost:
+          type: number
+        reason:
+          type: ["string", "null"]
+        note:
+          type: ["string", "null"]
+      required: [id, productId, productName, quantity, unitCost]
+    Stockout:
+      type: object
+      properties:
+        id:
+          type: number
+        date:
+          type: string
+          format: date-time
+        totalUnits:
+          type: number
+        totalValue:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockoutItem"
+      required: [id, date, totalUnits, totalValue, items]

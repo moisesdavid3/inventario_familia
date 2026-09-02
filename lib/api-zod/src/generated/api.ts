@@ -872,6 +872,126 @@ export const GetSalesReportResponse = zod.object({
 
 
 /**
+ * @summary List stockouts (bajas de inventario) for a month
+ */
+export const ListStockoutsQueryParams = zod.object({
+  "month": zod.coerce.string().optional()
+})
+
+export const ListStockoutsResponseItem = zod.object({
+  "id": zod.number(),
+  "date": zod.coerce.date(),
+  "totalUnits": zod.number(),
+  "totalValue": zod.number(),
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la baja'),
+  "quantity": zod.number(),
+  "unitCost": zod.number(),
+  "reason": zod.string().nullish(),
+  "note": zod.string().nullish()
+}))
+})
+export const ListStockoutsResponse = zod.array(ListStockoutsResponseItem)
+
+
+/**
+ * @summary Register a stockout session (several products) and deduct stock
+ */
+
+
+export const createStockoutBodyItemsItemUnitCostMin = 0;
+
+
+
+
+export const CreateStockoutBody = zod.object({
+  "date": zod.coerce.date().optional().describe('Fecha de la baja (editable); por defecto hoy'),
+  "items": zod.array(zod.object({
+  "productId": zod.number().min(1),
+  "quantity": zod.number().min(1),
+  "unitCost": zod.number().min(createStockoutBodyItemsItemUnitCostMin).optional(),
+  "reason": zod.string().optional(),
+  "note": zod.string().optional()
+})).min(1)
+})
+
+export const CreateStockoutResponse = zod.object({
+  "id": zod.number(),
+  "date": zod.coerce.date(),
+  "totalUnits": zod.number(),
+  "totalValue": zod.number(),
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la baja'),
+  "quantity": zod.number(),
+  "unitCost": zod.number(),
+  "reason": zod.string().nullish(),
+  "note": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Anular una baja completa y devolver el stock
+ */
+export const DeleteStockoutParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteStockoutResponse = zod.void()
+
+
+/**
+ * @summary Editar un item de una baja (cantidad, costo, motivo, nota)
+ */
+export const UpdateStockoutItemParams = zod.object({
+  "id": zod.coerce.number(),
+  "itemId": zod.coerce.number()
+})
+
+
+
+export const updateStockoutItemBodyUnitCostMin = 0;
+
+
+
+export const UpdateStockoutItemBody = zod.object({
+  "productId": zod.number().min(1),
+  "quantity": zod.number().min(1),
+  "unitCost": zod.number().min(updateStockoutItemBodyUnitCostMin).optional(),
+  "reason": zod.string().optional(),
+  "note": zod.string().optional()
+})
+
+export const UpdateStockoutItemResponse = zod.object({
+  "id": zod.number(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "productCode": zod.string().nullish().describe('Código del producto al momento de la baja'),
+  "quantity": zod.number(),
+  "unitCost": zod.number(),
+  "reason": zod.string().nullish(),
+  "note": zod.string().nullish()
+})
+
+
+/**
+ * @summary Eliminar un item de una baja y devolver su stock
+ */
+export const DeleteStockoutItemParams = zod.object({
+  "id": zod.coerce.number(),
+  "itemId": zod.coerce.number()
+})
+
+export const DeleteStockoutItemResponse = zod.void()
+
+
+/**
  * @summary List manual credit entries
  */
 export const listManualCreditsQueryScopeDefault = `company`;

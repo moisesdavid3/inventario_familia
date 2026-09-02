@@ -22,3 +22,4 @@ export * from "./inventory";
 export * from "./purchases";
 export * from "./sales";
 export * from "./suppliers";
+export * from "./stockouts";

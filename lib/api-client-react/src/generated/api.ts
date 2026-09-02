@@ -40,6 +40,7 @@ import type {
   ListManualCreditsParams,
   ListPurchasesParams,
   ListSalesParams,
+  ListStockoutsParams,
   ManualCredit,
   ManualCreditInput,
   NotFoundResponse,
@@ -55,6 +56,10 @@ import type {
   Sale,
   SaleInput,
   SalesReport,
+  Stockout,
+  StockoutInput,
+  StockoutItem,
+  StockoutItemInput,
   SupplierInput,
   SupplierSummary,
   UpdateSupplierInput
@@ -2469,6 +2474,379 @@ export function useGetSalesReport<TData = Awaited<ReturnType<typeof getSalesRepo
 
 
 
+
+export const getListStockoutsUrl = (params?: ListStockoutsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/stockouts?${stringifiedParams}` : `/api/stockouts`
+}
+
+/**
+ * @summary List stockouts (bajas de inventario) for a month
+ */
+export const listStockouts = async (params?: ListStockoutsParams, options?: Parameters<typeof customFetch>[1]): Promise<Stockout[]> => {
+
+  return customFetch<Stockout[]>(getListStockoutsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListStockoutsQueryKey = (params?: ListStockoutsParams,) => {
+    return [
+    `/api/stockouts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListStockoutsQueryOptions = <TData = Awaited<ReturnType<typeof listStockouts>>, TError = ErrorType<unknown>>(params?: ListStockoutsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStockouts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListStockoutsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStockouts>>> = ({ signal }) => listStockouts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStockouts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListStockoutsQueryResult = NonNullable<Awaited<ReturnType<typeof listStockouts>>>
+export type ListStockoutsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List stockouts (bajas de inventario) for a month
+ */
+
+export function useListStockouts<TData = Awaited<ReturnType<typeof listStockouts>>, TError = ErrorType<unknown>>(
+ params?: ListStockoutsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStockouts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListStockoutsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateStockoutUrl = () => {
+
+
+
+
+  return `/api/stockouts`
+}
+
+/**
+ * @summary Register a stockout session (several products) and deduct stock
+ */
+export const createStockout = async (stockoutInput: StockoutInput, options?: Parameters<typeof customFetch>[1]): Promise<Stockout> => {
+
+  return customFetch<Stockout>(getCreateStockoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(stockoutInput)
+  }
+);}
+
+
+
+
+
+export const getCreateStockoutMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStockout>>, TError,{data: BodyType<StockoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createStockout>>, TError,{data: BodyType<StockoutInput>}, TContext> => {
+
+const mutationKey = ['createStockout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createStockout>>, {data: BodyType<StockoutInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createStockout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateStockoutMutationResult = NonNullable<Awaited<ReturnType<typeof createStockout>>>
+    export type CreateStockoutMutationBody = BodyType<StockoutInput>
+    export type CreateStockoutMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Register a stockout session (several products) and deduct stock
+ */
+export const useCreateStockout = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStockout>>, TError,{data: BodyType<StockoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createStockout>>,
+        TError,
+        {data: BodyType<StockoutInput>},
+        TContext
+      > => {
+      return useMutation(getCreateStockoutMutationOptions(options));
+    }
+
+export const getDeleteStockoutUrl = (id: number,) => {
+
+
+
+
+  return `/api/stockouts/${id}`
+}
+
+/**
+ * @summary Anular una baja completa y devolver el stock
+ */
+export const deleteStockout = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteStockoutUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteStockoutMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStockout>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteStockout>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteStockout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteStockout>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteStockout(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteStockoutMutationResult = NonNullable<Awaited<ReturnType<typeof deleteStockout>>>
+
+    export type DeleteStockoutMutationError = ErrorType<NotFoundResponse>
+
+    /**
+ * @summary Anular una baja completa y devolver el stock
+ */
+export const useDeleteStockout = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStockout>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteStockout>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteStockoutMutationOptions(options));
+    }
+
+export const getUpdateStockoutItemUrl = (id: number,
+    itemId: number,) => {
+
+
+
+
+  return `/api/stockouts/${id}/items/${itemId}`
+}
+
+/**
+ * @summary Editar un item de una baja (cantidad, costo, motivo, nota)
+ */
+export const updateStockoutItem = async (id: number,
+    itemId: number,
+    stockoutItemInput: StockoutItemInput, options?: Parameters<typeof customFetch>[1]): Promise<StockoutItem> => {
+
+  return customFetch<StockoutItem>(getUpdateStockoutItemUrl(id,itemId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(stockoutItemInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateStockoutItemMutationOptions = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStockoutItem>>, TError,{id: number;itemId: number;data: BodyType<StockoutItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateStockoutItem>>, TError,{id: number;itemId: number;data: BodyType<StockoutItemInput>}, TContext> => {
+
+const mutationKey = ['updateStockoutItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStockoutItem>>, {id: number;itemId: number;data: BodyType<StockoutItemInput>}> = (props) => {
+          const {id,itemId,data} = props ?? {};
+
+          return  updateStockoutItem(id,itemId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateStockoutItemMutationResult = NonNullable<Awaited<ReturnType<typeof updateStockoutItem>>>
+    export type UpdateStockoutItemMutationBody = BodyType<StockoutItemInput>
+    export type UpdateStockoutItemMutationError = ErrorType<BadRequestResponse | NotFoundResponse>
+
+    /**
+ * @summary Editar un item de una baja (cantidad, costo, motivo, nota)
+ */
+export const useUpdateStockoutItem = <TError = ErrorType<BadRequestResponse | NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStockoutItem>>, TError,{id: number;itemId: number;data: BodyType<StockoutItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateStockoutItem>>,
+        TError,
+        {id: number;itemId: number;data: BodyType<StockoutItemInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateStockoutItemMutationOptions(options));
+    }
+
+export const getDeleteStockoutItemUrl = (id: number,
+    itemId: number,) => {
+
+
+
+
+  return `/api/stockouts/${id}/items/${itemId}`
+}
+
+/**
+ * @summary Eliminar un item de una baja y devolver su stock
+ */
+export const deleteStockoutItem = async (id: number,
+    itemId: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteStockoutItemUrl(id,itemId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteStockoutItemMutationOptions = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStockoutItem>>, TError,{id: number;itemId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteStockoutItem>>, TError,{id: number;itemId: number}, TContext> => {
+
+const mutationKey = ['deleteStockoutItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteStockoutItem>>, {id: number;itemId: number}> = (props) => {
+          const {id,itemId} = props ?? {};
+
+          return  deleteStockoutItem(id,itemId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteStockoutItemMutationResult = NonNullable<Awaited<ReturnType<typeof deleteStockoutItem>>>
+
+    export type DeleteStockoutItemMutationError = ErrorType<NotFoundResponse>
+
+    /**
+ * @summary Eliminar un item de una baja y devolver su stock
+ */
+export const useDeleteStockoutItem = <TError = ErrorType<NotFoundResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStockoutItem>>, TError,{id: number;itemId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteStockoutItem>>,
+        TError,
+        {id: number;itemId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteStockoutItemMutationOptions(options));
+    }
 
 export const getListManualCreditsUrl = (params?: ListManualCreditsParams,) => {
   const normalizedParams = new URLSearchParams();

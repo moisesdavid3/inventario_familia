@@ -442,6 +442,49 @@ export interface SalesReport {
   lowStockProducts: LowStockProduct[];
 }
 
+export interface StockoutItemInput {
+  /** @minimum 1 */
+  productId: number;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitCost?: number;
+  reason?: string;
+  note?: string;
+}
+
+export interface StockoutInput {
+  /** Fecha de la baja (editable); por defecto hoy */
+  date?: string;
+  /** @minItems 1 */
+  items: StockoutItemInput[];
+}
+
+export interface StockoutItem {
+  id: number;
+  productId: number;
+  productName: string;
+  /**
+     * Código del producto al momento de la baja
+     * @nullable
+     */
+  productCode?: string | null;
+  quantity: number;
+  unitCost: number;
+  /** @nullable */
+  reason?: string | null;
+  /** @nullable */
+  note?: string | null;
+}
+
+export interface Stockout {
+  id: number;
+  date: string;
+  totalUnits: number;
+  totalValue: number;
+  items: StockoutItem[];
+}
+
 /**
  * Invalid request
  */
@@ -545,6 +588,13 @@ export const GetSalesReportPeriod = {
   previousMonth: 'previousMonth',
   all: 'all',
 } as const;
+
+export type ListStockoutsParams = {
+/**
+ * Filtro por mes (YYYY-MM); si no se envía, retorna todos
+ */
+month?: string;
+};
 
 export type ListManualCreditsParams = {
 /**

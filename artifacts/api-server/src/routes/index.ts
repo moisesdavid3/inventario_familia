@@ -8,6 +8,7 @@ import reportsRouter from "./reports";
 import suppliersRouter from "./suppliers";
 import manualCreditsRouter from "./manual-credits";
 import clientsRouter from "./clients";
+import stockoutsRouter from "./stockouts";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(reportsRouter);
 router.use(suppliersRouter);
 router.use(manualCreditsRouter);
 router.use(clientsRouter);
+router.use(stockoutsRouter);
 
 export default router;
