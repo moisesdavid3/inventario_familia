@@ -266,7 +266,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
   const nav = [
     { href: '/app', label: 'Inicio', icon: HomeIcon },
-    { href: '/app/productos', label: 'Productos', icon: Box },
+    { href: '/app/productos', label: 'Inventario', icon: Box },
     { href: '/app/venta', label: 'Registrar venta', icon: ShoppingCart },
     { href: '/app/compras', label: 'Compras', icon: ShoppingBasket },
     { href: '/app/cartera', label: 'Cartera', icon: CreditCard },
